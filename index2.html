@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathfinder - JS Path (Level 2)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #4c1d95, #4338ca, #3730a3, #4f46e5);
+            background-size: 400% 400%;
+            animation: gradientBG 25s ease infinite;
+            color: #d1d5db;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .card {
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            background: rgba(15, 23, 42, 0.7);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            background: rgba(96, 165, 250, 0.1);
+            color: #93c5fd;
+        }
+        .btn:hover, .btn:focus {
+            background: rgba(96, 165, 250, 0.2);
+            box-shadow: 0 0 15px rgba(96, 165, 250, 0.3);
+        }
+        h1, h2, h3, h4 {
+            color: white;
+        }
+        [data-screen] { display: none; }
+        [data-screen].active { display: block; }
+
+        /* Drag and Drop Styles */
+        .drag-item { cursor: grab; user-select: none; background-color: rgba(255, 255, 255, 0.1); color: white; }
+        .drop-target { border: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color 0.2s ease; }
+        .drop-target.drag-over { background-color: rgba(255, 255, 255, 0.1); border-color: #60a5fa; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        
+        @keyframes xp-animation {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-60px) scale(1.1); opacity: 0; }
+        }
+        .xp-popup {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            padding: 4px 12px;
+            background-color: #60a5fa;
+            color: white;
+            border-radius: 9999px;
+            font-weight: bold;
+            animation: xp-animation 1.5s ease-out forwards;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex; align-items: center; justify-content: center; z-index: 50;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content { transform: scale(0.9); transition: transform 0.3s ease; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+
+        /* Flash Question Styles */
+        @keyframes pulse { 50% { opacity: .7; } }
+        .flash-indicator { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+        /* Custom input style for the new theme */
+        .themed-input {
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-family: monospace;
+        }
+        .themed-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+            border-color: #60a5fa;
+        }
+        .themed-input::placeholder {
+            color: #9ca3af;
+        }
+        
+        /* Achievement Tooltip Styles */
+        .achievement-icon {
+            position: relative;
+            cursor: pointer;
+        }
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 125%; /* Position above the icon */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0,0,0,0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            z-index: 10;
+            transition: opacity 0.3s;
+            width: 200px;
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+        .achievement-icon:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip-title {
+            font-weight: bold;
+            display: block;
+        }
+        .tooltip-desc {
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 4px;
+            color: #ccc;
+        }
+
+        /* Sidebar, Modal, and other UI component styles FROM INDEX.HTML */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(-100%);
+            z-index: 100;
+        }
+        #sidebar.open {
+            transform: translateX(0);
+        }
+        #overlay {
+            transition: opacity 0.3s ease-in-out;
+            z-index: 90;
+        }
+        .modal {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            z-index: 110;
+        }
+        .modal-content {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .themed-input {
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+        .themed-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+            border-color: #60a5fa;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Sidebar and Auth Modals Wrapper FROM INDEX.HTML -->
+    <div>
+        <!-- Hover zone to activate sidebar -->
+        <div id="sidebar-hover-zone" class="fixed top-0 left-0 h-full z-50" style="width: 100px;"></div>
+
+        <!-- Slide-out Sidebar -->
+        <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 to-slate-800 border-r border-gray-700/50 shadow-2xl p-6 flex flex-col">
+            <!-- Header -->
+            <div class="flex items-center gap-3 mb-8">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-blue-400">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h1 class="text-2xl font-bold text-white">Pathfinder</h1>
+            </div>
+
+            <!-- Level Navigation -->
+            <nav class="flex-grow">
+                <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Levels</h2>
+                <ul class="space-y-2">
+                    <li><a href="index1.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="flag" class="w-5 h-5 text-gray-400"></i> Level 1: Functions</a></li>
+                    <li><a href="index2.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="list" class="w-5 h-5 text-gray-400"></i> Level 2: Arrays</a></li>
+                    <li><a href="index3.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="git-fork" class="w-5 h-5 text-gray-400"></i> Level 3: Loops</a></li>
+                    <li><a href="index4.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="infinity" class="w-5 h-5 text-gray-400"></i> Level 4: Recursion</a></li>
+                    <li><a href="index5.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="box" class="w-5 h-5 text-gray-400"></i> Level 5: OOP</a></li>
+                    <li><a href="index6.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="database" class="w-5 h-5 text-gray-400"></i> Level 6: Data</a></li>
+                    <li><a href="index7.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="trophy" class="w-5 h-5 text-gray-400"></i> Level 7: Finale</a></li>
+                </ul>
+            </nav>
+
+            <!-- User/Auth Section -->
+            <div id="auth-section">
+                <!-- This button will be dynamically updated -->
+                 <div id="auth-button-container">
+                    <!-- Logged Out State -->
+                    <button id="login-register-btn" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-white font-semibold">
+                        <i data-lucide="log-in" class="w-5 h-5"></i>
+                        <span>Login / Register</span>
+                    </button>
+
+                    <!-- Logged In State (template, hidden initially) -->
+                    <div id="user-profile-btn" class="hidden w-full flex items-center justify-between p-2 rounded-lg bg-gray-800 text-white font-semibold">
+                        <span id="user-display-name" class="truncate flex-grow mr-2"></span>
+                        <div class="flex items-center gap-3">
+                             <a href="index.html" title="Home" class="text-gray-400 hover:text-white transition-colors">
+                                <i data-lucide="home" class="w-5 h-5"></i>
+                            </a>
+                            <i id="logout-icon" data-lucide="log-out" class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer" title="Logout"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Overlay for when sidebar is open -->
+        <div id="overlay" class="fixed inset-0 bg-black opacity-0 pointer-events-none"></div>
+
+        <!-- Modals -->
+        <div id="auth-modal" class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none">
+            <div class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8" id="auth-modal-content">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
+
+        <!-- Screen 1: Welcome (Level 2) -->
+        <div data-screen="welcome" class="w-full max-w-lg text-center active">
+            <div class="card fade-in">
+                <div class="flex justify-center mb-4">
+                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-blue-400"><path d="M7 4h10M17 4v16a2 2 0 01-2 2H9a2 2 0 01-2-2V4M12 2v2M20 4v2M4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+                <h1 class="text-4xl font-bold mb-2">Welcome to Level 2</h1>
+                <p class="text-lg mb-8 text-gray-300">Unlock the power of organized data by mastering JavaScript Arrays and their methods.</p>
+                <button id="start-learning-btn" class="btn text-lg">Begin Level 2</button>
+            </div>
+        </div>
+        
+        <!-- Screen 2: Learning Dashboard -->
+        <div data-screen="dashboard" class="w-full max-w-6xl">
+            <div class="p-4 md:p-8">
+                
+                <!-- NEW TOP NAV BAR -->
+                <div id="top-nav" class="card !p-4 mb-8">
+                    <!-- Header content and achievements will be injected here by JS -->
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 space-y-8">
+                        <div class="card" id="activity-container">
+                             <!-- Activity will be injected here -->
+                        </div>
+                    </div>
+                    <div class="lg:col-span-1 space-y-8">
+                        <div class="card sticky top-8">
+                           <h3 class="text-lg font-bold mb-4">Your Journey (Lvl 2)</h3>
+                           <div id="progress-tracker" class="space-y-3">
+                               <!-- Progress items will be injected here -->
+                           </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Achievement Modal -->
+    <div id="achievement-modal" class="modal-overlay">
+        <div class="modal-content card text-center max-w-sm w-full">
+            <div id="modal-content-inner"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- IMPORTS & FIREBASE SETUP (from index.html) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserSessionPersistence, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA76y2Cp0jvLBNiMkkl4Mlklw4SKdBg_Wo",
+            authDomain: "pathfinderquiz.firebaseapp.com",
+            projectId: "pathfinderquiz",
+            storageBucket: "pathfinderquiz.firebasestorage.app",
+            messagingSenderId: "653607161175",
+            appId: "1:653607161175:web:4ffd5922d221f26377c212",
+            measurementId: "G-S7XJTZ1VTZ"
+        };
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const auth = getAuth(firebaseApp);
+        const db = getFirestore(firebaseApp);
+        const googleProvider = new GoogleAuthProvider();
+        let currentUser = null;
+
+        // --- SHARED UI LOGIC (Sidebar, Modals from index.html) ---
+        lucide.createIcons();
+        
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const sidebarHoverZone = document.getElementById('sidebar-hover-zone');
+        const authModal = document.getElementById('auth-modal');
+        const authModalContent = document.getElementById('auth-modal-content');
+
+        const openSidebar = () => {
+            sidebar.classList.add('open');
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            overlay.classList.add('opacity-50');
+        };
+
+        const closeSidebar = () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('opacity-50');
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+        };
+
+        sidebarHoverZone.addEventListener('mouseenter', openSidebar);
+        sidebar.addEventListener('mouseleave', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        const showModal = (content) => {
+            authModalContent.innerHTML = content;
+            authModal.classList.remove('opacity-0', 'pointer-events-none');
+            attachModalEventListeners();
+            lucide.createIcons();
+        };
+        
+        const hideModals = () => {
+            authModal.classList.add('opacity-0', 'pointer-events-none');
+        };
+
+        authModal.addEventListener('click', (e) => {
+            if (e.target === authModal) hideModals();
+        });
+        
+        // --- AUTHENTICATION & DATABASE LOGIC (from index.html) ---
+        const loginRegisterBtn = document.getElementById('login-register-btn');
+        const userProfileBtn = document.getElementById('user-profile-btn');
+        const userDisplayName = document.getElementById('user-display-name');
+        const logoutIcon = document.getElementById('logout-icon');
+
+        const loginContent = `
+            <h2 class="text-2xl font-bold text-white mb-6 text-center">Login to Pathfinder</h2>
+            <div class="space-y-3">
+                <button id="google-signin-btn" class="w-full flex items-center justify-center gap-2 p-3 rounded-lg bg-white text-gray-800 font-semibold hover:bg-gray-200 transition-colors">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039L38.802 8.922C34.983 5.549 29.818 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path><path fill="#FF3D00" d="M6.306 14.691c-1.645 3.12-2.306 6.643-2.306 10.163C4 28.024 4.883 31.258 6.45 34.019l5.657-4.42C10.43 28.435 10 26.313 10 24c0-2.636 0.516-5.144 1.409-7.412l-5.103-3.897z"></path><path fill="#4CAF50" d="M24 48c5.166 0 9.86-1.977 13.409-5.192l-6.19-4.832C29.18 40.093 26.685 42 24 42c-4.482 0-8.3-2.922-9.829-6.965l-6.326 4.909C10.12 43.435 16.49 48 24 48z"></path><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-0.792 2.237-2.231 4.16-4.082 5.571l6.328 4.91c3.437-3.22 5.756-7.65 5.756-12.481c0-1.341-.138-2.65-.389-3.917z"></path></svg>
+                    Sign in with Google
+                </button>
+                <button id="guest-signin-btn" class="w-full p-3 rounded-lg bg-gray-600 hover:bg-gray-500 text-white font-semibold transition-colors">Continue as Guest</button>
+            </div>
+            <div class="my-4 flex items-center justify-center">
+                <span class="h-px bg-gray-600 flex-grow"></span>
+                <span class="px-2 text-sm text-gray-400">OR</span>
+                <span class="h-px bg-gray-600 flex-grow"></span>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="login-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-gray-300">Password</label>
+                    <input type="password" id="login-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center"><input id="remember-me" type="checkbox" class="h-4 w-4 rounded border-gray-500 text-blue-600 focus:ring-blue-500"><label for="remember-me" class="ml-2 block text-gray-300">Remember me</label></div>
+                    <a href="#" id="forgot-password-link" class="font-medium text-blue-400 hover:text-blue-300">Forgot password?</a>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors">Sign In</button>
+            </form>
+            <p class="text-center text-sm text-gray-400 mt-4">
+                Don't have an account? <a href="#" id="show-register-link" class="font-medium text-blue-400 hover:text-blue-300">Register</a>
+            </p>
+        `;
+
+        const registerContent = `
+            <h2 class="text-2xl font-bold text-white mb-6 text-center">Create an Account</h2>
+            <form id="register-form" class="space-y-4">
+                <div>
+                    <label for="register-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="register-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div>
+                    <label for="register-password" class="block text-sm font-medium text-gray-300">Password</label>
+                    <input type="password" id="register-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                 <div>
+                    <label for="register-confirm-password" class="block text-sm font-medium text-gray-300">Confirm Password</label>
+                    <input type="password" id="register-confirm-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors">Create Account</button>
+            </form>
+             <p class="text-center text-sm text-gray-400 mt-4">
+                Already have an account? <a href="#" id="show-login-link" class="font-medium text-blue-400 hover:text-blue-300">Login</a>
+            </p>
+        `;
+
+        const forgotPasswordContent = `
+            <h2 class="text-2xl font-bold text-white mb-4 text-center">Reset Password</h2>
+            <p class="text-center text-sm text-gray-400 mb-6">Enter your email and we'll send you a link to reset your password.</p>
+            <form id="forgot-password-form" class="space-y-4">
+                <div>
+                    <label for="forgot-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="forgot-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors">Send Reset Link</button>
+            </form>
+             <p class="text-center text-sm text-gray-400 mt-4">
+                <a href="#" id="back-to-login-link" class="font-medium text-blue-400 hover:text-blue-300">Back to Login</a>
+            </p>
+        `;
+
+        function attachModalEventListeners() {
+            const showRegisterLink = document.getElementById('show-register-link');
+            if(showRegisterLink) showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); showModal(registerContent); });
+            const showLoginLink = document.getElementById('show-login-link');
+            if(showLoginLink) showLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
+            const backToLoginLink = document.getElementById('back-to-login-link');
+            if(backToLoginLink) backToLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
+            const registerForm = document.getElementById('register-form');
+            if(registerForm) registerForm.addEventListener('submit', handleRegister);
+            const loginForm = document.getElementById('login-form');
+            if(loginForm) loginForm.addEventListener('submit', handleLogin);
+            const forgotPasswordLink = document.getElementById('forgot-password-link');
+            if(forgotPasswordLink) forgotPasswordLink.addEventListener('click', (e) => { e.preventDefault(); showModal(forgotPasswordContent); });
+            const forgotPasswordForm = document.getElementById('forgot-password-form');
+            if(forgotPasswordForm) forgotPasswordForm.addEventListener('submit', handleForgotPassword);
+            const googleSigninBtn = document.getElementById('google-signin-btn');
+            if(googleSigninBtn) googleSigninBtn.addEventListener('click', handleGoogleSignIn);
+            const guestSigninBtn = document.getElementById('guest-signin-btn');
+            if(guestSigninBtn) guestSigninBtn.addEventListener('click', handleGuestSignIn);
+        }
+
+        async function handleRegister(e) { e.preventDefault(); const email = document.getElementById('register-email').value, password = document.getElementById('register-password').value, confirmPassword = document.getElementById('register-confirm-password').value; if (password !== confirmPassword) { alert("Passwords do not match."); return; } try { const userCredential = await createUserWithEmailAndPassword(auth, email, password); console.log("Registration successful:", userCredential.user); hideModals(); } catch (error) { alert(`Registration failed: ${error.message}`); } }
+        async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('login-email').value, password = document.getElementById('login-password').value, rememberMe = document.getElementById('remember-me').checked; try { await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence); const userCredential = await signInWithEmailAndPassword(auth, email, password); console.log("Login successful:", userCredential.user); hideModals(); } catch (error) { alert(`Login failed: ${error.message}`); } }
+        async function handleForgotPassword(e) { e.preventDefault(); const email = document.getElementById('forgot-email').value; try { await sendPasswordResetEmail(auth, email); alert('Password reset email sent! Please check your inbox.'); hideModals(); } catch (error) { alert(`Failed to send reset email: ${error.message}`); } }
+        async function handleGoogleSignIn() { try { const result = await signInWithPopup(auth, googleProvider); console.log("Google Sign-In successful:", result.user); hideModals(); } catch (error) { console.error("Google Sign-In failed:", error); alert(`Google Sign-In failed: ${error.message}`); } }
+        async function handleGuestSignIn() { try { const userCredential = await signInAnonymously(auth); console.log("Signed in as guest:", userCredential.user); hideModals(); } catch (error) { console.error("Guest Sign-In failed:", error); alert(`Guest Sign-In failed: ${error.message}`); } }
+        
+        loginRegisterBtn.addEventListener('click', () => showModal(loginContent));
+        logoutIcon.addEventListener('click', async () => { try { await signOut(auth); console.log("Logout successful."); } catch (error) { console.error("Logout failed:", error); } });
+
+        // --- LEVEL 2: CONTENT & GAME LOGIC ---
+        const contentLibrary = {
+            javascript: {
+                title: "Arrays",
+                modules: [
+                    {
+                        title: "Array Basics", icon: "list-start",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "How do you declare a new array named `myArray`?", options: ["var myArray = {}", "var myArray = []", "new myArray()", "array myArray"], answer: "var myArray = []", explanation: "Arrays in JavaScript are declared using square brackets `[]`." },
+                                { type: 'code-correction', question: "How do you get the second item from an array named `colors`?", code: "colors(1);", answer: "colors[1];", explanation: "Array items are accessed using bracket notation `[]` with a zero-based index." },
+                                { type: 'multiple-choice', question: "Which property is used to find the number of elements in an array?", options: [".length", ".size", ".count", ".total"], answer: ".length", explanation: "The `.length` property returns the number of elements in an array." },
+                                { type: 'fill-in-the-blank', question: "The index of the first item in a JavaScript array is always `__`.", answer: "0", explanation: "JavaScript arrays are zero-indexed, meaning the first element is at index `0`.", flash: true, suggestions: ['1', '0', 'undefined', 'null'] },
+                                { type: 'multiple-choice', question: "What will `fruits.length` return for `['apple', 'banana', 'cherry']`?", options: ["3", "2", "4", "5"], answer: "3", explanation: "The `.length` property counts the total number of elements in the array, not the highest index." },
+                                { type: 'multiple-choice', question: "What can an array store?", options: ["Only numbers", "Only strings", "A mix of data types", "Only objects"], answer: "A mix of data types", explanation: "Arrays can hold different data types in the same list, including numbers, strings, objects, and other arrays." },
+                                { type: 'drag-and-drop', question: "Match the array items to their correct index.", items: [{ id: 'd1', text: '`' + `'banana'` + '`' }, { id: 'd2', text: '`' + `'cherry'` + '`' }], targets: [{ id: 't1', text: 'Index 1' }, { id: 't2', text: 'Index 2' }], matches: { d1: 't1', d2: 't2' }, explanation: "Arrays are zero-indexed, so `banana` is at index 1 and `cherry` is at index 2 in `['apple', 'banana', 'cherry']`." },
+                            ]
+                        }
+                    },
+                    {
+                        title: "Common Methods", icon: "table",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "Which method adds a new element to the *end* of an array?", options: [".add()", ".push()", ".append()", ".insertLast()"], answer: ".push()", explanation: "The `.push()` method adds a new element to the end of an array and returns the new length." },
+                                { type: 'code-correction', question: "Remove the last item from the `cart` array.", code: "let cart = ['apple', 'banana', 'grape'];\ncart.removeLast();", answer: "let cart = ['apple', 'banana', 'grape'];\ncart.pop();", explanation: "The `.pop()` method removes the last element from an array." },
+                                { type: 'multiple-choice', question: "Which method removes the *first* element from an array?", options: [".pop()", ".shift()", ".pull()", ".removeFirst()"], answer: ".shift()", explanation: "The `.shift()` method removes the first element from an array and returns that element." },
+                                { type: 'fill-in-the-blank', question: "The method `.slice(1, 3)` will return a `__` array from index 1 up to, but not including, index 3.", answer: "new", explanation: "`.slice()` returns a new array and does not modify the original array.", flash: true, suggestions: ['new', 'modified', 'same', 'empty'] },
+                                { type: 'multiple-choice', question: "How can you reverse the order of elements in an array?", options: [".sort()", ".reverse()", ".reorder()", "Array.reverse()"], answer: ".reverse()", explanation: "The `.reverse()` method reverses the elements of an array in place." },
+                                { type: 'code-correction', question: "Add the string `'kiwi'` to the beginning of the `fruits` array.", code: "let fruits = ['banana', 'apple'];\nfruits.unshift('kiwi');", answer: "let fruits = ['banana', 'apple'];\nfruits.unshift('kiwi');", explanation: "The `.unshift()` method adds one or more elements to the beginning of an array." },
+                                { type: 'drag-and-drop', question: "Match the method to its action.", items: [{ id: 'd1', text: '`.splice()`' }, { id: 'd2', text: '`.slice()`' }], targets: [{ id: 't1', text: 'Modifies the original array' }, { id: 't2', text: 'Returns a new array' }], matches: { d1: 't1', d2: 't2' }, explanation: "`.splice()` changes the original array, while `.slice()` creates a new array without changing the original." },
+                            ]
+                        }
+                    },
+                    {
+                        title: "Iteration Methods", icon: "repeat",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "Which method is used to execute a function for each array element?", options: [".loop()", ".each()", ".map()", ".forEach()"], answer: ".forEach()", explanation: "The `.forEach()` method calls a function for each element in the array." },
+                                { type: 'code-correction', question: "Use `.map()` to double each number in the array.", code: "let numbers = [1, 2, 3];\nlet doubled = numbers.map(num => num * 2);", answer: "let numbers = [1, 2, 3];\nlet doubled = numbers.map(num => num * 2);", explanation: "`.map()` creates a new array by applying a function to each element of the original array." },
+                                { type: 'multiple-choice', question: "The `.filter()` method is used to...?", options: ["Remove all elements from an array", "Create a new array with elements that pass a test", "Change every element in an array", "Check if an element exists in an array"], answer: "Create a new array with elements that pass a test", explanation: "`.filter()` returns a new array containing only the elements that satisfy the provided testing function." },
+                                { type: 'fill-in-the-blank', question: "The `.reduce()` method `__` an array into a single value.", answer: "condenses", explanation: "`.reduce()` executes a reducer function on each element of the array, resulting in a single output value.", flash: true, suggestions: ['condenses', 'expands', 'flattens', 'sorts'] },
+                                { type: 'multiple-choice', question: "What is the return value of `.forEach()`?", options: ["A new array", "The original array", "A boolean", "undefined"], answer: "undefined", explanation: "`.forEach()` does not return a value. Its purpose is to perform a side effect for each element." },
+                                { type: 'multiple-choice', question: "What does `numbers.reduce((sum, current) => sum + current, 0)` do?", options: ["Finds the largest number", "Filters out even numbers", "Sums all numbers in the array", "Sorts the array"], answer: "Sums all numbers in the array", explanation: "The `.reduce()` method accumulates a value (the `sum`) by iterating over the array." },
+                                { type: 'drag-and-drop', question: "Match the method to its purpose.", items: [{ id: 'd1', text: '`.map()`' }, { id: 'd2', text: '`.filter()`' }], targets: [{ id: 't1', text: 'Transforms each item' }, { id: 't2', text: 'Selects certain items' }], matches: { d1: 't1', d2: 't2' }, explanation: "`.map()` is for transforming data, while `.filter()` is for selecting a subset of data." },
+                            ]
+                        }
+                    },
+                     {
+                        title: "Destructuring & Spread", icon: "braces",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "What is array destructuring?", options: ["Breaking an array into individual characters", "Assigning array elements to variables in one expression", "Combining two arrays into one", "Reversing the order of an array"], answer: "Assigning array elements to variables in one expression", explanation: "Destructuring provides a more concise way to extract values from arrays or objects and assign them to new variables." },
+                                { type: 'code-correction', question: "Use array destructuring to assign the first two elements of `points` to variables `x` and `y`.", code: "let points = [10, 20, 30];\nlet x, y = points;", answer: "let points = [10, 20, 30];\nlet [x, y] = points;", explanation: "Array destructuring uses a syntax that mimics array literals on the left-hand side of an assignment." },
+                                { type: 'multiple-choice', question: "What does the spread operator (`...`) do?", options: ["Combines two arrays", "Expands an iterable into individual elements", "Clones an array", "Creates a new empty array"], answer: "Expands an iterable into individual elements", explanation: "The spread operator can be used to copy an array, merge arrays, or pass elements as arguments to a function." },
+                                { type: 'fill-in-the-blank', question: "The spread operator is represented by `...` and can be used to create a shallow `__` of an array.", answer: "copy", explanation: "Using `...` is a common and clean way to create a copy of an array without mutating the original.", flash: true, suggestions: ['copy', 'link', 'reference', 'pointer'] },
+                                { type: 'multiple-choice', question: "How do you combine `arr1` and `arr2` into a new array `combined` using the spread operator?", options: ["let combined = [...arr1, ...arr2];", "let combined = arr1 + arr2;", "let combined = arr1.concat(arr2);", "let combined = join(arr1, arr2);"], answer: "let combined = [...arr1, ...arr2];", explanation: "This is a modern and readable way to concatenate arrays. `concat` is an older method that does the same." },
+                                { type: 'code-correction', question: "Use the rest operator to gather the remaining elements of the `list` array into a new array called `rest`.", code: "let list = [1, 2, 3, 4, 5];\nlet [first, second, ...rest] = list;", answer: "let list = [1, 2, 3, 4, 5];\nlet [first, second, ...rest] = list;", explanation: "The rest operator (`...`) is used in destructuring to collect the remaining elements into a single new array." },
+                                { type: 'multiple-choice', question: "What's the difference between the spread and rest operators?", options: ["They are the same", "Spread collects, rest expands", "Spread expands, rest collects", "One is for arrays, one is for objects"], answer: "Spread expands, rest collects", explanation: "The syntax (`...`) is the same, but the context determines its meaning: when used to expand an array, it's the spread operator; when used to collect remaining elements in destructuring, it's the rest operator." },
+                            ]
+                        }
+                    }
+                ],
+                finalExam: { 
+                    title: "Final Exam (Lvl 2)", 
+                    icon: "trophy", 
+                    quiz: { 
+                        questions: [
+                            { type: 'multiple-choice', question: "What is the correct way to check if an item exists in an array?", options: [".includes()", ".exists()", ".contains()", ".search()"], answer: ".includes()", explanation: "The `.includes()` method determines whether an array includes a certain value among its entries, returning `true` or `false`." },
+                            { type: 'code-correction', question: "This code should get the last element of the `numbers` array. Fix it.", code: "let numbers = [10, 20, 30];\nlet last = numbers[numbers.length];", answer: "let numbers = [10, 20, 30];\nlet last = numbers[numbers.length - 1];", explanation: "Since arrays are zero-indexed, the last element is at an index of `length - 1`." },
+                            { type: 'multiple-choice', question: "Which array method returns a *new* array, leaving the original unchanged?", options: [".sort()", ".reverse()", ".splice()", ".map()"], answer: ".map()", explanation: "`.map()` is a non-mutating method that creates a new array based on the original." },
+                            { type: 'fill-in-the-blank', question: "The process of getting values from an array and putting them into separate variables is called array `__`.", answer: "destructuring", explanation: "Array destructuring is a convenient way to unpack values from arrays into distinct variables.", flash: true, suggestions: ['destructuring', 'slicing', 'mapping', 'spreading'] },
+                            { type: 'multiple-choice', question: "The `.reduce()` method is used to...?", options: ["Change the type of an array", "Execute a function on each element and return a single value", "Filter an array based on a condition", "Sort an array in ascending order"], answer: "Execute a function on each element and return a single value", explanation: "`.reduce()` can be used to sum up values, count occurrences, or condense an array into any single value." },
+                            { type: 'multiple-choice', question: "Which method is the most efficient for adding an element to the *beginning* of a large array?", options: [".unshift()", "Using the spread operator", "Both are equally efficient", "Neither are efficient"], answer: "Using the spread operator", explanation: "The spread operator (`[newEl, ...arr]`) is generally more performant than `.unshift()` for large arrays as it creates a new array without shifting all existing elements." },
+                            { type: 'drag-and-drop', question: "Match the operator to its action.", items: [{ id: 'd1', text: '`...` as spread' }, { id: 'd2', text: '`...` as rest' }], targets: [{ id: 't1', text: 'Creates a new array from remaining elements' }, { id: 't2', text: 'Expands an array into a new one' }], matches: { d1: 't2', d2: 't1' }, explanation: "The same syntax serves two purposes depending on the context: expanding an array or collecting remaining elements." },
+                        ] 
+                    } 
+                }
+            }
+        };
+
+        const SAVE_KEY = 'pathfinderSaveData_level2'; // Unique key for level 2
+        const appState = {
+            currentScreen: 'welcome',
+            userName: '',
+            learningPlan: null,
+            quizState: null,
+            achievements: new Set(),
+            flashTimerInterval: null,
+        };
+
+        // --- NEW UNIFIED SAVE/LOAD LOGIC ---
+        async function savePlayerState() {
+            try {
+                const stateToSave = {
+                    ...appState,
+                    achievements: [...appState.achievements], // Convert Set to Array for JSON
+                };
+                if (currentUser && !currentUser.isAnonymous) {
+                    const userLevelRef = doc(db, "users", currentUser.uid, "levelProgress", "level2");
+                    await setDoc(userLevelRef, stateToSave, { merge: true });
+                    console.log("Level 2 progress saved to Firebase.");
+                } else {
+                    localStorage.setItem(SAVE_KEY, JSON.stringify(stateToSave));
+                    console.log("Level 2 progress saved to Local Storage.");
+                }
+            } catch (e) {
+                console.error("Failed to save state:", e);
+            }
+        }
+
+        async function loadPlayerState() {
+            try {
+                let savedState = null;
+                if (currentUser && !currentUser.isAnonymous) {
+                    console.log("Attempting to load Level 2 progress from Firebase for user:", currentUser.uid);
+                    const userLevelRef = doc(db, "users", currentUser.uid, "levelProgress", "level2");
+                    const docSnap = await getDoc(userLevelRef);
+                    if (docSnap.exists()) {
+                        savedState = docSnap.data();
+                        console.log("Level 2 progress loaded from Firebase.");
+                    }
+                } else {
+                    const savedStateJSON = localStorage.getItem(SAVE_KEY);
+                    if (savedStateJSON) {
+                        savedState = JSON.parse(savedStateJSON);
+                        console.log("Level 2 progress loaded from Local Storage.");
+                    }
+                }
+                
+                if (savedState) {
+                    savedState.achievements = new Set(savedState.achievements); // Convert back to Set
+                    return savedState;
+                }
+            } catch (e) {
+                console.error("Failed to load or parse state:", e);
+            }
+            console.log("No saved state found for Level 2.");
+            return null;
+        }
+
+        // --- Utils ---
+        const shuffleArray = (array) => { return [...array].sort(() => Math.random() - 0.5); };
+        const calculateLevel = (xp) => ({ level: Math.floor(xp / 100) + 1, nextLevelXp: (Math.floor(xp / 100) + 1) * 100 });
+        function showXpAnimation() { const activityContainer = document.getElementById('activity-container'); if (!activityContainer) return; const xpEl = document.createElement('div'); xpEl.textContent = '+10 XP'; xpEl.className = 'xp-popup'; activityContainer.appendChild(xpEl); setTimeout(() => { xpEl.remove(); }, 1500); }
+
+        // --- UI Navigation & Setup ---
+        function navigateTo(screenName) {
+            document.querySelectorAll('[data-screen]').forEach(screen => screen.classList.remove('active'));
+            const newScreen = document.querySelector(`[data-screen="${screenName}"]`);
+            if (newScreen) {
+                newScreen.classList.add('active');
+                newScreen.querySelector('.card, .p-4')?.classList.add('fade-in');
+                appState.currentScreen = screenName;
+            }
+        }
+
+        function startLearningPath() {
+            appState.userName = currentUser?.displayName || "Learner";
+            const planData = contentLibrary.javascript;
+            appState.learningPlan = {
+                ...planData,
+                progress: planData.modules.reduce((acc, _, index) => ({ ...acc, [`module_${index}`]: 0 }), { finalExam: 0 }),
+                xp: 0,
+            };
+            appState.achievements = new Set();
+            savePlayerState();
+            renderDashboard();
+            navigateTo('dashboard');
+        }
+        
+        // --- Dashboard and Activity Rendering ---
+        function renderDashboard() {
+            const { learningPlan } = appState;
+            const userName = appState.userName || (currentUser?.displayName || "Learner");
+            if (!learningPlan) return;
+            const {level, nextLevelXp} = calculateLevel(learningPlan.xp);
+            const topNav = document.getElementById('top-nav');
+
+            topNav.innerHTML = `
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold">Level 2: Arrays</h1>
+                        <p class="text-gray-300">Welcome, ${userName}!</p>
+                    </div>
+                    <div id="achievements-bar" class="flex items-center gap-2">
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-400">Level ${level}</p>
+                        <p class="text-xl font-bold text-blue-400">${learningPlan.xp} / ${nextLevelXp} XP</p>
+                    </div>
+                </div>
+            `;
+
+            renderProgressTracker();
+            renderAchievements();
+            showModuleList();
+            lucide.createIcons();
+        }
+
+        function showModuleList() {
+            if (appState.quizState && appState.quizState.timerId) clearInterval(appState.quizState.timerId);
+            if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval);
+            appState.quizState = null;
+            
+            const { modules, finalExam, progress } = appState.learningPlan;
+             document.getElementById('activity-container').innerHTML = `
+                <h2 class="text-2xl font-bold mb-6">Level 2 Modules</h2>
+                <div class="space-y-4">
+                    ${modules.map((mod, i) => createModuleCard(mod, i)).join('')}
+                    ${createModuleCard(finalExam, 'finalExam', true)}
+                </div>
+            `;
+            
+            if (progress.finalExam > 0) {
+                 document.getElementById('activity-container').innerHTML += `
+                    <div class="mt-8 text-center fade-in">
+                        <h3 class="text-2xl font-bold text-blue-400">Level 2 Complete!</h3>
+                        <p class="mt-2 text-gray-300">You've mastered arrays. The next challenge awaits.</p>
+                        <a href="index3.html" class="btn mt-4">
+                            <i data-lucide="arrow-right-circle" class="mr-2"></i>
+                            Proceed to Level 3
+                        </a>
+                    </div>
+                `;
+            }
+
+            document.getElementById('activity-container').classList.add('fade-in');
+            lucide.createIcons();
+        }
+
+        function createModuleCard(module, index, isExam = false) {
+             const progress = appState.learningPlan.progress;
+             const id = isExam ? 'finalExam' : `module_${index}`;
+             const isDone = progress[id] > 0;
+
+            return `
+            <div class="card module-card !p-4 flex items-center gap-4 cursor-pointer ${isDone ? 'bg-indigo-500/20' : ''}" onclick="window.startActivity('${id}')">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center ${isExam ? 'bg-yellow-500' : 'bg-blue-500'} text-white flex-shrink-0">
+                     <i data-lucide="${module.icon}"></i>
+                </div>
+                <div class="flex-grow">
+                     <h3 class="text-xl font-bold">${module.title}</h3>
+                     <p class="text-sm text-gray-400">${module.quiz.questions.length} Questions</p>
+                </div>
+                ${isDone ? '<i data-lucide="check-circle-2" class="w-8 h-8 text-blue-400"></i>' : '<i data-lucide="chevron-right" class="w-8 h-8 text-gray-400"></i>'}
+            </div>
+            `;
+        }
+
+        function renderProgressTracker() {
+            const { progress, modules, finalExam } = appState.learningPlan;
+            const tracker = document.getElementById('progress-tracker');
+            
+            const createTrackerItem = (id, icon, title, isDone) => `<div class="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/10 ${isDone ? 'opacity-50' : ''}" onclick="${isDone ? '' : `window.startActivity('${id}')`}"><div class="w-8 h-8 rounded-full flex items-center justify-center ${isDone ? 'bg-blue-500' : 'bg-indigo-500'} text-white"><i data-lucide="${isDone ? 'check' : icon}"></i></div><div><p class="font-semibold text-gray-200">${title}</p></div>${isDone ? '<i data-lucide="sparkles" class="w-5 h-5 text-yellow-400 ml-auto"></i>' : ''}</div>`;
+
+            let html = modules.map((mod, i) => createTrackerItem(`module_${i}`, mod.icon, mod.title, progress[`module_${i}`] > 0)).join('');
+            html += createTrackerItem('finalExam', finalExam.icon, finalExam.title, progress.finalExam > 0);
+            tracker.innerHTML = html;
+        }
+
+        // --- Achievements ---
+        const allAchievements = {
+            arrayApprentice: { icon: 'list-checks', title: 'Array Apprentice', description: 'Complete your first Arrays module.' },
+            indexer: { icon: 'search', title: 'Array Indexer', description: 'Get a perfect score on a Level 2 module.' },
+            arrayMaster: { icon: 'box', title: 'Array Master', description: 'Complete the entire Arrays path.' }
+        };
+
+        function awardAchievement(id) {
+            if (appState.achievements.has(id)) return;
+            appState.achievements.add(id);
+            const achievement = allAchievements[id];
+            
+            const modal = document.getElementById('achievement-modal');
+            document.getElementById('modal-content-inner').innerHTML = `<i data-lucide="award" class="w-16 h-16 mx-auto text-yellow-400 mb-4"></i><h2 class="text-2xl font-bold">Achievement Unlocked!</h2><p class="mt-2 font-semibold text-gray-200">${achievement.title}</p><p class="text-sm text-gray-300">${achievement.description}</p><button class="btn mt-6" onclick="this.closest('.modal-overlay').classList.remove('visible')">Continue</button>`;
+            lucide.createIcons();
+            modal.classList.add('visible');
+            renderAchievements();
+            savePlayerState();
+        }
+
+        function renderAchievements() {
+            const barEl = document.getElementById('achievements-bar');
+            if (!barEl) return; 
+
+            let html = '<h3 class="text-lg font-bold mr-2 text-gray-300 hidden md:block">Achievements</h3>';
+            
+            for (const id in allAchievements) {
+                const achievement = allAchievements[id];
+                const isEarned = appState.achievements.has(id);
+                
+                html += `
+                    <div class="achievement-icon ${isEarned ? '' : 'opacity-30'}" title="${achievement.title}">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center ${isEarned ? 'bg-yellow-400' : 'bg-gray-500'} text-white">
+                            <i data-lucide="${achievement.icon}"></i>
+                        </div>
+                        <div class="tooltip">
+                            <span class="tooltip-title">${achievement.title}</span>
+                            <span class="tooltip-desc">${achievement.description}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            barEl.innerHTML = html;
+            lucide.createIcons();
+        }
+        
+        window.markComplete = (activityId, score) => {
+            if (appState.quizState && appState.quizState.timerId) clearInterval(appState.quizState.timerId);
+            if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval);
+
+            const oldXp = appState.learningPlan.xp;
+            const newXp = oldXp - (appState.learningPlan.progress[activityId] || 0) + score * 10;
+            appState.learningPlan.progress[activityId] = score * 10;
+            appState.learningPlan.xp = newXp;
+
+            if (activityId !== 'finalExam') awardAchievement('arrayApprentice');
+            const module = activityId === 'finalExam' ? appState.learningPlan.finalExam : appState.learningPlan.modules[activityId.split('_')[1]];
+            if (score === module.quiz.questions.length) awardAchievement('indexer');
+            const allDone = appState.learningPlan.modules.every((_, i) => appState.learningPlan.progress[`module_${i}`] > 0) && appState.learningPlan.progress.finalExam > 0;
+            if(allDone) awardAchievement('arrayMaster');
+
+            renderDashboard();
+            savePlayerState();
+        }
+        
+        // --- Quiz Logic ---
+        window.startActivity = (activityId) => {
+            const isExam = activityId === 'finalExam';
+            const moduleData = isExam ? appState.learningPlan.finalExam : appState.learningPlan.modules[activityId.split('_')[1]];
+            appState.quizState = { activityId, questions: shuffleArray(moduleData.quiz.questions), currentIndex: 0, score: 0, timerId: null, timeLeft: moduleData.quiz.questions.length * 30 };
+            appState.quizState.timerId = setInterval(updateTimer, 1000);
+            renderQuizActivityQuestion();
+        }
+        function updateTimer() { if (!appState.quizState) return; appState.quizState.timeLeft--; const timerEl = document.getElementById('quiz-timer'); if (timerEl) { const m = Math.floor(appState.quizState.timeLeft / 60); const s = appState.quizState.timeLeft % 60; timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`; } if (appState.quizState.timeLeft <= 0) finishQuiz(true); }
+        function finishQuiz(timesUp = false) { if (!appState.quizState) return; if (appState.quizState.timerId) clearInterval(appState.quizState.timerId); if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const activityContainer = document.getElementById('activity-container'); activityContainer.innerHTML = `<div class="text-center fade-in"><h2 class="text-2xl font-bold">${timesUp ? "Time's Up!" : "Module Complete!"}</h2><p class="text-lg mt-2 text-gray-300">You scored</p><p class="text-5xl font-bold text-blue-400 my-4">${appState.quizState.score} / ${appState.quizState.questions.length}</p><button onclick="window.markComplete('${appState.quizState.activityId}', ${appState.quizState.score})" class="btn">Continue</button></div>`; }
+        function renderQuizActivityQuestion() { if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const { quizState } = appState; if (!quizState) return; const quizData = quizState.questions[quizState.currentIndex]; const activityContainer = document.getElementById('activity-container'); let questionHTML = '', flashHeaderHTML = ''; if (quizData.flash) { flashHeaderHTML = `<div class="mb-4 p-3 rounded-lg bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center gap-4"><i data-lucide="zap" class="text-yellow-400 flash-indicator"></i><span class="font-semibold text-yellow-200">Flash Question!</span><span id="flash-timer" class="font-bold text-yellow-300 text-lg">15s</span></div>`; } if (quizData.type === 'multiple-choice') quizData.options = shuffleArray(quizData.options); switch(quizData.type) { case 'fill-in-the-blank': { let sHTML = ''; if (quizData.suggestions) { sHTML = `<datalist id="suggestions-list">${quizData.suggestions.map(s => `<option value="${s}"></option>`).join('')}</datalist>`; } const iHTML = `<input type="text" id="fill-in-blank-input" ${quizData.suggestions ? 'list="suggestions-list"' : ''} class="mx-2 p-1 border-b-2 border-blue-400 focus:outline-none focus:border-blue-500 bg-transparent text-white">`; questionHTML = `<p class="text-lg mb-6">${quizData.question.replace('______', iHTML).replace('____', iHTML)}</p>${sHTML}<button id="submit-fill-btn" class="btn">Submit</button>`; break; } case 'drag-and-drop': { questionHTML = `<p class="text-lg mb-6">${quizData.question}</p><div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Items</h4>${quizData.items.map(item => `<div id="${item.id}" draggable="true" class="drag-item p-3 rounded-lg">${item.text}</div>`).join('')}</div><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Targets</h4>${quizData.targets.map(target => `<div id="${target.id}" class="drop-target p-3 rounded-lg min-h-[50px]">${target.text}</div>`).join('')}</div></div><button id="submit-drag-btn" class="btn mt-6">Check Answer</button>`; break; } case 'code-correction': { questionHTML = `<p class="text-lg mb-4">${quizData.question}</p><pre class="bg-black/20 p-4 rounded-lg text-gray-400 text-sm mb-4"><code>${quizData.code}</code></pre><textarea id="code-correction-input" rows="3" class="w-full p-2 rounded-lg themed-input" placeholder="Enter corrected code here..."></textarea><button id="submit-code-btn" class="btn mt-4">Submit</button>`; break; } case 'multiple-choice': default: { questionHTML = `<p class="text-lg mb-6">${quizData.question}</p><div class="space-y-3">${quizData.options.map(opt => `<button class="w-full text-left p-4 rounded-lg quiz-act-option border-2 border-transparent hover:border-blue-400 bg-white/5 transition-colors" data-answer="${opt}">${opt}</button>`).join('')}</div>`; break; } } activityContainer.innerHTML = `<div class="fade-in"><div class="flex justify-between items-center mb-4"><button onclick="showModuleList()" class="text-sm text-blue-300 hover:text-blue-200">&larr; Back to Modules</button><div class="text-lg font-bold text-gray-300" id="quiz-timer"></div></div>${flashHeaderHTML}<h2 class="text-2xl font-bold mb-6">${quizState.questions[quizState.currentIndex].title || 'Question '+(quizState.currentIndex+1)}</h2><div id="question-content">${questionHTML}</div><div id="quiz-feedback-container" class="mt-6"></div></div>`; if (quizData.flash) { let t = 15; const ft = document.getElementById('flash-timer'); ft.textContent = `${t}s`; appState.flashTimerInterval = setInterval(() => { t--; ft.textContent = `${t}s`; if (t <= 0) { clearInterval(appState.flashTimerInterval); handleAnswer('__timeout__', quizData); } }, 1000); } setupQuestionEventListeners(quizData); lucide.createIcons(); }
+        function setupQuestionEventListeners(quizData) { switch(quizData.type) { case 'multiple-choice': document.querySelectorAll('.quiz-act-option').forEach(btn => btn.addEventListener('click', (e) => handleAnswer(e.target.dataset.answer, quizData))); break; case 'fill-in-the-blank': document.getElementById('submit-fill-btn').addEventListener('click', () => handleAnswer(document.getElementById('fill-in-blank-input').value, quizData)); document.getElementById('fill-in-blank-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('submit-fill-btn').click(); }); break; case 'drag-and-drop': let dId = null; document.querySelectorAll('.drag-item').forEach(i => i.addEventListener('dragstart', e => { dId = e.target.id; e.dataTransfer.setData('text/plain', e.target.id); })); document.querySelectorAll('.drop-target').forEach(t => { t.addEventListener('dragover', e => { e.preventDefault(); t.classList.add('drag-over'); }); t.addEventListener('dragleave', () => t.classList.remove('drag-over')); t.addEventListener('drop', e => { e.preventDefault(); t.classList.remove('drag-over'); const dItem = document.getElementById(dId); if (dItem && t.children.length === 0) { t.appendChild(dItem); dItem.style.cursor = 'default'; }}); }); document.getElementById('submit-drag-btn').addEventListener('click', () => { let isCorrect = Object.entries(quizData.matches).every(([iId, tId]) => document.getElementById(tId).querySelector(`#${iId}`)); handleAnswer(isCorrect, quizData); }); break; case 'code-correction': document.getElementById('submit-code-btn').addEventListener('click', () => handleAnswer(document.getElementById('code-correction-input').value, quizData)); break; } }
+        function handleAnswer(selectedAnswer, quizData) { if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const { quizState } = appState; let isCorrect = false, wasTimeout = selectedAnswer === '__timeout__'; if (!wasTimeout) { if (quizData.type === 'code-correction') { isCorrect = selectedAnswer.trim() === quizData.answer.trim(); } else if (typeof selectedAnswer === 'string') { isCorrect = selectedAnswer.trim().toLowerCase() === quizData.answer.trim().toLowerCase(); } else { isCorrect = selectedAnswer === true; } } if (isCorrect) { quizState.score++; showXpAnimation(); } const isLastQuestion = quizState.currentIndex === quizState.questions.length - 1; const feedbackContainer = document.getElementById('quiz-feedback-container'); let feedbackTitle = 'Correct!'; if (wasTimeout) feedbackTitle = "Time's Up!"; else if (!isCorrect) feedbackTitle = 'Not quite.'; feedbackContainer.innerHTML = `<div class="fade-in p-4 rounded-lg ${isCorrect ? 'bg-indigo-500/20' : 'bg-red-500/20'}"><p class="font-semibold ${isCorrect ? 'text-blue-300' : 'text-red-300'}">${feedbackTitle}</p><p class="mt-2 text-sm ${isCorrect ? 'text-blue-400' : 'text-red-400'}">${quizData.explanation}</p></div><button id="next-quiz-btn" class="btn mt-4">${isLastQuestion ? 'Finish Quiz' : 'Next Question'}</button>`; document.querySelectorAll('button, input, textarea').forEach(el => { if(el.id !== 'next-quiz-btn') el.disabled = true; }); document.getElementById('next-quiz-btn').addEventListener('click', () => { if (isLastQuestion) finishQuiz(); else { quizState.currentIndex++; renderQuizActivityQuestion(); } }); }
+        
+        // --- APP INITIALIZATION ---
+        async function initializePathfinderApp() {
+            const loadedState = await loadPlayerState();
+            if (loadedState && loadedState.learningPlan) {
+                Object.assign(appState, loadedState);
+                renderDashboard();
+                navigateTo('dashboard');
+            } else {
+                navigateTo('welcome');
+            }
+            document.getElementById('start-learning-btn').addEventListener('click', startLearningPath);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            if (user) {
+                console.log("User is logged in:", user.displayName || user.email);
+                userDisplayName.textContent = user.displayName || user.email || `Guest-${user.uid.substring(0,5)}`;
+                userProfileBtn.classList.remove('hidden');
+                loginRegisterBtn.classList.add('hidden');
+            } else {
+                console.log("User is logged out.");
+                userProfileBtn.classList.add('hidden');
+                loginRegisterBtn.classList.remove('hidden');
+            }
+            // Initialize or re-initialize the app with the current user state
+            initializePathfinderApp();
+        });
+        
+    </script>
+</body>
+</html>

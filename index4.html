@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathfinder - JS Path (Level 4)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #5b21b6, #4c1d95, #3730a3, #4f46e5);
+            background-size: 400% 400%;
+            animation: gradientBG 25s ease infinite;
+            color: #d1d5db;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .card {
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            background: rgba(15, 23, 42, 0.7);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            background: rgba(139, 92, 246, 0.1);
+            color: #c4b5fd;
+        }
+        .btn:hover, .btn:focus {
+            background: rgba(139, 92, 246, 0.2);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+        }
+        h1, h2, h3, h4 {
+            color: white;
+        }
+        [data-screen] { display: none; }
+        [data-screen].active { display: block; }
+
+        /* Drag and Drop Styles */
+        .drag-item { cursor: grab; user-select: none; background-color: rgba(255, 255, 255, 0.1); color: white; }
+        .drop-target { border: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color 0.2s ease; }
+        .drop-target.drag-over { background-color: rgba(255, 255, 255, 0.1); border-color: #8b5cf6; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        
+        @keyframes xp-animation {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-60px) scale(1.1); opacity: 0; }
+        }
+        .xp-popup {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            padding: 4px 12px;
+            background-color: #8b5cf6;
+            color: white;
+            border-radius: 9999px;
+            font-weight: bold;
+            animation: xp-animation 1.5s ease-out forwards;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex; align-items: center; justify-content: center; z-index: 50;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content { transform: scale(0.9); transition: transform 0.3s ease; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+
+        /* Flash Question Styles */
+        @keyframes pulse { 50% { opacity: .7; } }
+        .flash-indicator { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+        /* Custom input style for the new theme */
+        .themed-input {
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-family: monospace;
+        }
+        .themed-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
+            border-color: #8b5cf6;
+        }
+        .themed-input::placeholder {
+            color: #9ca3af;
+        }
+        
+        /* Achievement Tooltip Styles */
+        .achievement-icon {
+            position: relative;
+            cursor: pointer;
+        }
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 125%; /* Position above the icon */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0,0,0,0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            z-index: 10;
+            transition: opacity 0.3s;
+            width: 200px;
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+        .achievement-icon:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip-title {
+            font-weight: bold;
+            display: block;
+        }
+        .tooltip-desc {
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 4px;
+            color: #ccc;
+        }
+
+        /* Sidebar, Modal, and other UI component styles FROM INDEX.HTML */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(-100%);
+            z-index: 100;
+        }
+        #sidebar.open {
+            transform: translateX(0);
+        }
+        #overlay {
+            transition: opacity 0.3s ease-in-out;
+            z-index: 90;
+        }
+        .modal {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            z-index: 110;
+        }
+        .modal-content {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .themed-input {
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+        .themed-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
+            border-color: #8b5cf6;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Sidebar and Auth Modals Wrapper FROM INDEX.HTML -->
+    <div>
+        <!-- Hover zone to activate sidebar -->
+        <div id="sidebar-hover-zone" class="fixed top-0 left-0 h-full z-50" style="width: 100px;"></div>
+
+        <!-- Slide-out Sidebar -->
+        <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 to-slate-800 border-r border-gray-700/50 shadow-2xl p-6 flex flex-col">
+            <!-- Header -->
+            <div class="flex items-center gap-3 mb-8">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-purple-400">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h1 class="text-2xl font-bold text-white">Pathfinder</h1>
+            </div>
+
+            <!-- Level Navigation -->
+            <nav class="flex-grow">
+                <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Levels</h2>
+                <ul class="space-y-2">
+                    <li><a href="index1.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="flag" class="w-5 h-5 text-gray-400"></i> Level 1: Functions</a></li>
+                    <li><a href="index2.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="list" class="w-5 h-5 text-gray-400"></i> Level 2: Arrays</a></li>
+                    <li><a href="index3.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="git-fork" class="w-5 h-5 text-gray-400"></i> Level 3: Loops</a></li>
+                    <li><a href="index4.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="infinity" class="w-5 h-5 text-gray-400"></i> Level 4: Recursion</a></li>
+                    <li><a href="index5.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="box" class="w-5 h-5 text-gray-400"></i> Level 5: OOP</a></li>
+                    <li><a href="index6.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="database" class="w-5 h-5 text-gray-400"></i> Level 6: Data</a></li>
+                    <li><a href="index7.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="trophy" class="w-5 h-5 text-gray-400"></i> Level 7: Finale</a></li>
+                </ul>
+            </nav>
+
+            <!-- User/Auth Section -->
+            <div id="auth-section">
+                <!-- This button will be dynamically updated -->
+                 <div id="auth-button-container">
+                    <!-- Logged Out State -->
+                    <button id="login-register-btn" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-purple-600 hover:bg-purple-500 transition-colors text-white font-semibold">
+                        <i data-lucide="log-in" class="w-5 h-5"></i>
+                        <span>Login / Register</span>
+                    </button>
+
+                    <!-- Logged In State (template, hidden initially) -->
+                    <div id="user-profile-btn" class="hidden w-full flex items-center justify-between p-2 rounded-lg bg-gray-800 text-white font-semibold">
+                        <span id="user-display-name" class="truncate flex-grow mr-2"></span>
+                        <div class="flex items-center gap-3">
+                             <a href="index.html" title="Home" class="text-gray-400 hover:text-white transition-colors">
+                                <i data-lucide="home" class="w-5 h-5"></i>
+                            </a>
+                            <i id="logout-icon" data-lucide="log-out" class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer" title="Logout"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Overlay for when sidebar is open -->
+        <div id="overlay" class="fixed inset-0 bg-black opacity-0 pointer-events-none"></div>
+
+        <!-- Modals -->
+        <div id="auth-modal" class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none">
+            <div class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8" id="auth-modal-content">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
+
+        <!-- Screen 1: Welcome (Level 4) -->
+        <div data-screen="welcome" class="w-full max-w-lg text-center active">
+            <div class="card fade-in">
+                <div class="flex justify-center mb-4">
+                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-purple-400"><path d="M12 18L18 12L12 6L6 12L12 18Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12V6M12 12V18M18 12H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <h1 class="text-4xl font-bold mb-2">Welcome to Level 4</h1>
+                <p class="text-lg mb-8 text-gray-300">Dive into a powerful programming concept by learning how to solve problems with JavaScript Recursion.</p>
+                <button id="start-learning-btn" class="btn text-lg">Begin Level 4</button>
+            </div>
+        </div>
+        
+        <!-- Screen 2: Learning Dashboard -->
+        <div data-screen="dashboard" class="w-full max-w-6xl">
+            <div class="p-4 md:p-8">
+                
+                <!-- NEW TOP NAV BAR -->
+                <div id="top-nav" class="card !p-4 mb-8">
+                    <!-- Header content and achievements will be injected here by JS -->
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 space-y-8">
+                        <div class="card" id="activity-container">
+                             <!-- Activity will be injected here -->
+                        </div>
+                    </div>
+                    <div class="lg:col-span-1 space-y-8">
+                        <div class="card sticky top-8">
+                           <h3 class="text-lg font-bold mb-4">Your Journey (Lvl 4)</h3>
+                           <div id="progress-tracker" class="space-y-3">
+                               <!-- Progress items will be injected here -->
+                           </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Achievement Modal -->
+    <div id="achievement-modal" class="modal-overlay">
+        <div class="modal-content card text-center max-w-sm w-full">
+            <div id="modal-content-inner"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- IMPORTS & FIREBASE SETUP (from index.html) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserSessionPersistence, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA76y2Cp0jvLBNiMkkl4Mlklw4SKdBg_Wo",
+            authDomain: "pathfinderquiz.firebaseapp.com",
+            projectId: "pathfinderquiz",
+            storageBucket: "pathfinderquiz.firebasestorage.app",
+            messagingSenderId: "653607161175",
+            appId: "1:653607161175:web:4ffd5922d221f26377c212",
+            measurementId: "G-S7XJTZ1VTZ"
+        };
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const auth = getAuth(firebaseApp);
+        const db = getFirestore(firebaseApp);
+        const googleProvider = new GoogleAuthProvider();
+        let currentUser = null;
+
+        // --- SHARED UI LOGIC (Sidebar, Modals from index.html) ---
+        lucide.createIcons();
+        
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const sidebarHoverZone = document.getElementById('sidebar-hover-zone');
+        const authModal = document.getElementById('auth-modal');
+        const authModalContent = document.getElementById('auth-modal-content');
+
+        const openSidebar = () => {
+            sidebar.classList.add('open');
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            overlay.classList.add('opacity-50');
+        };
+
+        const closeSidebar = () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('opacity-50');
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+        };
+
+        sidebarHoverZone.addEventListener('mouseenter', openSidebar);
+        sidebar.addEventListener('mouseleave', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        const showModal = (content) => {
+            authModalContent.innerHTML = content;
+            authModal.classList.remove('opacity-0', 'pointer-events-none');
+            attachModalEventListeners();
+            lucide.createIcons();
+        };
+        
+        const hideModals = () => {
+            authModal.classList.add('opacity-0', 'pointer-events-none');
+        };
+
+        authModal.addEventListener('click', (e) => {
+            if (e.target === authModal) hideModals();
+        });
+        
+        // --- AUTHENTICATION & DATABASE LOGIC (from index.html) ---
+        const loginRegisterBtn = document.getElementById('login-register-btn');
+        const userProfileBtn = document.getElementById('user-profile-btn');
+        const userDisplayName = document.getElementById('user-display-name');
+        const logoutIcon = document.getElementById('logout-icon');
+
+        const loginContent = `
+            <h2 class="text-2xl font-bold text-white mb-6 text-center">Login to Pathfinder</h2>
+            <div class="space-y-3">
+                <button id="google-signin-btn" class="w-full flex items-center justify-center gap-2 p-3 rounded-lg bg-white text-gray-800 font-semibold hover:bg-gray-200 transition-colors">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039L38.802 8.922C34.983 5.549 29.818 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path><path fill="#FF3D00" d="M6.306 14.691c-1.645 3.12-2.306 6.643-2.306 10.163C4 28.024 4.883 31.258 6.45 34.019l5.657-4.42C10.43 28.435 10 26.313 10 24c0-2.636 0.516-5.144 1.409-7.412l-5.103-3.897z"></path><path fill="#4CAF50" d="M24 48c5.166 0 9.86-1.977 13.409-5.192l-6.19-4.832C29.18 40.093 26.685 42 24 42c-4.482 0-8.3-2.922-9.829-6.965l-6.326 4.909C10.12 43.435 16.49 48 24 48z"></path><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-0.792 2.237-2.231 4.16-4.082 5.571l6.328 4.91c3.437-3.22 5.756-7.65 5.756-12.481c0-1.341-.138-2.65-.389-3.917z"></path></svg>
+                    Sign in with Google
+                </button>
+                <button id="guest-signin-btn" class="w-full p-3 rounded-lg bg-gray-600 hover:bg-gray-500 text-white font-semibold transition-colors">Continue as Guest</button>
+            </div>
+            <div class="my-4 flex items-center justify-center">
+                <span class="h-px bg-gray-600 flex-grow"></span>
+                <span class="px-2 text-sm text-gray-400">OR</span>
+                <span class="h-px bg-gray-600 flex-grow"></span>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="login-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-gray-300">Password</label>
+                    <input type="password" id="login-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center"><input id="remember-me" type="checkbox" class="h-4 w-4 rounded border-gray-500 text-purple-600 focus:ring-purple-500"><label for="remember-me" class="ml-2 block text-gray-300">Remember me</label></div>
+                    <a href="#" id="forgot-password-link" class="font-medium text-purple-400 hover:text-purple-300">Forgot password?</a>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold transition-colors">Sign In</button>
+            </form>
+            <p class="text-center text-sm text-gray-400 mt-4">
+                Don't have an account? <a href="#" id="show-register-link" class="font-medium text-purple-400 hover:text-purple-300">Register</a>
+            </p>
+        `;
+
+        const registerContent = `
+            <h2 class="text-2xl font-bold text-white mb-6 text-center">Create an Account</h2>
+            <form id="register-form" class="space-y-4">
+                <div>
+                    <label for="register-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="register-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div>
+                    <label for="register-password" class="block text-sm font-medium text-gray-300">Password</label>
+                    <input type="password" id="register-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                 <div>
+                    <label for="register-confirm-password" class="block text-sm font-medium text-gray-300">Confirm Password</label>
+                    <input type="password" id="register-confirm-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold transition-colors">Create Account</button>
+            </form>
+             <p class="text-center text-sm text-gray-400 mt-4">
+                Already have an account? <a href="#" id="show-login-link" class="font-medium text-purple-400 hover:text-purple-300">Login</a>
+            </p>
+        `;
+
+        const forgotPasswordContent = `
+            <h2 class="text-2xl font-bold text-white mb-4 text-center">Reset Password</h2>
+            <p class="text-center text-sm text-gray-400 mb-6">Enter your email and we'll send you a link to reset your password.</p>
+            <form id="forgot-password-form" class="space-y-4">
+                <div>
+                    <label for="forgot-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="forgot-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold transition-colors">Send Reset Link</button>
+            </form>
+             <p class="text-center text-sm text-gray-400 mt-4">
+                <a href="#" id="back-to-login-link" class="font-medium text-purple-400 hover:text-purple-300">Back to Login</a>
+            </p>
+        `;
+
+        function attachModalEventListeners() {
+            const showRegisterLink = document.getElementById('show-register-link');
+            if(showRegisterLink) showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); showModal(registerContent); });
+            const showLoginLink = document.getElementById('show-login-link');
+            if(showLoginLink) showLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
+            const backToLoginLink = document.getElementById('back-to-login-link');
+            if(backToLoginLink) backToLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
+            const registerForm = document.getElementById('register-form');
+            if(registerForm) registerForm.addEventListener('submit', handleRegister);
+            const loginForm = document.getElementById('login-form');
+            if(loginForm) loginForm.addEventListener('submit', handleLogin);
+            const forgotPasswordLink = document.getElementById('forgot-password-link');
+            if(forgotPasswordLink) forgotPasswordLink.addEventListener('click', (e) => { e.preventDefault(); showModal(forgotPasswordContent); });
+            const forgotPasswordForm = document.getElementById('forgot-password-form');
+            if(forgotPasswordForm) forgotPasswordForm.addEventListener('submit', handleForgotPassword);
+            const googleSigninBtn = document.getElementById('google-signin-btn');
+            if(googleSigninBtn) googleSigninBtn.addEventListener('click', handleGoogleSignIn);
+            const guestSigninBtn = document.getElementById('guest-signin-btn');
+            if(guestSigninBtn) guestSigninBtn.addEventListener('click', handleGuestSignIn);
+        }
+
+        async function handleRegister(e) { e.preventDefault(); const email = document.getElementById('register-email').value, password = document.getElementById('register-password').value, confirmPassword = document.getElementById('register-confirm-password').value; if (password !== confirmPassword) { alert("Passwords do not match."); return; } try { const userCredential = await createUserWithEmailAndPassword(auth, email, password); console.log("Registration successful:", userCredential.user); hideModals(); } catch (error) { alert(`Registration failed: ${error.message}`); } }
+        async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('login-email').value, password = document.getElementById('login-password').value, rememberMe = document.getElementById('remember-me').checked; try { await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence); const userCredential = await signInWithEmailAndPassword(auth, email, password); console.log("Login successful:", userCredential.user); hideModals(); } catch (error) { alert(`Login failed: ${error.message}`); } }
+        async function handleForgotPassword(e) { e.preventDefault(); const email = document.getElementById('forgot-email').value; try { await sendPasswordResetEmail(auth, email); alert('Password reset email sent! Please check your inbox.'); hideModals(); } catch (error) { alert(`Failed to send reset email: ${error.message}`); } }
+        async function handleGoogleSignIn() { try { const result = await signInWithPopup(auth, googleProvider); console.log("Google Sign-In successful:", result.user); hideModals(); } catch (error) { console.error("Google Sign-In failed:", error); alert(`Google Sign-In failed: ${error.message}`); } }
+        async function handleGuestSignIn() { try { const userCredential = await signInAnonymously(auth); console.log("Signed in as guest:", userCredential.user); hideModals(); } catch (error) { console.error("Guest Sign-In failed:", error); alert(`Guest Sign-In failed: ${error.message}`); } }
+        
+        loginRegisterBtn.addEventListener('click', () => showModal(loginContent));
+        logoutIcon.addEventListener('click', async () => { try { await signOut(auth); console.log("Logout successful."); } catch (error) { console.error("Logout failed:", error); } });
+
+        // --- LEVEL 4: CONTENT & GAME LOGIC ---
+        const contentLibrary = {
+            javascript: {
+                title: "Recursion",
+                modules: [
+                    {
+                        title: "Intro to Recursion", icon: "infinity",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "What is the key principle of recursion?", options: ["A function calling a different function", "A function calling itself", "A function that runs infinitely", "A function that has no parameters"], answer: "A function calling itself", explanation: "Recursion is a programming technique where a function calls itself to solve a smaller part of the problem." },
+                                { type: 'code-correction', question: "This recursive function for counting down is missing a crucial part. Fix it.", code: "function countDown(n) {\n  console.log(n);\n  countDown(n - 1);\n}", answer: "function countDown(n) {\n  if (n < 1) return;\n  console.log(n);\n  countDown(n - 1);\n}", explanation: "A recursive function must have a **base case** to stop the recursion and prevent an infinite loop." },
+                                { type: 'multiple-choice', question: "What is the **base case** in a recursive function?", options: ["The final, non-recursive step", "The initial function call", "The part of the function that handles errors", "The part that calls the function itself"], answer: "The final, non-recursive step", explanation: "The base case is the condition that stops the recursion and returns a value, preventing infinite loops." },
+                                { type: 'fill-in-the-blank', question: "Without a base case, a recursive function will cause a `__` `__` `__`.", answer: "stack overflow error", explanation: "Each recursive call adds a new frame to the call stack. An infinite loop will fill the stack, causing an error.", flash: true, suggestions: ['runtime error', 'stack overflow error', 'memory leak', 'type error'] },
+                                { type: 'multiple-choice', question: "Which of these problems is a good candidate for a recursive solution?", options: ["Finding a specific value in a large unsorted array", "Calculating a simple interest rate", "Calculating the factorial of a number", "Finding the last element of an array"], answer: "Calculating the factorial of a number", explanation: "The factorial of a number is a classic recursive problem because `n!` can be defined in terms of `(n-1)!`." },
+                                { type: 'code-correction', question: "This function should return `n * factorial(n - 1)`. Fix the return statement.", code: "function factorial(n) {\n  if (n === 0) return 1;\n  factorial(n - 1) * n;\n}", answer: "function factorial(n) {\n  if (n === 0) return 1;\n  return factorial(n - 1) * n;\n}", explanation: "A recursive function must return a value at each step to pass the result back up the call stack." },
+                                { type: 'drag-and-drop', question: "Match the recursive concept to its role.", items: [{ id: 'd1', text: 'Base Case' }, { id: 'd2', text: 'Recursive Step' }], targets: [{ id: 't1', text: 'The part that calls itself' }, { id: 't2', text: 'The part that stops the recursion' }], matches: { d1: 't2', d2: 't1' }, explanation: "Every recursive function must have a base case and a recursive step." },
+                            ]
+                        }
+                    },
+                    {
+                        title: "Call Stack & Memory", icon: "git-commit",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "What is the **call stack**?", options: ["A physical memory location for variables", "A list of all functions that have been called", "A data structure that stores the state of a function call", "The area where global variables are stored"], answer: "A data structure that stores the state of a function call", explanation: "The call stack is a mechanism for an interpreter to keep track of its place in a script that calls multiple functions." },
+                                { type: 'code-correction', question: "Fix this code so it doesn't cause a stack overflow.", code: "function loop() {\n  loop();\n}", answer: "function loop(i) {\n  if (i < 1) return;\n  loop(i - 1);\n}", explanation: "A base case is necessary to prevent an infinite loop, which leads to a stack overflow." },
+                                { type: 'multiple-choice', question: "When a function returns, what happens to its call stack frame?", options: ["It is kept for future use", "It is moved to the heap", "It is removed from the stack", "It is recycled"], answer: "It is removed from the stack", explanation: "The call stack operates on a LIFO (Last-In, First-Out) principle. Once a function returns, its frame is popped off the stack." },
+                                { type: 'fill-in-the-blank', question: "A recursive function that never reaches its base case will result in a `__` `__`.", answer: "stack overflow", explanation: "The continuous addition of stack frames without removal will exceed available memory, causing a crash.", flash: true, suggestions: ['memory leak', 'stack overflow', 'heap exhaustion', 'runtime crash'] },
+                                { type: 'multiple-choice', question: "For a `factorial(3)` call, how many stack frames are created in total (including the initial call)?", options: ["1", "2", "3", "4"], answer: "4", explanation: "The calls would be `factorial(3)`, `factorial(2)`, `factorial(1)`, and `factorial(0)`. Four separate function calls, so four stack frames." },
+                                { type: 'multiple-choice', question: "Which of the following is an advantage of recursion?", options: ["It is always faster than iteration", "It uses less memory", "It can make code more elegant for certain problems", "It is easier to debug"], answer: "It can make code more elegant for certain problems", explanation: "Recursion can provide a clean and intuitive solution for problems that are naturally recursive, like tree traversal." },
+                                { type: 'drag-and-drop', question: "Match the term to its definition.", items: [{ id: 'd1', text: 'Call Stack' }, { id: 'd2', text: 'Stack Frame' }], targets: [{ id: 't1', text: 'A data structure that manages function calls' }, { id: 't2', text: 'Stores local variables for a single function call' }], matches: { d1: 't1', d2: 't2' }, explanation: "The call stack contains multiple stack frames, one for each active function call." },
+                            ]
+                        }
+                    },
+                    {
+                        title: "Common Recursive Patterns", icon: "network",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "A function that processes a list and calls itself on the rest of the list is a pattern for...?", options: ["Iteration", "Tail Recursion", "Head Recursion", "Flattening an array"], answer: "Head Recursion", explanation: "In head recursion, the recursive call is made before any other operations on the return value of that call." },
+                                { type: 'code-correction', question: "Fix this to correctly sum all numbers in an array using recursion.", code: "function sumArray(arr) {\n  if (arr.length === 0) return 0;\n  sumArray(arr.slice(1)) + arr[0];\n}", answer: "function sumArray(arr) {\n  if (arr.length === 0) return 0;\n  return arr[0] + sumArray(arr.slice(1));\n}", explanation: "The recursive call must be part of a return statement to pass the accumulated sum back up the call stack." },
+                                { type: 'multiple-choice', question: "What is **tail recursion**?", options: ["A recursive call at the end of a function", "A recursive call at the beginning of a function", "A function that has no return value", "A function that calls itself multiple times"], answer: "A recursive call at the end of a function", explanation: "Tail recursion is a special case where the recursive call is the last action in the function. Some engines can optimize this to prevent stack overflow." },
+                                { type: 'fill-in-the-blank', question: "Finding a path in a maze is an example of `__`.", answer: "backtracking", explanation: "Backtracking algorithms try a path, and if it fails, they 'backtrack' to a previous state and try a new path. This is a common recursive pattern.", flash: true, suggestions: ['iteration', 'backtracking', 'traversal', 'mapping'] },
+                                { type: 'multiple-choice', question: "Which is a good use case for recursion?", options: ["Simple loops (1-10)", "Calculating a Fibonacci sequence", "Iterating over a flat array of 1000 items", "Modifying an array in place"], answer: "Calculating a Fibonacci sequence", explanation: "The Fibonacci sequence is naturally recursive: `fib(n) = fib(n-1) + fib(n-2)`. While an iterative approach can be more efficient, the recursive solution is a classic example." },
+                                { type: 'code-correction', question: "Fix this function to correctly find the nth Fibonacci number recursively.", code: "function fib(n) {\n  if (n <= 1) return 1;\n  return fib(n - 1) + fib(n - 2);\n}", answer: "function fib(n) {\n  if (n <= 1) return n;\n  return fib(n - 1) + fib(n - 2);\n}", explanation: "The base case for fib(0) is 0, and fib(1) is 1. Returning 1 for `n <= 1` is incorrect and would cause an error in the sequence." },
+                                { type: 'drag-and-drop', question: "Match the recursive pattern to its description.", items: [{ id: 'd1', text: 'Tail Recursion' }, { id: 'd2', text: 'Backtracking' }], targets: [{ id: 't1', text: 'The recursive call is the last operation' }, { id: 't2', text: 'Explores multiple paths, reverting when a dead end is reached' }], matches: { d1: 't1', d2: 't2' }, explanation: "Understanding these patterns helps in identifying when recursion is a good fit for a problem." },
+                            ]
+                        }
+                    },
+                    {
+                        title: "Iterative vs. Recursive", icon: "git-branch-plus",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "Which approach is generally more memory-efficient for solving a problem?", options: ["Recursive", "Iterative", "Both are the same", "Depends on the problem"], answer: "Iterative", explanation: "Iterative solutions typically use a fixed amount of memory (for loop counters, etc.), while each recursive call adds a new stack frame." },
+                                { type: 'code-correction', question: "This is an iterative version of the factorial function. Fix it to work correctly.", code: "function factorial(n) {\n  let result = 1;\n  for (let i = 1; i < n; i++) {\n    result *= i;\n  }\n  return result;\n}", answer: "function factorial(n) {\n  let result = 1;\n  for (let i = 1; i <= n; i++) {\n    result *= i;\n  }\n  return result;\n}", explanation: "The loop needs to include `n` itself in the multiplication, so the condition should be `i <= n`." },
+                                { type: 'multiple-choice', question: "When is a recursive solution often preferred?", options: ["When performance is the highest priority", "When the problem is naturally expressed in terms of a simpler version of itself", "When you need to avoid the call stack", "When working with large datasets"], answer: "When the problem is naturally expressed in terms of a simpler version of itself", explanation: "Problems like tree traversal, certain sorting algorithms, and fractal generation are often simpler to write with recursion." },
+                                { type: 'fill-in-the-blank', question: "An iterative solution can always be converted to a `__` solution.", answer: "recursive", explanation: "Any problem that can be solved with loops can also be solved with a recursive function, though it may not always be practical or efficient.", flash: true, suggestions: ['recursive', 'functional', 'declarative', 'object-oriented'] },
+                                { type: 'multiple-choice', question: "Which of the following is a disadvantage of recursion?", options: ["It can lead to more complex code", "It can be harder to reason about", "It can cause a stack overflow on large inputs", "All of the above"], answer: "All of the above", explanation: "Recursion's elegance can come with a cost in terms of performance, memory, and readability for non-trivial problems." },
+                                { type: 'code-correction', question: "This iterative function for Fibonacci is incorrect. Fix it to return the nth number.", code: "function fib(n) {\n  if (n <= 1) return n;\n  let a = 0, b = 1;\n  for (let i = 2; i <= n; i++) {\n    b = a + b;\n    a = b;\n  }\n  return b;\n}", answer: "function fib(n) {\n  if (n <= 1) return n;\n  let a = 0, b = 1;\n  for (let i = 2; i <= n; i++) {\n    let temp = a;\n    a = b;\n    b = temp + b;\n  }\n  return b;\n}", explanation: "The logic for updating `a` and `b` was wrong. You need a temporary variable to hold the old value of `a` before it's updated." },
+                                { type: 'drag-and-drop', question: "Match the approach to its characteristic.", items: [{ id: 'd1', text: 'Iterative' }, { id: 'd2', text: 'Recursive' }], targets: [{ id: 't1', text: 'Uses loops' }, { id: 't2', text: 'Uses function calls' }], matches: { d1: 't1', d2: 't2' }, explanation: "The fundamental difference lies in their approach to repeating an action." },
+                            ]
+                        }
+                    },
+                     {
+                        title: "Memoization & Tail Call Optimization", icon: "database",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "What is **memoization**?", options: ["Storing function parameters for later use", "A technique for converting a recursive function to an iterative one", "An optimization technique that caches the results of expensive function calls", "A way to pass data between recursive calls"], answer: "An optimization technique that caches the results of expensive function calls", explanation: "Memoization is a specific form of caching that prevents recomputing the same results for the same inputs, which is very useful for functions with repeated subproblems like Fibonacci." },
+                                { type: 'code-correction', question: "Fix this Fibonacci function using memoization with a cache object.", code: "const cache = {};\nfunction fib(n) {\n  if (n <= 1) return n;\n  return fib(n-1) + fib(n-2);\n}", answer: "const cache = {};\nfunction fib(n) {\n  if (n in cache) return cache[n];\n  if (n <= 1) return n;\n  cache[n] = fib(n-1) + fib(n-2);\n  return cache[n];\n}", explanation: "The original code doesn't use the `cache` object. The corrected code first checks the cache and then stores the result before returning." },
+                                { type: 'multiple-choice', question: "Why is memoization particularly useful for recursive functions?", options: ["It uses less memory", "It eliminates the need for a base case", "It can drastically reduce computation time for functions with repeated subproblems", "It makes the code easier to read"], answer: "It can drastically reduce computation time for functions with repeated subproblems", explanation: "For a function like `fib(n)`, the same subproblems (e.g., `fib(2)`) are computed many times. Memoization solves this by storing the result the first time it's computed." },
+                                { type: 'fill-in-the-blank', question: "Tail Call Optimization (TCO) is a feature that optimizes recursive functions that are `__` recursive.", answer: "tail", explanation: "TCO reuses a single stack frame for a tail-recursive function, preventing a stack overflow.", flash: true, suggestions: ['head', 'tail', 'nested', 'functional'] },
+                                { type: 'multiple-choice', question: "Is TCO supported in all modern JavaScript engines?", options: ["Yes, it is a standard feature", "No, it is an optional feature and is not widely implemented in browsers", "It is only available in strict mode", "It is only available in Node.js"], answer: "No, it is an optional feature and is not widely implemented in browsers", explanation: "While TCO is part of the ES6 specification, most browser engines like V8 (used in Chrome and Node.js) have not implemented it due to performance and debugging concerns." },
+                                { type: 'code-correction', question: "This recursive function is not tail recursive. Fix it to be tail recursive.", code: "function factorial(n) {\n  if (n === 0) return 1;\n  return n * factorial(n-1);\n}", answer: "function factorial(n, acc = 1) {\n  if (n === 0) return acc;\n  return factorial(n-1, acc * n);\n}", explanation: "To make a function tail-recursive, the recursive call must be the very last operation. This often requires an accumulator parameter." },
+                                { type: 'drag-and-drop', question: "Match the concept to its purpose.", items: [{ id: 'd1', text: 'Memoization' }, { id: 'd2', text: 'Tail Call Optimization' }], targets: [{ id: 't1', text: 'Avoids stack overflow for certain functions' }, { id: 't2', text: 'Speeds up functions by caching results' }], matches: { d1: 't2', d2: 't1' }, explanation: "Both are optimization techniques, but they solve different problems related to recursion." },
+                            ]
+                        }
+                    }
+                ],
+                finalExam: { 
+                    title: "Final Exam (Lvl 4)", 
+                    icon: "award", 
+                    quiz: { 
+                        questions: [
+                            { type: 'multiple-choice', question: "What is the most critical component of a recursive function?", options: ["A clear variable name", "A base case", "An iterative loop", "A higher-order function"], answer: "A base case", explanation: "A base case is what terminates the recursion. Without it, the function would run indefinitely and crash." },
+                            { type: 'code-correction', question: "This recursive function is not returning the correct value. Fix it to get the sum of numbers from 1 to n.", code: "function sum(n) {\n  if (n === 1) return 1;\n  n + sum(n-1);\n}", answer: "function sum(n) {\n  if (n === 1) return 1;\n  return n + sum(n-1);\n}", explanation: "The function needs a `return` statement to pass the sum from each recursive call back up the stack." },
+                            { type: 'multiple-choice', question: "What is the purpose of the call stack in recursion?", options: ["To manage global variables", "To prevent infinite loops", "To manage function calls and their local state", "To store the function itself"], answer: "To manage function calls and their local state", explanation: "The call stack keeps track of the execution context of each function call, which is essential for recursion." },
+                            { type: 'fill-in-the-blank', question: "A recursive solution can often be more `__` to read than an iterative one for complex problems.", answer: "elegant", explanation: "For problems like tree traversal, the recursive solution can be more intuitive and closely match the problem's structure.", flash: true, suggestions: ['complex', 'efficient', 'elegant', 'messy'] },
+                            { type: 'multiple-choice', question: "Why is memoization a useful optimization for recursive functions like Fibonacci?", options: ["It converts the function to tail recursion", "It prevents a stack overflow", "It avoids redundant computations of the same subproblems", "It reduces the number of function calls"], answer: "It avoids redundant computations of the same subproblems", explanation: "Memoization significantly improves performance by caching the results of expensive function calls, especially when the same inputs are used repeatedly." },
+                            { type: 'multiple-choice', question: "Which of these recursive patterns is most memory-efficient in environments with Tail Call Optimization?", options: ["Head Recursion", "Backtracking", "Tail Recursion", "Nested Recursion"], answer: "Tail Recursion", explanation: "TCO reuses a single stack frame for tail-recursive functions, essentially making them as memory-efficient as a loop." },
+                            { type: 'drag-and-drop', question: "Match the type of recursion to its characteristic.", items: [{ id: 'd1', text: 'Head Recursion' }, { id: 'd2', text: 'Tail Recursion' }], targets: [{ id: 't1', text: 'Performs calculations on the returned value' }, { id: 't2', text: 'Passes the result in a parameter to the next call' }], matches: { d1: 't1', d2: 't2' }, explanation: "The position of the recursive call and the way it handles results distinguishes these two patterns." },
+                        ] 
+                    } 
+                }
+            }
+        };
+
+        const SAVE_KEY = 'pathfinderSaveData_level4'; // Unique key for level 4
+        const appState = {
+            currentScreen: 'welcome',
+            userName: '',
+            learningPlan: null,
+            quizState: null,
+            achievements: new Set(),
+            flashTimerInterval: null,
+        };
+
+        // --- NEW UNIFIED SAVE/LOAD LOGIC ---
+        async function savePlayerState() {
+            try {
+                const stateToSave = {
+                    ...appState,
+                    achievements: [...appState.achievements], // Convert Set to Array for JSON
+                };
+                if (currentUser && !currentUser.isAnonymous) {
+                    const userLevelRef = doc(db, "users", currentUser.uid, "levelProgress", "level4");
+                    await setDoc(userLevelRef, stateToSave, { merge: true });
+                    console.log("Level 4 progress saved to Firebase.");
+                } else {
+                    localStorage.setItem(SAVE_KEY, JSON.stringify(stateToSave));
+                    console.log("Level 4 progress saved to Local Storage.");
+                }
+            } catch (e) {
+                console.error("Failed to save state:", e);
+            }
+        }
+
+        async function loadPlayerState() {
+            try {
+                let savedState = null;
+                if (currentUser && !currentUser.isAnonymous) {
+                    console.log("Attempting to load Level 4 progress from Firebase for user:", currentUser.uid);
+                    const userLevelRef = doc(db, "users", currentUser.uid, "levelProgress", "level4");
+                    const docSnap = await getDoc(userLevelRef);
+                    if (docSnap.exists()) {
+                        savedState = docSnap.data();
+                        console.log("Level 4 progress loaded from Firebase.");
+                    }
+                } else {
+                    const savedStateJSON = localStorage.getItem(SAVE_KEY);
+                    if (savedStateJSON) {
+                        savedState = JSON.parse(savedStateJSON);
+                        console.log("Level 4 progress loaded from Local Storage.");
+                    }
+                }
+                
+                if (savedState) {
+                    savedState.achievements = new Set(savedState.achievements); // Convert back to Set
+                    return savedState;
+                }
+            } catch (e) {
+                console.error("Failed to load or parse state:", e);
+            }
+            console.log("No saved state found for Level 4.");
+            return null;
+        }
+
+        // --- Utils ---
+        const shuffleArray = (array) => { return [...array].sort(() => Math.random() - 0.5); };
+        const calculateLevel = (xp) => ({ level: Math.floor(xp / 100) + 1, nextLevelXp: (Math.floor(xp / 100) + 1) * 100 });
+        function showXpAnimation() { const activityContainer = document.getElementById('activity-container'); if (!activityContainer) return; const xpEl = document.createElement('div'); xpEl.textContent = '+10 XP'; xpEl.className = 'xp-popup'; activityContainer.appendChild(xpEl); setTimeout(() => { xpEl.remove(); }, 1500); }
+
+        // --- UI Navigation & Setup ---
+        function navigateTo(screenName) {
+            document.querySelectorAll('[data-screen]').forEach(screen => screen.classList.remove('active'));
+            const newScreen = document.querySelector(`[data-screen="${screenName}"]`);
+            if (newScreen) {
+                newScreen.classList.add('active');
+                newScreen.querySelector('.card, .p-4')?.classList.add('fade-in');
+                appState.currentScreen = screenName;
+            }
+        }
+
+        function startLearningPath() {
+            appState.userName = currentUser?.displayName || "Learner";
+            const planData = contentLibrary.javascript;
+            appState.learningPlan = {
+                ...planData,
+                progress: planData.modules.reduce((acc, _, index) => ({ ...acc, [`module_${index}`]: 0 }), { finalExam: 0 }),
+                xp: 0,
+            };
+            appState.achievements = new Set();
+            savePlayerState();
+            renderDashboard();
+            navigateTo('dashboard');
+        }
+        
+        // --- Dashboard and Activity Rendering ---
+        function renderDashboard() {
+            const { learningPlan } = appState;
+            const userName = appState.userName || (currentUser?.displayName || "Learner");
+            if (!learningPlan) return;
+            const {level, nextLevelXp} = calculateLevel(learningPlan.xp);
+            const topNav = document.getElementById('top-nav');
+
+            topNav.innerHTML = `
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold">Level 4: Recursion</h1>
+                        <p class="text-gray-300">Welcome, ${userName}!</p>
+                    </div>
+                    <div id="achievements-bar" class="flex items-center gap-2">
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-400">Level ${level}</p>
+                        <p class="text-xl font-bold text-purple-400">${learningPlan.xp} / ${nextLevelXp} XP</p>
+                    </div>
+                </div>
+            `;
+
+            renderProgressTracker();
+            renderAchievements();
+            showModuleList();
+            lucide.createIcons();
+        }
+
+        function showModuleList() {
+            if (appState.quizState && appState.quizState.timerId) clearInterval(appState.quizState.timerId);
+            if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval);
+            appState.quizState = null;
+            
+            const { modules, finalExam, progress } = appState.learningPlan;
+             document.getElementById('activity-container').innerHTML = `
+                <h2 class="text-2xl font-bold mb-6">Level 4 Modules</h2>
+                <div class="space-y-4">
+                    ${modules.map((mod, i) => createModuleCard(mod, i)).join('')}
+                    ${createModuleCard(finalExam, 'finalExam', true)}
+                </div>
+            `;
+            
+            if (progress.finalExam > 0) {
+                 document.getElementById('activity-container').innerHTML += `
+                    <div class="mt-8 text-center fade-in">
+                        <h3 class="text-2xl font-bold text-purple-400">Level 4 Complete!</h3>
+                        <p class="mt-2 text-gray-300">You've mastered recursion. The next challenge awaits.</p>
+                        <a href="index5.html" class="btn mt-4">
+                            <i data-lucide="arrow-right-circle" class="mr-2"></i>
+                            Proceed to Level 5
+                        </a>
+                    </div>
+                `;
+            }
+
+            document.getElementById('activity-container').classList.add('fade-in');
+            lucide.createIcons();
+        }
+
+        function createModuleCard(module, index, isExam = false) {
+             const progress = appState.learningPlan.progress;
+             const id = isExam ? 'finalExam' : `module_${index}`;
+             const isDone = progress[id] > 0;
+
+            return `
+            <div class="card module-card !p-4 flex items-center gap-4 cursor-pointer ${isDone ? 'bg-purple-500/20' : ''}" onclick="window.startActivity('${id}')">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center ${isExam ? 'bg-yellow-500' : 'bg-purple-500'} text-white flex-shrink-0">
+                     <i data-lucide="${module.icon}"></i>
+                </div>
+                <div class="flex-grow">
+                     <h3 class="text-xl font-bold">${module.title}</h3>
+                     <p class="text-sm text-gray-400">${module.quiz.questions.length} Questions</p>
+                </div>
+                ${isDone ? '<i data-lucide="check-circle-2" class="w-8 h-8 text-purple-400"></i>' : '<i data-lucide="chevron-right" class="w-8 h-8 text-gray-400"></i>'}
+            </div>
+            `;
+        }
+
+        function renderProgressTracker() {
+            const { progress, modules, finalExam } = appState.learningPlan;
+            const tracker = document.getElementById('progress-tracker');
+            
+            const createTrackerItem = (id, icon, title, isDone) => `<div class="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/10 ${isDone ? 'opacity-50' : ''}" onclick="${isDone ? '' : `window.startActivity('${id}')`}"><div class="w-8 h-8 rounded-full flex items-center justify-center ${isDone ? 'bg-purple-500' : 'bg-purple-500'} text-white"><i data-lucide="${isDone ? 'check' : icon}"></i></div><div><p class="font-semibold text-gray-200">${title}</p></div>${isDone ? '<i data-lucide="sparkles" class="w-5 h-5 text-yellow-400 ml-auto"></i>' : ''}</div>`;
+
+            let html = modules.map((mod, i) => createTrackerItem(`module_${i}`, mod.icon, mod.title, progress[`module_${i}`] > 0)).join('');
+            html += createTrackerItem('finalExam', finalExam.icon, finalExam.title, progress.finalExam > 0);
+            tracker.innerHTML = html;
+        }
+
+        // --- Achievements ---
+        const allAchievements = {
+            recursionRookie: { icon: 'infinity', title: 'Recursion Rookie', description: 'Complete your first Recursion module.' },
+            baseCaseMaster: { icon: 'star', title: 'Base Case Master', description: 'Get a perfect score on a Level 4 module.' },
+            recursivePro: { icon: 'git-branch-plus', title: 'Recursive Pro', description: 'Complete the entire Recursion path.' }
+        };
+
+        function awardAchievement(id) {
+            if (appState.achievements.has(id)) return;
+            appState.achievements.add(id);
+            const achievement = allAchievements[id];
+            
+            const modal = document.getElementById('achievement-modal');
+            document.getElementById('modal-content-inner').innerHTML = `<i data-lucide="award" class="w-16 h-16 mx-auto text-yellow-400 mb-4"></i><h2 class="text-2xl font-bold">Achievement Unlocked!</h2><p class="mt-2 font-semibold text-gray-200">${achievement.title}</p><p class="text-sm text-gray-300">${achievement.description}</p><button class="btn mt-6" onclick="this.closest('.modal-overlay').classList.remove('visible')">Continue</button>`;
+            lucide.createIcons();
+            modal.classList.add('visible');
+            renderAchievements();
+            savePlayerState();
+        }
+
+        function renderAchievements() {
+            const barEl = document.getElementById('achievements-bar');
+            if (!barEl) return; 
+
+            let html = '<h3 class="text-lg font-bold mr-2 text-gray-300 hidden md:block">Achievements</h3>';
+            
+            for (const id in allAchievements) {
+                const achievement = allAchievements[id];
+                const isEarned = appState.achievements.has(id);
+                
+                html += `
+                    <div class="achievement-icon ${isEarned ? '' : 'opacity-30'}" title="${achievement.title}">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center ${isEarned ? 'bg-yellow-400' : 'bg-gray-500'} text-white">
+                            <i data-lucide="${achievement.icon}"></i>
+                        </div>
+                        <div class="tooltip">
+                            <span class="tooltip-title">${achievement.title}</span>
+                            <span class="tooltip-desc">${achievement.description}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            barEl.innerHTML = html;
+            lucide.createIcons();
+        }
+        
+        window.markComplete = (activityId, score) => {
+            if (appState.quizState && appState.quizState.timerId) clearInterval(appState.quizState.timerId);
+            if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval);
+
+            const oldXp = appState.learningPlan.xp;
+            const newXp = oldXp - (appState.learningPlan.progress[activityId] || 0) + score * 10;
+            appState.learningPlan.progress[activityId] = score * 10;
+            appState.learningPlan.xp = newXp;
+
+            if (activityId !== 'finalExam') awardAchievement('recursionRookie');
+            const module = activityId === 'finalExam' ? appState.learningPlan.finalExam : appState.learningPlan.modules[activityId.split('_')[1]];
+            if (score === module.quiz.questions.length) awardAchievement('baseCaseMaster');
+            const allDone = appState.learningPlan.modules.every((_, i) => appState.learningPlan.progress[`module_${i}`] > 0) && appState.learningPlan.progress.finalExam > 0;
+            if(allDone) awardAchievement('recursivePro');
+
+            renderDashboard();
+            savePlayerState();
+        }
+        
+        // --- Quiz Logic ---
+        window.startActivity = (activityId) => {
+            const isExam = activityId === 'finalExam';
+            const moduleData = isExam ? appState.learningPlan.finalExam : appState.learningPlan.modules[activityId.split('_')[1]];
+            appState.quizState = { activityId, questions: shuffleArray(moduleData.quiz.questions), currentIndex: 0, score: 0, timerId: null, timeLeft: moduleData.quiz.questions.length * 30 };
+            appState.quizState.timerId = setInterval(updateTimer, 1000);
+            renderQuizActivityQuestion();
+        }
+        function updateTimer() { if (!appState.quizState) return; appState.quizState.timeLeft--; const timerEl = document.getElementById('quiz-timer'); if (timerEl) { const m = Math.floor(appState.quizState.timeLeft / 60); const s = appState.quizState.timeLeft % 60; timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`; } if (appState.quizState.timeLeft <= 0) finishQuiz(true); }
+        function finishQuiz(timesUp = false) { if (!appState.quizState) return; if (appState.quizState.timerId) clearInterval(appState.quizState.timerId); if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const activityContainer = document.getElementById('activity-container'); activityContainer.innerHTML = `<div class="text-center fade-in"><h2 class="text-2xl font-bold">${timesUp ? "Time's Up!" : "Module Complete!"}</h2><p class="text-lg mt-2 text-gray-300">You scored</p><p class="text-5xl font-bold text-purple-400 my-4">${appState.quizState.score} / ${appState.quizState.questions.length}</p><button onclick="window.markComplete('${appState.quizState.activityId}', ${appState.quizState.score})" class="btn">Continue</button></div>`; }
+        function renderQuizActivityQuestion() { if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const { quizState } = appState; if (!quizState) return; const quizData = quizState.questions[quizState.currentIndex]; const activityContainer = document.getElementById('activity-container'); let questionHTML = '', flashHeaderHTML = ''; if (quizData.flash) { flashHeaderHTML = `<div class="mb-4 p-3 rounded-lg bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center gap-4"><i data-lucide="zap" class="text-yellow-400 flash-indicator"></i><span class="font-semibold text-yellow-200">Flash Question!</span><span id="flash-timer" class="font-bold text-yellow-300 text-lg">15s</span></div>`; } if (quizData.type === 'multiple-choice') quizData.options = shuffleArray(quizData.options); switch(quizData.type) { case 'fill-in-the-blank': { let sHTML = ''; if (quizData.suggestions) { sHTML = `<datalist id="suggestions-list">${quizData.suggestions.map(s => `<option value="${s}"></option>`).join('')}</datalist>`; } const iHTML = `<input type="text" id="fill-in-blank-input" ${quizData.suggestions ? 'list="suggestions-list"' : ''} class="mx-2 p-1 border-b-2 border-purple-400 focus:outline-none focus:border-purple-500 bg-transparent text-white">`; questionHTML = `<p class="text-lg mb-6">${quizData.question.replace('______', iHTML).replace('____', iHTML)}</p>${sHTML}<button id="submit-fill-btn" class="btn">Submit</button>`; break; } case 'drag-and-drop': { questionHTML = `<p class="text-lg mb-6">${quizData.question}</p><div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Items</h4>${quizData.items.map(item => `<div id="${item.id}" draggable="true" class="drag-item p-3 rounded-lg">${item.text}</div>`).join('')}</div><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Targets</h4>${quizData.targets.map(target => `<div id="${target.id}" class="drop-target p-3 rounded-lg min-h-[50px]">${target.text}</div>`).join('')}</div></div><button id="submit-drag-btn" class="btn mt-6">Check Answer</button>`; break; } case 'code-correction': { questionHTML = `<p class="text-lg mb-4">${quizData.question}</p><pre class="bg-black/20 p-4 rounded-lg text-gray-400 text-sm mb-4"><code>${quizData.code}</code></pre><textarea id="code-correction-input" rows="3" class="w-full p-2 rounded-lg themed-input" placeholder="Enter corrected code here..."></textarea><button id="submit-code-btn" class="btn mt-4">Submit</button>`; break; } case 'multiple-choice': default: { questionHTML = `<p class="text-lg mb-6">${quizData.question}</p><div class="space-y-3">${quizData.options.map(opt => `<button class="w-full text-left p-4 rounded-lg quiz-act-option border-2 border-transparent hover:border-purple-400 bg-white/5 transition-colors" data-answer="${opt}">${opt}</button>`).join('')}</div>`; break; } } activityContainer.innerHTML = `<div class="fade-in"><div class="flex justify-between items-center mb-4"><button onclick="showModuleList()" class="text-sm text-purple-300 hover:text-purple-200">&larr; Back to Modules</button><div class="text-lg font-bold text-gray-300" id="quiz-timer"></div></div>${flashHeaderHTML}<h2 class="text-2xl font-bold mb-6">${quizState.questions[quizState.currentIndex].title || 'Question '+(quizState.currentIndex+1)}</h2><div id="question-content">${questionHTML}</div><div id="quiz-feedback-container" class="mt-6"></div></div>`; if (quizData.flash) { let t = 15; const ft = document.getElementById('flash-timer'); ft.textContent = `${t}s`; appState.flashTimerInterval = setInterval(() => { t--; ft.textContent = `${t}s`; if (t <= 0) { clearInterval(appState.flashTimerInterval); handleAnswer('__timeout__', quizData); } }, 1000); } setupQuestionEventListeners(quizData); lucide.createIcons(); }
+        function setupQuestionEventListeners(quizData) { switch(quizData.type) { case 'multiple-choice': document.querySelectorAll('.quiz-act-option').forEach(btn => btn.addEventListener('click', (e) => handleAnswer(e.target.dataset.answer, quizData))); break; case 'fill-in-the-blank': document.getElementById('submit-fill-btn').addEventListener('click', () => handleAnswer(document.getElementById('fill-in-blank-input').value, quizData)); document.getElementById('fill-in-blank-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('submit-fill-btn').click(); }); break; case 'drag-and-drop': let dId = null; document.querySelectorAll('.drag-item').forEach(i => i.addEventListener('dragstart', e => { dId = e.target.id; e.dataTransfer.setData('text/plain', e.target.id); })); document.querySelectorAll('.drop-target').forEach(t => { t.addEventListener('dragover', e => { e.preventDefault(); t.classList.add('drag-over'); }); t.addEventListener('dragleave', () => t.classList.remove('drag-over')); t.addEventListener('drop', e => { e.preventDefault(); t.classList.remove('drag-over'); const dItem = document.getElementById(dId); if (dItem && t.children.length === 0) { t.appendChild(dItem); dItem.style.cursor = 'default'; }}); }); document.getElementById('submit-drag-btn').addEventListener('click', () => { let isCorrect = Object.entries(quizData.matches).every(([iId, tId]) => document.getElementById(tId).querySelector(`#${iId}`)); handleAnswer(isCorrect, quizData); }); break; case 'code-correction': document.getElementById('submit-code-btn').addEventListener('click', () => handleAnswer(document.getElementById('code-correction-input').value, quizData)); break; } }
+        function handleAnswer(selectedAnswer, quizData) { if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const { quizState } = appState; let isCorrect = false, wasTimeout = selectedAnswer === '__timeout__'; if (!wasTimeout) { if (quizData.type === 'code-correction') { isCorrect = selectedAnswer.trim() === quizData.answer.trim(); } else if (typeof selectedAnswer === 'string') { isCorrect = selectedAnswer.trim().toLowerCase() === quizData.answer.trim().toLowerCase(); } else { isCorrect = selectedAnswer === true; } } if (isCorrect) { quizState.score++; showXpAnimation(); } const isLastQuestion = quizState.currentIndex === quizState.questions.length - 1; const feedbackContainer = document.getElementById('quiz-feedback-container'); let feedbackTitle = 'Correct!'; if (wasTimeout) feedbackTitle = "Time's Up!"; else if (!isCorrect) feedbackTitle = 'Not quite.'; feedbackContainer.innerHTML = `<div class="fade-in p-4 rounded-lg ${isCorrect ? 'bg-purple-500/20' : 'bg-red-500/20'}"><p class="font-semibold ${isCorrect ? 'text-purple-300' : 'text-red-300'}">${feedbackTitle}</p><p class="mt-2 text-sm ${isCorrect ? 'text-purple-400' : 'text-red-400'}">${quizData.explanation}</p></div><button id="next-quiz-btn" class="btn mt-4">${isLastQuestion ? 'Finish Quiz' : 'Next Question'}</button>`; document.querySelectorAll('button, input, textarea').forEach(el => { if(el.id !== 'next-quiz-btn') el.disabled = true; }); document.getElementById('next-quiz-btn').addEventListener('click', () => { if (isLastQuestion) finishQuiz(); else { quizState.currentIndex++; renderQuizActivityQuestion(); } }); }
+        
+        // --- APP INITIALIZATION ---
+        async function initializePathfinderApp() {
+            const loadedState = await loadPlayerState();
+            if (loadedState && loadedState.learningPlan) {
+                Object.assign(appState, loadedState);
+                renderDashboard();
+                navigateTo('dashboard');
+            } else {
+                navigateTo('welcome');
+            }
+            document.getElementById('start-learning-btn').addEventListener('click', startLearningPath);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            if (user) {
+                console.log("User is logged in:", user.displayName || user.email);
+                userDisplayName.textContent = user.displayName || user.email || `Guest-${user.uid.substring(0,5)}`;
+                userProfileBtn.classList.remove('hidden');
+                loginRegisterBtn.classList.add('hidden');
+            } else {
+                console.log("User is logged out.");
+                userProfileBtn.classList.add('hidden');
+                loginRegisterBtn.classList.remove('hidden');
+            }
+            // Initialize or re-initialize the app with the current user state
+            initializePathfinderApp();
+        });
+        
+    </script>
+</body>
+</html>

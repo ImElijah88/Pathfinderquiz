@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathfinder - JS Path (Level 6)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #1f2937, #111827, #374151, #1f2937);
+            background-size: 400% 400%;
+            animation: gradientBG 25s ease infinite;
+            color: #d1d5db;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .card {
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            background: rgba(15, 23, 42, 0.7);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            background: rgba(100, 116, 139, 0.1);
+            color: #94a3b8;
+        }
+        .btn:hover, .btn:focus {
+            background: rgba(100, 116, 139, 0.2);
+            box-shadow: 0 0 15px rgba(100, 116, 139, 0.3);
+        }
+        h1, h2, h3, h4 {
+            color: white;
+        }
+        [data-screen] { display: none; }
+        [data-screen].active { display: block; }
+
+        /* Drag and Drop Styles */
+        .drag-item { cursor: grab; user-select: none; background-color: rgba(255, 255, 255, 0.1); color: white; }
+        .drop-target { border: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color 0.2s ease; }
+        .drop-target.drag-over { background-color: rgba(255, 255, 255, 0.1); border-color: #94a3b8; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        
+        @keyframes xp-animation {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-60px) scale(1.1); opacity: 0; }
+        }
+        .xp-popup {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            padding: 4px 12px;
+            background-color: #94a3b8;
+            color: white;
+            border-radius: 9999px;
+            font-weight: bold;
+            animation: xp-animation 1.5s ease-out forwards;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex; align-items: center; justify-content: center; z-index: 50;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content { transform: scale(0.9); transition: transform 0.3s ease; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+
+        /* Flash Question Styles */
+        @keyframes pulse { 50% { opacity: .7; } }
+        .flash-indicator { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+        /* Custom input style for the new theme */
+        .themed-input {
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-family: monospace;
+        }
+        .themed-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.5);
+            border-color: #94a3b8;
+        }
+        .themed-input::placeholder {
+            color: #9ca3af;
+        }
+        
+        /* Achievement Tooltip Styles */
+        .achievement-icon {
+            position: relative;
+            cursor: pointer;
+        }
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 125%; /* Position above the icon */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0,0,0,0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            z-index: 10;
+            transition: opacity 0.3s;
+            width: 200px;
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+        .achievement-icon:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip-title {
+            font-weight: bold;
+            display: block;
+        }
+        .tooltip-desc {
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 4px;
+            color: #ccc;
+        }
+
+        /* Sidebar, Modal, and other UI component styles FROM INDEX.HTML */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(-100%);
+            z-index: 100;
+        }
+        #sidebar.open {
+            transform: translateX(0);
+        }
+        #overlay {
+            transition: opacity 0.3s ease-in-out;
+            z-index: 90;
+        }
+        .modal {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            z-index: 110;
+        }
+        .modal-content {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .themed-input {
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+        .themed-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.5);
+            border-color: #94a3b8;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Sidebar and Auth Modals Wrapper FROM INDEX.HTML -->
+    <div>
+        <!-- Hover zone to activate sidebar -->
+        <div id="sidebar-hover-zone" class="fixed top-0 left-0 h-full z-50" style="width: 100px;"></div>
+
+        <!-- Slide-out Sidebar -->
+        <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 to-slate-800 border-r border-gray-700/50 shadow-2xl p-6 flex flex-col">
+            <!-- Header -->
+            <div class="flex items-center gap-3 mb-8">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-slate-400">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h1 class="text-2xl font-bold text-white">Pathfinder</h1>
+            </div>
+
+            <!-- Level Navigation -->
+            <nav class="flex-grow">
+                <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Levels</h2>
+                <ul class="space-y-2">
+                    <li><a href="index1.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="flag" class="w-5 h-5 text-gray-400"></i> Level 1: Functions</a></li>
+                    <li><a href="index2.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="list" class="w-5 h-5 text-gray-400"></i> Level 2: Arrays</a></li>
+                    <li><a href="index3.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="git-fork" class="w-5 h-5 text-gray-400"></i> Level 3: Loops</a></li>
+                    <li><a href="index4.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="infinity" class="w-5 h-5 text-gray-400"></i> Level 4: Recursion</a></li>
+                    <li><a href="index5.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="box" class="w-5 h-5 text-gray-400"></i> Level 5: OOP</a></li>
+                    <li><a href="index6.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="database" class="w-5 h-5 text-gray-400"></i> Level 6: Data</a></li>
+                    <li><a href="index7.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="trophy" class="w-5 h-5 text-gray-400"></i> Level 7: Finale</a></li>
+                </ul>
+            </nav>
+
+            <!-- User/Auth Section -->
+            <div id="auth-section">
+                <!-- This button will be dynamically updated -->
+                 <div id="auth-button-container">
+                    <!-- Logged Out State -->
+                    <button id="login-register-btn" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-slate-600 hover:bg-slate-500 transition-colors text-white font-semibold">
+                        <i data-lucide="log-in" class="w-5 h-5"></i>
+                        <span>Login / Register</span>
+                    </button>
+
+                    <!-- Logged In State (template, hidden initially) -->
+                    <div id="user-profile-btn" class="hidden w-full flex items-center justify-between p-2 rounded-lg bg-gray-800 text-white font-semibold">
+                        <span id="user-display-name" class="truncate flex-grow mr-2"></span>
+                        <div class="flex items-center gap-3">
+                             <a href="index.html" title="Home" class="text-gray-400 hover:text-white transition-colors">
+                                <i data-lucide="home" class="w-5 h-5"></i>
+                            </a>
+                            <i id="logout-icon" data-lucide="log-out" class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer" title="Logout"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Overlay for when sidebar is open -->
+        <div id="overlay" class="fixed inset-0 bg-black opacity-0 pointer-events-none"></div>
+
+        <!-- Modals -->
+        <div id="auth-modal" class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none">
+            <div class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8" id="auth-modal-content">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
+
+        <!-- Screen 1: Welcome (Level 6) -->
+        <div data-screen="welcome" class="w-full max-w-lg text-center active">
+            <div class="card fade-in">
+                <div class="flex justify-center mb-4">
+                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-slate-400"><path d="M12 18V6M12 6L9 9M12 6L15 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 15V9M9 15V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 18V12M18 12L21 15M18 12L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 18V12M6 12L3 15M6 12L9 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 21L12 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 21H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 3H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 3L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <h1 class="text-4xl font-bold mb-2">Welcome to Level 6</h1>
+                <p class="text-lg mb-8 text-gray-300">Master how to efficiently store and manipulate data with common Data Structures and Algorithms.</p>
+                <button id="start-learning-btn" class="btn text-lg">Begin Level 6</button>
+            </div>
+        </div>
+        
+        <!-- Screen 2: Learning Dashboard -->
+        <div data-screen="dashboard" class="w-full max-w-6xl">
+            <div class="p-4 md:p-8">
+                
+                <!-- NEW TOP NAV BAR -->
+                <div id="top-nav" class="card !p-4 mb-8">
+                    <!-- Header content and achievements will be injected here by JS -->
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 space-y-8">
+                        <div class="card" id="activity-container">
+                             <!-- Activity will be injected here -->
+                        </div>
+                    </div>
+                    <div class="lg:col-span-1 space-y-8">
+                        <div class="card sticky top-8">
+                           <h3 class="text-lg font-bold mb-4">Your Journey (Lvl 6)</h3>
+                           <div id="progress-tracker" class="space-y-3">
+                               <!-- Progress items will be injected here -->
+                           </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Achievement Modal -->
+    <div id="achievement-modal" class="modal-overlay">
+        <div class="modal-content card text-center max-w-sm w-full">
+            <div id="modal-content-inner"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- IMPORTS & FIREBASE SETUP (from index.html) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserSessionPersistence, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA76y2Cp0jvLBNiMkkl4Mlklw4SKdBg_Wo",
+            authDomain: "pathfinderquiz.firebaseapp.com",
+            projectId: "pathfinderquiz",
+            storageBucket: "pathfinderquiz.firebasestorage.app",
+            messagingSenderId: "653607161175",
+            appId: "1:653607161175:web:4ffd5922d221f26377c212",
+            measurementId: "G-S7XJTZ1VTZ"
+        };
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const auth = getAuth(firebaseApp);
+        const db = getFirestore(firebaseApp);
+        const googleProvider = new GoogleAuthProvider();
+        let currentUser = null;
+
+        // --- SHARED UI LOGIC (Sidebar, Modals from index.html) ---
+        lucide.createIcons();
+        
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const sidebarHoverZone = document.getElementById('sidebar-hover-zone');
+        const authModal = document.getElementById('auth-modal');
+        const authModalContent = document.getElementById('auth-modal-content');
+
+        const openSidebar = () => {
+            sidebar.classList.add('open');
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            overlay.classList.add('opacity-50');
+        };
+
+        const closeSidebar = () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('opacity-50');
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+        };
+
+        sidebarHoverZone.addEventListener('mouseenter', openSidebar);
+        sidebar.addEventListener('mouseleave', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        const showModal = (content) => {
+            authModalContent.innerHTML = content;
+            authModal.classList.remove('opacity-0', 'pointer-events-none');
+            attachModalEventListeners();
+            lucide.createIcons();
+        };
+        
+        const hideModals = () => {
+            authModal.classList.add('opacity-0', 'pointer-events-none');
+        };
+
+        authModal.addEventListener('click', (e) => {
+            if (e.target === authModal) hideModals();
+        });
+        
+        // --- AUTHENTICATION & DATABASE LOGIC (from index.html) ---
+        const loginRegisterBtn = document.getElementById('login-register-btn');
+        const userProfileBtn = document.getElementById('user-profile-btn');
+        const userDisplayName = document.getElementById('user-display-name');
+        const logoutIcon = document.getElementById('logout-icon');
+
+        const loginContent = `
+            <h2 class="text-2xl font-bold text-white mb-6 text-center">Login to Pathfinder</h2>
+            <div class="space-y-3">
+                <button id="google-signin-btn" class="w-full flex items-center justify-center gap-2 p-3 rounded-lg bg-white text-gray-800 font-semibold hover:bg-gray-200 transition-colors">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039L38.802 8.922C34.983 5.549 29.818 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path><path fill="#FF3D00" d="M6.306 14.691c-1.645 3.12-2.306 6.643-2.306 10.163C4 28.024 4.883 31.258 6.45 34.019l5.657-4.42C10.43 28.435 10 26.313 10 24c0-2.636 0.516-5.144 1.409-7.412l-5.103-3.897z"></path><path fill="#4CAF50" d="M24 48c5.166 0 9.86-1.977 13.409-5.192l-6.19-4.832C29.18 40.093 26.685 42 24 42c-4.482 0-8.3-2.922-9.829-6.965l-6.326 4.909C10.12 43.435 16.49 48 24 48z"></path><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-0.792 2.237-2.231 4.16-4.082 5.571l6.328 4.91c3.437-3.22 5.756-7.65 5.756-12.481c0-1.341-.138-2.65-.389-3.917z"></path></svg>
+                    Sign in with Google
+                </button>
+                <button id="guest-signin-btn" class="w-full p-3 rounded-lg bg-gray-600 hover:bg-gray-500 text-white font-semibold transition-colors">Continue as Guest</button>
+            </div>
+            <div class="my-4 flex items-center justify-center">
+                <span class="h-px bg-gray-600 flex-grow"></span>
+                <span class="px-2 text-sm text-gray-400">OR</span>
+                <span class="h-px bg-gray-600 flex-grow"></span>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="login-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-gray-300">Password</label>
+                    <input type="password" id="login-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center"><input id="remember-me" type="checkbox" class="h-4 w-4 rounded border-gray-500 text-slate-600 focus:ring-slate-500"><label for="remember-me" class="ml-2 block text-gray-300">Remember me</label></div>
+                    <a href="#" id="forgot-password-link" class="font-medium text-slate-400 hover:text-slate-300">Forgot password?</a>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-slate-600 hover:bg-slate-500 text-white font-semibold transition-colors">Sign In</button>
+            </form>
+            <p class="text-center text-sm text-gray-400 mt-4">
+                Don't have an account? <a href="#" id="show-register-link" class="font-medium text-slate-400 hover:text-slate-300">Register</a>
+            </p>
+        `;
+
+        const registerContent = `
+            <h2 class="text-2xl font-bold text-white mb-6 text-center">Create an Account</h2>
+            <form id="register-form" class="space-y-4">
+                <div>
+                    <label for="register-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="register-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div>
+                    <label for="register-password" class="block text-sm font-medium text-gray-300">Password</label>
+                    <input type="password" id="register-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                 <div>
+                    <label for="register-confirm-password" class="block text-sm font-medium text-gray-300">Confirm Password</label>
+                    <input type="password" id="register-confirm-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-slate-600 hover:bg-slate-500 text-white font-semibold transition-colors">Create Account</button>
+            </form>
+             <p class="text-center text-sm text-gray-400 mt-4">
+                Already have an account? <a href="#" id="show-login-link" class="font-medium text-slate-400 hover:text-slate-300">Login</a>
+            </p>
+        `;
+
+        const forgotPasswordContent = `
+            <h2 class="text-2xl font-bold text-white mb-4 text-center">Reset Password</h2>
+            <p class="text-center text-sm text-gray-400 mb-6">Enter your email and we'll send you a link to reset your password.</p>
+            <form id="forgot-password-form" class="space-y-4">
+                <div>
+                    <label for="forgot-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="forgot-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-slate-600 hover:bg-slate-500 text-white font-semibold transition-colors">Send Reset Link</button>
+            </form>
+             <p class="text-center text-sm text-gray-400 mt-4">
+                <a href="#" id="back-to-login-link" class="font-medium text-slate-400 hover:text-slate-300">Back to Login</a>
+            </p>
+        `;
+
+        function attachModalEventListeners() {
+            const showRegisterLink = document.getElementById('show-register-link');
+            if(showRegisterLink) showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); showModal(registerContent); });
+            const showLoginLink = document.getElementById('show-login-link');
+            if(showLoginLink) showLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
+            const backToLoginLink = document.getElementById('back-to-login-link');
+            if(backToLoginLink) backToLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
+            const registerForm = document.getElementById('register-form');
+            if(registerForm) registerForm.addEventListener('submit', handleRegister);
+            const loginForm = document.getElementById('login-form');
+            if(loginForm) loginForm.addEventListener('submit', handleLogin);
+            const forgotPasswordLink = document.getElementById('forgot-password-link');
+            if(forgotPasswordLink) forgotPasswordLink.addEventListener('click', (e) => { e.preventDefault(); showModal(forgotPasswordContent); });
+            const forgotPasswordForm = document.getElementById('forgot-password-form');
+            if(forgotPasswordForm) forgotPasswordForm.addEventListener('submit', handleForgotPassword);
+            const googleSigninBtn = document.getElementById('google-signin-btn');
+            if(googleSigninBtn) googleSigninBtn.addEventListener('click', handleGoogleSignIn);
+            const guestSigninBtn = document.getElementById('guest-signin-btn');
+            if(guestSigninBtn) guestSigninBtn.addEventListener('click', handleGuestSignIn);
+        }
+
+        async function handleRegister(e) { e.preventDefault(); const email = document.getElementById('register-email').value, password = document.getElementById('register-password').value, confirmPassword = document.getElementById('register-confirm-password').value; if (password !== confirmPassword) { alert("Passwords do not match."); return; } try { const userCredential = await createUserWithEmailAndPassword(auth, email, password); console.log("Registration successful:", userCredential.user); hideModals(); } catch (error) { alert(`Registration failed: ${error.message}`); } }
+        async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('login-email').value, password = document.getElementById('login-password').value, rememberMe = document.getElementById('remember-me').checked; try { await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence); const userCredential = await signInWithEmailAndPassword(auth, email, password); console.log("Login successful:", userCredential.user); hideModals(); } catch (error) { alert(`Login failed: ${error.message}`); } }
+        async function handleForgotPassword(e) { e.preventDefault(); const email = document.getElementById('forgot-email').value; try { await sendPasswordResetEmail(auth, email); alert('Password reset email sent! Please check your inbox.'); hideModals(); } catch (error) { alert(`Failed to send reset email: ${error.message}`); } }
+        async function handleGoogleSignIn() { try { const result = await signInWithPopup(auth, googleProvider); console.log("Google Sign-In successful:", result.user); hideModals(); } catch (error) { console.error("Google Sign-In failed:", error); alert(`Google Sign-In failed: ${error.message}`); } }
+        async function handleGuestSignIn() { try { const userCredential = await signInAnonymously(auth); console.log("Signed in as guest:", userCredential.user); hideModals(); } catch (error) { console.error("Guest Sign-In failed:", error); alert(`Guest Sign-In failed: ${error.message}`); } }
+        
+        loginRegisterBtn.addEventListener('click', () => showModal(loginContent));
+        logoutIcon.addEventListener('click', async () => { try { await signOut(auth); console.log("Logout successful."); } catch (error) { console.error("Logout failed:", error); } });
+
+        // --- LEVEL 6: CONTENT & GAME LOGIC ---
+        const contentLibrary = {
+            javascript: {
+                title: "Data Structures & Algorithms",
+                modules: [
+                    {
+                        title: "Intro to Data Structures", icon: "database",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "What is a **Data Structure**?", options: ["A type of function", "A way to organize and store data", "A programming language feature", "A type of loop"], answer: "A way to organize and store data", explanation: "Data structures are specialized formats for organizing and storing data, which allows for efficient access and modification." },
+                                { type: 'code-correction', question: "This object is a simple data structure. How would you add a new property for 'email'?", code: "const user = {\n  name: 'Alex',\n  id: 123,\n};", answer: "const user = {\n  name: 'Alex',\n  id: 123,\n  email: 'alex@example.com',\n};", explanation: "Adding a new key-value pair is a fundamental operation on a JavaScript object, which acts as a hash map." },
+                                { type: 'multiple-choice', question: "Which of these is a **linear** data structure?", options: ["Tree", "Graph", "Linked List", "Hash Table"], answer: "Linked List", explanation: "Linear data structures, like arrays and linked lists, have elements arranged in a sequential order." },
+                                { type: 'fill-in-the-blank', question: "The acronym for the **Last-In, First-Out** principle is `____`.", answer: "LIFO", explanation: "LIFO is the principle used in data structures like stacks, where the last element added is the first one to be removed.", flash: true, suggestions: ['FIFO', 'LILO', 'LIFO', 'FILO'] },
+                                { type: 'multiple-choice', question: "What is the key advantage of a **linked list** over an array?", options: ["Faster element access by index", "Constant time for insertion and deletion at any position", "Stores data in a contiguous memory block", "Can only store one data type"], answer: "Constant time for insertion and deletion at any position", explanation: "Unlike arrays, which require re-indexing, a linked list can add or remove a node by simply updating a few pointers." },
+                                { type: 'code-correction', question: "Fix this code to push a new element to the beginning of the array without using `unshift`.", code: "const arr = [2, 3];\nconst newArr = [1, ...arr];", answer: "const arr = [2, 3];\nconst newArr = [1, ...arr];", explanation: "The spread operator (`...`) is a modern way to prepend an element to an array by creating a new array." },
+                                { type: 'drag-and-drop', question: "Match the data structure to its common use case.", items: [{ id: 'd1', text: 'Stack' }, { id: 'd2', text: 'Queue' }], targets: [{ id: 't1', text: 'Browser history' }, { id: 't2', text: 'Task scheduling' }], matches: { d1: 't1', d2: 't2' }, explanation: "A stack is like a pile of plates (LIFO), useful for undo features. A queue is like a line at a store (FIFO), good for handling tasks." },
+                            ]
+                        }
+                    },
+                    {
+                        title: "Arrays & Hash Tables", icon: "square-stack",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "In a JavaScript array, what is the time complexity for accessing an element by its index?", options: ["O(n)", "O(log n)", "O(n²)", "O(1)"], answer: "O(1)", explanation: "Arrays provide random access, meaning any element can be accessed in constant time, regardless of the array's size." },
+                                { type: 'code-correction', question: "This code should check if a key 'age' exists in the `user` object. Fix it.", code: "const user = { name: 'Alice' };\nif (user.age) { console.log('Has age'); }", answer: "const user = { name: 'Alice', age: 30 };\nif ('age' in user) { console.log('Has age'); }", explanation: "The `in` operator is the most reliable way to check for a key's existence, as `user.age` could be `0` or `null`, which are falsy values." },
+                                { type: 'multiple-choice', question: "What is a **hash table** (or hash map)?", options: ["A data structure that stores data sequentially", "A list of linked nodes", "A data structure that uses a hash function to map keys to values", "A type of tree data structure"], answer: "A data structure that uses a hash function to map keys to values", explanation: "Hash tables provide very fast average-case performance for lookups, insertions, and deletions by mapping keys to an index in an array." },
+                                { type: 'fill-in-the-blank', question: "A **collision** in a hash table occurs when two different keys map to the same `__`.", answer: "index", explanation: "Hash collisions are inevitable with a fixed-size array and require specific strategies (like chaining) to handle.", flash: true, suggestions: ['value', 'key', 'index', 'function'] },
+                                { type: 'multiple-choice', question: "Which JavaScript data type is most similar to a hash table?", options: ["Array", "Set", "Object", "Map"], answer: "Object", explanation: "JavaScript `Object`s and `Map`s are both implemented as hash tables and offer key-value storage. `Map` is generally preferred for its more robust API." },
+                                { type: 'code-correction', question: "Fix this to create a new `Map` with key-value pairs.", code: "const myMap = new Map([ 'a', 1 ], [ 'b', 2 ]);", answer: "const myMap = new Map([ ['a', 1], ['b', 2] ]);", explanation: "The `Map` constructor expects an array of key-value pair arrays." },
+                                { type: 'drag-and-drop', question: "Match the data structure to its lookup time complexity.", items: [{ id: 'd1', text: 'Array (by index)' }, { id: 'd2', text: 'Hash Table (average)' }], targets: [{ id: 't1', text: 'O(1)' }, { id: 't2', text: 'O(1)' }], matches: { d1: 't1', d2: 't2' }, explanation: "Both arrays (by index) and hash tables (on average) provide constant time lookups." },
+                            ]
+                        }
+                    },
+                    {
+                        title: "Stacks & Queues", icon: "server-stack",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "What is the primary principle of a **queue**?", options: ["LIFO (Last-In, First-Out)", "FIFO (First-In, First-Out)", "Random access", "FILO (First-In, Last-Out)"], answer: "FIFO (First-In, First-Out)", explanation: "A queue is like a line of people waiting. The first one in is the first one served." },
+                                { type: 'code-correction', question: "This code should implement a queue. Fix it to correctly remove the first element.", code: "const queue = [1, 2, 3];\nqueue.pop();", answer: "const queue = [1, 2, 3];\nqueue.shift();", explanation: "The `pop()` method removes the last element from an array. To simulate a queue, you need to remove the first element with `shift()`." },
+                                { type: 'multiple-choice', question: "Which of the following operations is the equivalent of a `push` operation for a stack?", options: ["Peek", "Pop", "Enqueue", "Push"], answer: "Push", explanation: "The `push` operation adds an item to the top of a stack. `pop` removes it." },
+                                { type: 'fill-in-the-blank', question: "The `__` operation for a stack allows you to see the top element without removing it.", answer: "peek", explanation: "Peeking is a common stack operation that lets you inspect the element at the top of the stack without modifying the stack itself.", flash: true, suggestions: ['pop', 'push', 'peek', 'empty'] },
+                                { type: 'multiple-choice', question: "Which data structure is typically used to implement a 'back' button in a web browser?", options: ["Queue", "Hash Table", "Stack", "Linked List"], answer: "Stack", explanation: "The 'back' button's functionality is LIFO: the most recently visited page is the first one you go back to." },
+                                { type: 'code-correction', question: "Fix this code to add an element to the top of the stack.", code: "const stack = [1, 2, 3];\nstack.unshift(0);", answer: "const stack = [1, 2, 3];\nstack.push(4);", explanation: "The `unshift()` method adds to the beginning of an array. To simulate a stack, you should use `push()` to add to the end." },
+                                { type: 'drag-and-drop', question: "Match the data structure to its fundamental principle.", items: [{ id: 'd1', text: 'Stack' }, { id: 'd2', text: 'Queue' }], targets: [{ id: 't1', text: 'LIFO' }, { id: 't2', text: 'FIFO' }], matches: { d1: 't1', d2: 't2' }, explanation: "Stacks and queues are distinguished by their fundamental access principles, LIFO and FIFO, respectively." },
+                            ]
+                        }
+                    },
+                    {
+                        title: "Intro to Algorithms", icon: "trending-up",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "What is an **Algorithm**?", options: ["A specific syntax for a programming language", "A step-by-step procedure for solving a problem", "A data structure for storing numbers", "A type of loop"], answer: "A step-by-step procedure for solving a problem", explanation: "An algorithm is a well-defined sequence of instructions to perform a task or solve a problem." },
+                                { type: 'code-correction', question: "This search algorithm is inefficient. Fix it to be a more efficient search.", code: "function findElement(arr, elem) {\n  for (let i = 0; i < arr.length; i++) {\n    if (arr[i] === elem) return i;\n  }\n  return -1;\n}", answer: "function findElement(arr, elem) {\n  // Assumes arr is sorted\n  let start = 0;\n  let end = arr.length - 1;\n  while (start <= end) {\n    let mid = Math.floor((start + end) / 2);\n    if (arr[mid] === elem) return mid;\n    else if (arr[mid] < elem) start = mid + 1;\n    else end = mid - 1;\n  }\n  return -1;\n}", explanation: "The original code is a linear search, which is O(n). The corrected code is a binary search, which is O(log n) for sorted arrays." },
+                                { type: 'multiple-choice', question: "What does **Big O Notation** describe?", options: ["The exact runtime of an algorithm", "The amount of memory an algorithm uses", "The worst-case performance of an algorithm as the input size grows", "The best-case performance of an algorithm"], answer: "The worst-case performance of an algorithm as the input size grows", explanation: "Big O notation provides an upper bound on an algorithm's growth rate, helping to compare their scalability." },
+                                { type: 'fill-in-the-blank', question: "An algorithm with a time complexity of O(1) is said to have `__` `__`.", answer: "constant time", explanation: "Constant time means the algorithm's runtime does not change, regardless of the input size.", flash: true, suggestions: ['linear time', 'constant time', 'logarithmic time', 'exponential time'] },
+                                { type: 'multiple-choice', question: "Which of these is the least efficient time complexity?", options: ["O(log n)", "O(n)", "O(n²)", "O(n log n)"], answer: "O(n²)", explanation: "O(n²) (quadratic time) is typically the least efficient of these, as the runtime grows exponentially with the input size. O(n!) is worse, but not in the options." },
+                                { type: 'code-correction', question: "Fix this code to sort an array in ascending order.", code: "const arr = [3, 1, 2];\narr.sort();", answer: "const arr = [3, 1, 2];\narr.sort((a, b) => a - b);", explanation: "The default `sort()` method sorts alphabetically. To sort numerically, a comparison function is required." },
+                                { type: 'drag-and-drop', question: "Match the Big O notation to its name.", items: [{ id: 'd1', text: 'O(n)' }, { id: 'd2', text: 'O(log n)' }], targets: [{ id: 't1', text: 'Linear' }, { id: 't2', text: 'Logarithmic' }], matches: { d1: 't1', d2: 't2' }, explanation: "Logarithmic time is very efficient, while linear time means the runtime grows directly with the input size." },
+                            ]
+                        }
+                    },
+                    {
+                        title: "Sorting & Searching Algorithms", icon: "sort-asc",
+                        quiz: {
+                            questions: [
+                                { type: 'multiple-choice', question: "What is the time complexity of a **linear search**?", options: ["O(1)", "O(log n)", "O(n)", "O(n²)"], answer: "O(n)", explanation: "In a linear search, you must iterate through every element in the worst case, so the time is proportional to the size of the array." },
+                                { type: 'code-correction', question: "This is a basic linear search. Fix it to return the index of the element if found.", code: "function linearSearch(arr, elem) {\n  for (let i = 0; i < arr.length; i++) {\n    if (arr[i] === elem) return true;\n  }\n  return false;\n}", answer: "function linearSearch(arr, elem) {\n  for (let i = 0; i < arr.length; i++) {\n    if (arr[i] === elem) return i;\n  }\n  return -1;\n}", explanation: "A search algorithm typically returns the index or -1 if not found, rather than a boolean." },
+                                { type: 'multiple-choice', question: "Which sorting algorithm has a worst-case time complexity of O(n²)?", options: ["Merge Sort", "Quick Sort", "Bubble Sort", "Radix Sort"], answer: "Bubble Sort", explanation: "Bubble sort, insertion sort, and selection sort are all examples of simple sorting algorithms with O(n²) worst-case complexity." },
+                                { type: 'fill-in-the-blank', question: "The `__` `__` algorithm repeatedly divides a sorted array in half to find a target element.", answer: "binary search", explanation: "Binary search is a highly efficient algorithm for finding an element in a sorted array, with a time complexity of O(log n).", flash: true, suggestions: ['linear search', 'binary search', 'quick sort', 'merge sort'] },
+                                { type: 'multiple-choice', question: "What is the time complexity of a Merge Sort algorithm?", options: ["O(n²)", "O(n log n)", "O(n)", "O(1)"], answer: "O(n log n)", explanation: "Merge sort's efficiency comes from its divide-and-conquer approach, which makes it much faster than O(n²) algorithms for large datasets." },
+                                { type: 'code-correction', question: "This merge sort implementation is missing the base case. Fix it.", code: "function mergeSort(arr) {\n  const mid = Math.floor(arr.length / 2);\n  const left = arr.slice(0, mid);\n  const right = arr.slice(mid);\n  return merge(mergeSort(left), mergeSort(right));\n}", answer: "function mergeSort(arr) {\n  if (arr.length <= 1) return arr;\n  const mid = Math.floor(arr.length / 2);\n  const left = arr.slice(0, mid);\n  const right = arr.slice(mid);\n  return merge(mergeSort(left), mergeSort(right));\n}", explanation: "A recursive algorithm must have a base case to prevent an infinite loop. The base case for merge sort is an array with one or zero elements." },
+                                { type: 'drag-and-drop', question: "Match the algorithm to its time complexity.", items: [{ id: 'd1', text: 'Linear Search' }, { id: 'd2', text: 'Binary Search' }], targets: [{ id: 't1', text: 'O(n)' }, { id: 't2', text: 'O(log n)' }], matches: { d1: 't1', d2: 't2' }, explanation: "The efficiency of searching heavily depends on whether the data is sorted. Binary search is only possible on sorted data." },
+                            ]
+                        }
+                    },
+                ],
+                finalExam: { 
+                    title: "Final Exam (Lvl 6)", 
+                    icon: "award", 
+                    quiz: { 
+                        questions: [
+                            { type: 'multiple-choice', question: "Which data structure operates on a First-In, First-Out (FIFO) principle?", options: ["Stack", "Hash Table", "Queue", "Linked List"], answer: "Queue", explanation: "A queue is like a waiting line, where the first element to be added is the first one to be removed." },
+                            { type: 'code-correction', question: "This `Map` is missing its second argument. Fix it to set a key-value pair.", code: "const map = new Map();\nmap.set('name');", answer: "const map = new Map();\nmap.set('name', 'Alice');", explanation: "The `set()` method for a `Map` requires both a key and a value to be passed as arguments." },
+                            { type: 'multiple-choice', question: "What is the time complexity of accessing an element in a hash table in the average case?", options: ["O(n)", "O(log n)", "O(n²)", "O(1)"], answer: "O(1)", explanation: "Hash tables offer constant-time average access because the hash function directly maps the key to an array index." },
+                            { type: 'fill-in-the-blank', question: "A `__` is an algorithm that uses a divide-and-conquer strategy to sort data.", answer: "merge sort", explanation: "Merge sort recursively divides the array, sorts the smaller pieces, and then merges them back together.", flash: true, suggestions: ['bubble sort', 'linear search', 'merge sort', 'binary search'] },
+                            { type: 'multiple-choice', question: "Which of the following is an advantage of using a linked list over an array?", options: ["Faster random access by index", "Less memory usage", "Efficient insertion and deletion at any point", "Simpler to implement"], answer: "Efficient insertion and deletion at any point", explanation: "The non-contiguous nature of a linked list means you only need to update pointers, which is a constant-time operation." },
+                            { type: 'code-correction', question: "Fix this code to perform a binary search on a sorted array.", code: "function binarySearch(arr, elem) {\n  let start = 0;\n  let end = arr.length - 1;\n  while (start <= end) {\n    let mid = Math.floor((start + end) / 2);\n    if (arr[mid] < elem) start = mid + 1;\n    else end = mid - 1;\n  }\n  return -1;\n}", answer: "function binarySearch(arr, elem) {\n  let start = 0;\n  let end = arr.length - 1;\n  while (start <= end) {\n    let mid = Math.floor((start + end) / 2);\n    if (arr[mid] === elem) return mid;\n    else if (arr[mid] < elem) start = mid + 1;\n    else end = mid - 1;\n  }\n  return -1;\n}", explanation: "The original code was missing the check to see if the middle element was the one being searched for. Without that, it would never return a correct index." },
+                            { type: 'drag-and-drop', question: "Match the data structure to its primary characteristic.", items: [{ id: 'd1', text: 'Hash Table' }, { id: 'd2', text: 'Linked List' }], targets: [{ id: 't1', text: 'Efficient key-value lookup' }, { id: 't2', text: 'Flexible insertion/deletion' }], matches: { d1: 't1', d2: 't2' }, explanation: "Hash tables are optimized for quick lookups, while linked lists are better for managing dynamic data with frequent additions and removals." },
+                        ] 
+                    } 
+                }
+            }
+        };
+
+        const SAVE_KEY = 'pathfinderSaveData_level6'; // Unique key for level 6
+        const appState = {
+            currentScreen: 'welcome',
+            userName: '',
+            learningPlan: null,
+            quizState: null,
+            achievements: new Set(),
+            flashTimerInterval: null,
+        };
+
+        // --- NEW UNIFIED SAVE/LOAD LOGIC ---
+        async function savePlayerState() {
+            try {
+                const stateToSave = {
+                    ...appState,
+                    achievements: [...appState.achievements], // Convert Set to Array for JSON
+                };
+                if (currentUser && !currentUser.isAnonymous) {
+                    const userLevelRef = doc(db, "users", currentUser.uid, "levelProgress", "level6");
+                    await setDoc(userLevelRef, stateToSave, { merge: true });
+                    console.log("Level 6 progress saved to Firebase.");
+                } else {
+                    localStorage.setItem(SAVE_KEY, JSON.stringify(stateToSave));
+                    console.log("Level 6 progress saved to Local Storage.");
+                }
+            } catch (e) {
+                console.error("Failed to save state:", e);
+            }
+        }
+
+        async function loadPlayerState() {
+            try {
+                let savedState = null;
+                if (currentUser && !currentUser.isAnonymous) {
+                    console.log("Attempting to load Level 6 progress from Firebase for user:", currentUser.uid);
+                    const userLevelRef = doc(db, "users", currentUser.uid, "levelProgress", "level6");
+                    const docSnap = await getDoc(userLevelRef);
+                    if (docSnap.exists()) {
+                        savedState = docSnap.data();
+                        console.log("Level 6 progress loaded from Firebase.");
+                    }
+                } else {
+                    const savedStateJSON = localStorage.getItem(SAVE_KEY);
+                    if (savedStateJSON) {
+                        savedState = JSON.parse(savedStateJSON);
+                        console.log("Level 6 progress loaded from Local Storage.");
+                    }
+                }
+                
+                if (savedState) {
+                    savedState.achievements = new Set(savedState.achievements); // Convert back to Set
+                    return savedState;
+                }
+            } catch (e) {
+                console.error("Failed to load or parse state:", e);
+            }
+            console.log("No saved state found for Level 6.");
+            return null;
+        }
+
+        // --- Utils ---
+        const shuffleArray = (array) => { return [...array].sort(() => Math.random() - 0.5); };
+        const calculateLevel = (xp) => ({ level: Math.floor(xp / 100) + 1, nextLevelXp: (Math.floor(xp / 100) + 1) * 100 });
+        function showXpAnimation() { const activityContainer = document.getElementById('activity-container'); if (!activityContainer) return; const xpEl = document.createElement('div'); xpEl.textContent = '+10 XP'; xpEl.className = 'xp-popup'; activityContainer.appendChild(xpEl); setTimeout(() => { xpEl.remove(); }, 1500); }
+
+        // --- UI Navigation & Setup ---
+        function navigateTo(screenName) {
+            document.querySelectorAll('[data-screen]').forEach(screen => screen.classList.remove('active'));
+            const newScreen = document.querySelector(`[data-screen="${screenName}"]`);
+            if (newScreen) {
+                newScreen.classList.add('active');
+                newScreen.querySelector('.card, .p-4')?.classList.add('fade-in');
+                appState.currentScreen = screenName;
+            }
+        }
+
+        function startLearningPath() {
+            appState.userName = currentUser?.displayName || "Learner";
+            const planData = contentLibrary.javascript;
+            appState.learningPlan = {
+                ...planData,
+                progress: planData.modules.reduce((acc, _, index) => ({ ...acc, [`module_${index}`]: 0 }), { finalExam: 0 }),
+                xp: 0,
+            };
+            appState.achievements = new Set();
+            savePlayerState();
+            renderDashboard();
+            navigateTo('dashboard');
+        }
+        
+        // --- Dashboard and Activity Rendering ---
+        function renderDashboard() {
+            const { learningPlan } = appState;
+            const userName = appState.userName || (currentUser?.displayName || "Learner");
+            if (!learningPlan) return;
+            const {level, nextLevelXp} = calculateLevel(learningPlan.xp);
+            const topNav = document.getElementById('top-nav');
+
+            topNav.innerHTML = `
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold">Level 6: Data Structures & Algorithms</h1>
+                        <p class="text-gray-300">Welcome, ${userName}!</p>
+                    </div>
+                    <div id="achievements-bar" class="flex items-center gap-2">
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-400">Level ${level}</p>
+                        <p class="text-xl font-bold text-slate-400">${learningPlan.xp} / ${nextLevelXp} XP</p>
+                    </div>
+                </div>
+            `;
+
+            renderProgressTracker();
+            renderAchievements();
+            showModuleList();
+            lucide.createIcons();
+        }
+
+        function showModuleList() {
+            if (appState.quizState && appState.quizState.timerId) clearInterval(appState.quizState.timerId);
+            if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval);
+            appState.quizState = null;
+            
+            const { modules, finalExam, progress } = appState.learningPlan;
+             document.getElementById('activity-container').innerHTML = `
+                <h2 class="text-2xl font-bold mb-6">Level 6 Modules</h2>
+                <div class="space-y-4">
+                    ${modules.map((mod, i) => createModuleCard(mod, i)).join('')}
+                    ${createModuleCard(finalExam, 'finalExam', true)}
+                </div>
+            `;
+            
+            if (progress.finalExam > 0) {
+                 document.getElementById('activity-container').innerHTML += `
+                    <div class="mt-8 text-center fade-in">
+                        <h3 class="text-2xl font-bold text-slate-400">Level 6 Complete!</h3>
+                        <p class="mt-2 text-gray-300">You've mastered Data Structures & Algorithms. The next challenge awaits.</p>
+                        <a href="index7.html" class="btn mt-4">
+                            <i data-lucide="arrow-right-circle" class="mr-2"></i>
+                            Proceed to Level 7
+                        </a>
+                    </div>
+                `;
+            }
+
+            document.getElementById('activity-container').classList.add('fade-in');
+            lucide.createIcons();
+        }
+
+        function createModuleCard(module, index, isExam = false) {
+             const progress = appState.learningPlan.progress;
+             const id = isExam ? 'finalExam' : `module_${index}`;
+             const isDone = progress[id] > 0;
+
+            return `
+            <div class="card module-card !p-4 flex items-center gap-4 cursor-pointer ${isDone ? 'bg-slate-500/20' : ''}" onclick="window.startActivity('${id}')">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center ${isExam ? 'bg-yellow-500' : 'bg-slate-500'} text-white flex-shrink-0">
+                     <i data-lucide="${module.icon}"></i>
+                </div>
+                <div class="flex-grow">
+                     <h3 class="text-xl font-bold">${module.title}</h3>
+                     <p class="text-sm text-gray-400">${module.quiz.questions.length} Questions</p>
+                </div>
+                ${isDone ? '<i data-lucide="check-circle-2" class="w-8 h-8 text-slate-400"></i>' : '<i data-lucide="chevron-right" class="w-8 h-8 text-gray-400"></i>'}
+            </div>
+            `;
+        }
+
+        function renderProgressTracker() {
+            const { progress, modules, finalExam } = appState.learningPlan;
+            const tracker = document.getElementById('progress-tracker');
+            
+            const createTrackerItem = (id, icon, title, isDone) => `<div class="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/10 ${isDone ? 'opacity-50' : ''}" onclick="${isDone ? '' : `window.startActivity('${id}')`}"><div class="w-8 h-8 rounded-full flex items-center justify-center ${isDone ? 'bg-slate-500' : 'bg-slate-500'} text-white"><i data-lucide="${isDone ? 'check' : icon}"></i></div><div><p class="font-semibold text-gray-200">${title}</p></div>${isDone ? '<i data-lucide="sparkles" class="w-5 h-5 text-yellow-400 ml-auto"></i>' : ''}</div>`;
+
+            let html = modules.map((mod, i) => createTrackerItem(`module_${i}`, mod.icon, mod.title, progress[`module_${i}`] > 0)).join('');
+            html += createTrackerItem('finalExam', finalExam.icon, finalExam.title, progress.finalExam > 0);
+            tracker.innerHTML = html;
+        }
+
+        // --- Achievements ---
+        const allAchievements = {
+            dsarookie: { icon: 'database', title: 'Data Structure Rookie', description: 'Complete your first DSA module.' },
+            algoexpert: { icon: 'star', title: 'Algorithm Expert', description: 'Get a perfect score on a Level 6 module.' },
+            dsapro: { icon: 'trending-up', title: 'DSA Pro', description: 'Complete the entire DSA path.' }
+        };
+
+        function awardAchievement(id) {
+            if (appState.achievements.has(id)) return;
+            appState.achievements.add(id);
+            const achievement = allAchievements[id];
+            
+            const modal = document.getElementById('achievement-modal');
+            document.getElementById('modal-content-inner').innerHTML = `<i data-lucide="award" class="w-16 h-16 mx-auto text-yellow-400 mb-4"></i><h2 class="text-2xl font-bold">Achievement Unlocked!</h2><p class="mt-2 font-semibold text-gray-200">${achievement.title}</p><p class="text-sm text-gray-300">${achievement.description}</p><button class="btn mt-6" onclick="this.closest('.modal-overlay').classList.remove('visible')">Continue</button>`;
+            lucide.createIcons();
+            modal.classList.add('visible');
+            renderAchievements();
+            savePlayerState();
+        }
+
+        function renderAchievements() {
+            const barEl = document.getElementById('achievements-bar');
+            if (!barEl) return; 
+
+            let html = '<h3 class="text-lg font-bold mr-2 text-gray-300 hidden md:block">Achievements</h3>';
+            
+            for (const id in allAchievements) {
+                const achievement = allAchievements[id];
+                const isEarned = appState.achievements.has(id);
+                
+                html += `
+                    <div class="achievement-icon ${isEarned ? '' : 'opacity-30'}" title="${achievement.title}">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center ${isEarned ? 'bg-yellow-400' : 'bg-gray-500'} text-white">
+                            <i data-lucide="${achievement.icon}"></i>
+                        </div>
+                        <div class="tooltip">
+                            <span class="tooltip-title">${achievement.title}</span>
+                            <span class="tooltip-desc">${achievement.description}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            barEl.innerHTML = html;
+            lucide.createIcons();
+        }
+        
+        window.markComplete = (activityId, score) => {
+            if (appState.quizState && appState.quizState.timerId) clearInterval(appState.quizState.timerId);
+            if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval);
+
+            const oldXp = appState.learningPlan.xp;
+            const newXp = oldXp - (appState.learningPlan.progress[activityId] || 0) + score * 10;
+            appState.learningPlan.progress[activityId] = score * 10;
+            appState.learningPlan.xp = newXp;
+
+            if (activityId !== 'finalExam') awardAchievement('dsarookie');
+            const module = activityId === 'finalExam' ? appState.learningPlan.finalExam : appState.learningPlan.modules[activityId.split('_')[1]];
+            if (score === module.quiz.questions.length) awardAchievement('algoexpert');
+            const allDone = appState.learningPlan.modules.every((_, i) => appState.learningPlan.progress[`module_${i}`] > 0) && appState.learningPlan.progress.finalExam > 0;
+            if(allDone) awardAchievement('dsapro');
+
+            renderDashboard();
+            savePlayerState();
+        }
+        
+        // --- Quiz Logic ---
+        window.startActivity = (activityId) => {
+            if (appState.quizState && appState.quizState.timerId) {
+                clearInterval(appState.quizState.timerId);
+                appState.quizState.timerId = null;
+            }
+
+            const isExam = activityId === 'finalExam';
+            const moduleData = isExam ? appState.learningPlan.finalExam : appState.learningPlan.modules[activityId.split('_')[1]];
+            appState.quizState = { activityId, questions: shuffleArray(moduleData.quiz.questions), currentIndex: 0, score: 0, timerId: null, timeLeft: moduleData.quiz.questions.length * 30 };
+            appState.quizState.timerId = setInterval(updateTimer, 1000);
+            renderQuizActivityQuestion();
+        }
+        function updateTimer() {
+            if (!appState.quizState) return;
+            appState.quizState.timeLeft--;
+            const timerEl = document.getElementById('quiz-timer');
+            if (timerEl) {
+                const minutes = Math.floor(appState.quizState.timeLeft / 60);
+                const seconds = appState.quizState.timeLeft % 60;
+                const formattedSeconds = seconds.toString().padStart(2, '0');
+                timerEl.textContent = `${minutes}:${formattedSeconds}`;
+            }
+            if (appState.quizState.timeLeft <= 0) {
+                finishQuiz(true);
+            }
+        }
+        function finishQuiz(timesUp = false) { if (!appState.quizState) return; if (appState.quizState.timerId) clearInterval(appState.quizState.timerId); if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const activityContainer = document.getElementById('activity-container'); activityContainer.innerHTML = `<div class="text-center fade-in"><h2 class="text-2xl font-bold">${timesUp ? "Time's Up!" : "Module Complete!"}</h2><p class="text-lg mt-2 text-gray-300">You scored</p><p class="text-5xl font-bold text-slate-400 my-4">${appState.quizState.score} / ${appState.quizState.questions.length}</p><button onclick="window.markComplete('${appState.quizState.activityId}', ${appState.quizState.score})" class="btn">Continue</button></div>`; }
+        function renderQuizActivityQuestion() { if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const { quizState } = appState; if (!quizState) return; const quizData = quizState.questions[quizState.currentIndex]; const activityContainer = document.getElementById('activity-container'); let questionHTML = '', flashHeaderHTML = ''; if (quizData.flash) { flashHeaderHTML = `<div class="mb-4 p-3 rounded-lg bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center gap-4"><i data-lucide="zap" class="text-yellow-400 flash-indicator"></i><span class="font-semibold text-yellow-200">Flash Question!</span><span id="flash-timer" class="font-bold text-yellow-300 text-lg">15s</span></div>`; } if (quizData.type === 'multiple-choice') quizData.options = shuffleArray(quizData.options); switch(quizData.type) { case 'fill-in-the-blank': { let sHTML = ''; if (quizData.suggestions) { sHTML = `<datalist id="suggestions-list">${quizData.suggestions.map(s => `<option value="${s}"></option>`).join('')}</datalist>`; } const iHTML = `<input type="text" id="fill-in-blank-input" placeholder="Type or select an option" ${quizData.suggestions ? 'list="suggestions-list"' : ''} class="mx-2 p-1 border-b-2 border-slate-400 focus:outline-none focus:border-slate-500 bg-transparent text-white">`; questionHTML = `<p class="text-lg mb-6">${quizData.question.replace('______', iHTML).replace('____', iHTML)}</p>${sHTML}<button id="submit-fill-btn" class="btn">Submit</button>`; break; } case 'drag-and-drop': { questionHTML = `<p class="text-lg mb-6">${quizData.question}</p><div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Items</h4>${quizData.items.map(item => `<div id="${item.id}" draggable="true" class="drag-item p-3 rounded-lg">${item.text}</div>`).join('')}</div><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Targets</h4>${quizData.targets.map(target => `<div id="${target.id}" class="drop-target p-3 rounded-lg min-h-[50px]">${target.text}</div>`).join('')}</div></div><button id="submit-drag-btn" class="btn mt-6">Check Answer</button>`; break; } case 'code-correction': { questionHTML = `<p class="text-lg mb-4">${quizData.question}</p><pre class="bg-black/20 p-4 rounded-lg text-gray-400 text-sm mb-4"><code>${quizData.code}</code></pre><textarea id="code-correction-input" rows="3" class="w-full p-2 rounded-lg themed-input" placeholder="Enter corrected code here..."></textarea><button id="submit-code-btn" class="btn mt-4">Submit</button>`; break; } case 'multiple-choice': default: { questionHTML = `<p class="text-lg mb-6">${quizData.question}</p><div class="space-y-3">${quizData.options.map(opt => `<button class="w-full text-left p-4 rounded-lg quiz-act-option border-2 border-transparent hover:border-slate-400 bg-white/5 transition-colors" data-answer="${opt}">${opt}</button>`).join('')}</div>`; break; } } activityContainer.innerHTML = `<div class="fade-in"><div class="flex justify-between items-center mb-4"><button onclick="showModuleList()" class="text-sm text-slate-300 hover:text-slate-200">&larr; Back to Modules</button><div class="text-lg font-bold text-gray-300" id="quiz-timer"></div></div>${flashHeaderHTML}<h2 class="text-2xl font-bold mb-6">${quizState.questions[quizState.currentIndex].title || 'Question '+(quizState.currentIndex+1)}</h2><div id="question-content">${questionHTML}</div><div id="quiz-feedback-container" class="mt-6"></div></div>`; if (quizData.flash) { let t = 15; const ft = document.getElementById('flash-timer'); ft.textContent = `${t}s`; appState.flashTimerInterval = setInterval(() => { t--; ft.textContent = `${t}s`; if (t <= 0) { clearInterval(appState.flashTimerInterval); handleAnswer('__timeout__', quizData); } }, 1000); } setupQuestionEventListeners(quizData); lucide.createIcons(); }
+        function setupQuestionEventListeners(quizData) { switch(quizData.type) { case 'multiple-choice': document.querySelectorAll('.quiz-act-option').forEach(btn => btn.addEventListener('click', (e) => handleAnswer(e.target.dataset.answer, quizData))); break; case 'fill-in-the-blank': document.getElementById('submit-fill-btn').addEventListener('click', () => handleAnswer(document.getElementById('fill-in-blank-input').value, quizData)); document.getElementById('fill-in-blank-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('submit-fill-btn').click(); }); break; case 'drag-and-drop': let dId = null; document.querySelectorAll('.drag-item').forEach(i => i.addEventListener('dragstart', e => { dId = e.target.id; e.dataTransfer.setData('text/plain', e.target.id); })); document.querySelectorAll('.drop-target').forEach(t => { t.addEventListener('dragover', e => { e.preventDefault(); t.classList.add('drag-over'); }); t.addEventListener('dragleave', () => t.classList.remove('drag-over')); t.addEventListener('drop', e => { e.preventDefault(); t.classList.remove('drag-over'); const dItem = document.getElementById(dId); if (dItem && t.children.length === 0) { t.appendChild(dItem); dItem.style.cursor = 'default'; }}); }); document.getElementById('submit-drag-btn').addEventListener('click', () => { let isCorrect = Object.entries(quizData.matches).every(([iId, tId]) => document.getElementById(tId).querySelector(`#${iId}`)); handleAnswer(isCorrect, quizData); }); break; case 'code-correction': document.getElementById('submit-code-btn').addEventListener('click', () => handleAnswer(document.getElementById('code-correction-input').value, quizData)); break; } }
+        function handleAnswer(selectedAnswer, quizData) { if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const { quizState } = appState; let isCorrect = false, wasTimeout = selectedAnswer === '__timeout__'; if (!wasTimeout) { if (quizData.type === 'code-correction') { isCorrect = selectedAnswer.trim() === quizData.answer.trim(); } else if (typeof selectedAnswer === 'string') { isCorrect = selectedAnswer.trim().toLowerCase() === quizData.answer.trim().toLowerCase(); } else { isCorrect = selectedAnswer === true; } } if (isCorrect) { quizState.score++; showXpAnimation(); } const isLastQuestion = quizState.currentIndex === quizState.questions.length - 1; const feedbackContainer = document.getElementById('quiz-feedback-container'); let feedbackTitle = 'Correct!'; if (wasTimeout) feedbackTitle = "Time's Up!"; else if (!isCorrect) feedbackTitle = 'Not quite.'; feedbackContainer.innerHTML = `<div class="fade-in p-4 rounded-lg ${isCorrect ? 'bg-slate-500/20' : 'bg-red-500/20'}"><p class="font-semibold ${isCorrect ? 'text-slate-300' : 'text-red-300'}">${feedbackTitle}</p><p class="mt-2 text-sm ${isCorrect ? 'text-slate-400' : 'text-red-400'}">${quizData.explanation}</p></div><button id="next-quiz-btn" class="btn mt-4">${isLastQuestion ? 'Finish Quiz' : 'Next Question'}</button>`; document.querySelectorAll('button, input, textarea').forEach(el => { if(el.id !== 'next-quiz-btn') el.disabled = true; }); document.getElementById('next-quiz-btn').addEventListener('click', () => { if (isLastQuestion) finishQuiz(); else { quizState.currentIndex++; renderQuizActivityQuestion(); } }); }
+        
+        // --- APP INITIALIZATION ---
+        async function initializePathfinderApp() {
+            const loadedState = await loadPlayerState();
+            if (loadedState && loadedState.learningPlan) {
+                Object.assign(appState, loadedState);
+                renderDashboard();
+                navigateTo('dashboard');
+            } else {
+                navigateTo('welcome');
+            }
+            document.getElementById('start-learning-btn').addEventListener('click', startLearningPath);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            if (user) {
+                console.log("User is logged in:", user.displayName || user.email);
+                userDisplayName.textContent = user.displayName || user.email || `Guest-${user.uid.substring(0,5)}`;
+                userProfileBtn.classList.remove('hidden');
+                loginRegisterBtn.classList.add('hidden');
+            } else {
+                console.log("User is logged out.");
+                userProfileBtn.classList.add('hidden');
+                loginRegisterBtn.classList.remove('hidden');
+            }
+            // Initialize or re-initialize the app with the current user state
+            initializePathfinderApp();
+        });
+        
+    </script>
+</body>
+</html>
