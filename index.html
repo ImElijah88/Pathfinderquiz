@@ -164,23 +164,24 @@
 
             <!-- User/Auth Section -->
             <div id="auth-section">
-                <!-- Logged Out State -->
-                <div id="logged-out-view">
-                    <p class="text-sm text-gray-400 mb-3">Save your progress by logging in.</p>
-                    <div class="space-y-2">
-                        <button id="login-btn" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-white font-semibold">
-                            <i data-lucide="log-in" class="w-5 h-5"></i> Login
-                        </button>
-                        <button id="register-btn" class="w-full p-2 rounded-lg hover:bg-gray-800 transition-colors font-semibold">Register</button>
-                    </div>
-                </div>
-                <!-- Logged In State (Initially hidden) -->
-                <div id="logged-in-view" class="hidden">
-                    <p class="text-sm text-gray-400">Welcome back!</p>
-                    <p id="user-email" class="font-semibold text-white truncate mb-3">user@example.com</p>
-                    <button id="logout-btn" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-white font-semibold">
-                        <i data-lucide="log-out" class="w-5 h-5"></i> Logout
+                <!-- This button will be dynamically updated -->
+                 <div id="auth-button-container">
+                    <!-- Logged Out State -->
+                    <button id="login-register-btn" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-white font-semibold">
+                        <i data-lucide="log-in" class="w-5 h-5"></i>
+                        <span>Login / Register</span>
                     </button>
+
+                    <!-- Logged In State (template, hidden initially) -->
+                    <div id="user-profile-btn" class="hidden w-full flex items-center justify-between p-2 rounded-lg bg-gray-800 text-white font-semibold">
+                        <span id="user-display-name" class="truncate flex-grow mr-2"></span>
+                        <div class="flex items-center gap-3">
+                             <a href="index.html" title="Home" class="text-gray-400 hover:text-white transition-colors">
+                                <i data-lucide="home" class="w-5 h-5"></i>
+                            </a>
+                            <i id="logout-icon" data-lucide="log-out" class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer" title="Logout"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -189,71 +190,9 @@
         <div id="overlay" class="fixed inset-0 bg-black opacity-0 pointer-events-none"></div>
 
         <!-- Modals -->
-        <div id="login-modal" class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none">
-            <div class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8">
-                <h2 class="text-2xl font-bold text-white mb-6 text-center">Login to Pathfinder</h2>
-                <form id="login-form" class="space-y-4">
-                    <div>
-                        <label for="login-email" class="block text-sm font-medium text-gray-300">Email Address</label>
-                        <input type="email" id="login-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
-                    </div>
-                    <div>
-                        <label for="login-password" class="block text-sm font-medium text-gray-300">Password</label>
-                        <input type="password" id="login-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <input id="remember-me" type="checkbox" class="h-4 w-4 rounded border-gray-500 text-blue-600 focus:ring-blue-500">
-                            <label for="remember-me" class="ml-2 block text-sm text-gray-300">Remember me</label>
-                        </div>
-                        <div class="text-sm">
-                            <a href="#" id="forgot-password-link" class="font-medium text-blue-400 hover:text-blue-300">Forgot your password?</a>
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors">Sign In</button>
-                </form>
-                <p class="text-center text-sm text-gray-400 mt-4">
-                    Don't have an account? <a href="#" id="show-register-link" class="font-medium text-blue-400 hover:text-blue-300">Register</a>
-                </p>
-            </div>
-        </div>
-        <div id="register-modal" class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none">
-            <div class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8">
-                <h2 class="text-2xl font-bold text-white mb-6 text-center">Create an Account</h2>
-                <form id="register-form" class="space-y-4">
-                    <div>
-                        <label for="register-email" class="block text-sm font-medium text-gray-300">Email Address</label>
-                        <input type="email" id="register-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
-                    </div>
-                    <div>
-                        <label for="register-password" class="block text-sm font-medium text-gray-300">Password</label>
-                        <input type="password" id="register-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
-                    </div>
-                     <div>
-                        <label for="register-confirm-password" class="block text-sm font-medium text-gray-300">Confirm Password</label>
-                        <input type="password" id="register-confirm-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
-                    </div>
-                    <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors">Create Account</button>
-                </form>
-                 <p class="text-center text-sm text-gray-400 mt-4">
-                    Already have an account? <a href="#" id="show-login-link" class="font-medium text-blue-400 hover:text-blue-300">Login</a>
-                </p>
-            </div>
-        </div>
-        <div id="forgot-password-modal" class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none">
-            <div class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8">
-                <h2 class="text-2xl font-bold text-white mb-4 text-center">Reset Password</h2>
-                <p class="text-center text-sm text-gray-400 mb-6">Enter your email and we'll send you a link to reset your password.</p>
-                <form id="forgot-password-form" class="space-y-4">
-                    <div>
-                        <label for="forgot-email" class="block text-sm font-medium text-gray-300">Email Address</label>
-                        <input type="email" id="forgot-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
-                    </div>
-                    <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors">Send Reset Link</button>
-                </form>
-                 <p class="text-center text-sm text-gray-400 mt-4">
-                    <a href="#" id="back-to-login-link" class="font-medium text-blue-400 hover:text-blue-300">Back to Login</a>
-                </p>
+        <div id="auth-modal" class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none">
+            <div class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8" id="auth-modal-content">
+                <!-- Content will be injected here -->
             </div>
         </div>
     </div>
@@ -333,9 +272,9 @@
     <!-- Firebase SDKs -->
     <script type="module">
         // Import the functions you need from the SDKs
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserSessionPersistence, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserSessionPersistence, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -352,6 +291,7 @@
         const firebaseApp = initializeApp(firebaseConfig);
         const auth = getAuth(firebaseApp);
         const db = getFirestore(firebaseApp);
+        const googleProvider = new GoogleAuthProvider();
 
         // --- Combined Script ---
         
@@ -361,9 +301,8 @@
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
         const sidebarHoverZone = document.getElementById('sidebar-hover-zone');
-        const loginModal = document.getElementById('login-modal');
-        const registerModal = document.getElementById('register-modal');
-        const forgotPasswordModal = document.getElementById('forgot-password-modal');
+        const authModal = document.getElementById('auth-modal');
+        const authModalContent = document.getElementById('auth-modal-content');
 
         const openSidebar = () => {
             sidebar.classList.add('open');
@@ -381,34 +320,28 @@
         sidebar.addEventListener('mouseleave', closeSidebar);
         overlay.addEventListener('click', closeSidebar);
 
-        const showModal = (modal) => {
-            [loginModal, registerModal, forgotPasswordModal].forEach(m => {
-                m.classList.add('opacity-0', 'pointer-events-none');
-            });
-            modal.classList.remove('opacity-0', 'pointer-events-none');
+        const showModal = (content) => {
+            authModalContent.innerHTML = content;
+            authModal.classList.remove('opacity-0', 'pointer-events-none');
+            attachModalEventListeners();
+
+            lucide.createIcons();
         };
         
         const hideModals = () => {
-            [loginModal, registerModal, forgotPasswordModal].forEach(m => {
-                m.classList.add('opacity-0', 'pointer-events-none');
-            });
+            authModal.classList.add('opacity-0', 'pointer-events-none');
         };
 
-        document.getElementById('login-btn').addEventListener('click', () => showModal(loginModal));
-        document.getElementById('register-btn').addEventListener('click', () => showModal(registerModal));
-        document.getElementById('forgot-password-link').addEventListener('click', (e) => { e.preventDefault(); showModal(forgotPasswordModal); });
-        document.getElementById('show-register-link').addEventListener('click', (e) => { e.preventDefault(); showModal(registerModal); });
-        document.getElementById('show-login-link').addEventListener('click', (e) => { e.preventDefault(); showModal(loginModal); });
-        document.getElementById('back-to-login-link').addEventListener('click', (e) => { e.preventDefault(); showModal(loginModal); });
-
-        [loginModal, registerModal, forgotPasswordModal].forEach(m => {
-            m.addEventListener('click', (e) => { if (e.target === m) hideModals(); });
+        authModal.addEventListener('click', (e) => {
+            if (e.target === authModal) hideModals();
         });
         
         // --- Authentication & Database Logic ---
-        const loggedOutView = document.getElementById('logged-out-view');
-        const loggedInView = document.getElementById('logged-in-view');
-        const userEmailEl = document.getElementById('user-email');
+        const loginRegisterBtn = document.getElementById('login-register-btn');
+        const userProfileBtn = document.getElementById('user-profile-btn');
+        const userDisplayName = document.getElementById('user-display-name');
+        const logoutIcon = document.getElementById('logout-icon');
+
         const LOCAL_SAVE_KEY = 'pathfinderLocalProgress';
         
         let currentUser = null;
@@ -456,25 +389,137 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                console.log("User is logged in:", user.email);
-                userEmailEl.textContent = user.email;
-                loggedInView.classList.remove('hidden');
-                loggedOutView.classList.add('hidden');
-                await mergeLocalProgressWithCloud(user.uid);
+                console.log("User is logged in:", user.displayName || user.email || "Guest");
+                userDisplayName.textContent = user.displayName || user.email || `Guest-${user.uid.substring(0,5)}`;
+                userProfileBtn.classList.remove('hidden');
+                loginRegisterBtn.classList.add('hidden');
+                if (!user.isAnonymous) {
+                   await mergeLocalProgressWithCloud(user.uid);
+                }
                 initApp(); // Re-initialize the app to load cloud data
             } else {
                 currentUser = null;
                 console.log("User is logged out.");
-                loggedInView.classList.add('hidden');
-                loggedOutView.classList.remove('hidden');
+                userProfileBtn.classList.add('hidden');
+                loginRegisterBtn.classList.remove('hidden');
                 initApp(); // Re-initialize for anonymous user
             }
         });
 
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
+        // --- Modal Content Templates ---
+        const loginContent = `
+            <h2 class="text-2xl font-bold text-white mb-6 text-center">Login to Pathfinder</h2>
+            <div class="space-y-3">
+                <button id="google-signin-btn" class="w-full flex items-center justify-center gap-2 p-3 rounded-lg bg-white text-gray-800 font-semibold hover:bg-gray-200 transition-colors">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039L38.802 8.922C34.983 5.549 29.818 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path><path fill="#FF3D00" d="M6.306 14.691c-1.645 3.12-2.306 6.643-2.306 10.163C4 28.024 4.883 31.258 6.45 34.019l5.657-4.42C10.43 28.435 10 26.313 10 24c0-2.636 0.516-5.144 1.409-7.412l-5.103-3.897z"></path><path fill="#4CAF50" d="M24 48c5.166 0 9.86-1.977 13.409-5.192l-6.19-4.832C29.18 40.093 26.685 42 24 42c-4.482 0-8.3-2.922-9.829-6.965l-6.326 4.909C10.12 43.435 16.49 48 24 48z"></path><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-0.792 2.237-2.231 4.16-4.082 5.571l6.328 4.91c3.437-3.22 5.756-7.65 5.756-12.481c0-1.341-.138-2.65-.389-3.917z"></path></svg>
+                    Sign in with Google
+                </button>
+                <button id="guest-signin-btn" class="w-full p-3 rounded-lg bg-gray-600 hover:bg-gray-500 text-white font-semibold transition-colors">Continue as Guest</button>
+            </div>
+            <div class="my-4 flex items-center justify-center">
+                <span class="h-px bg-gray-600 flex-grow"></span>
+                <span class="px-2 text-sm text-gray-400">OR</span>
+                <span class="h-px bg-gray-600 flex-grow"></span>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="login-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-gray-300">Password</label>
+                    <input type="password" id="login-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center"><input id="remember-me" type="checkbox" class="h-4 w-4 rounded border-gray-500 text-blue-600 focus:ring-blue-500"><label for="remember-me" class="ml-2 block text-gray-300">Remember me</label></div>
+                    <a href="#" id="forgot-password-link" class="font-medium text-blue-400 hover:text-blue-300">Forgot password?</a>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors">Sign In</button>
+            </form>
+            <p class="text-center text-sm text-gray-400 mt-4">
+                Don't have an account? <a href="#" id="show-register-link" class="font-medium text-blue-400 hover:text-blue-300">Register</a>
+            </p>
+        `;
+
+        const registerContent = `
+            <h2 class="text-2xl font-bold text-white mb-6 text-center">Create an Account</h2>
+            <form id="register-form" class="space-y-4">
+                <div>
+                    <label for="register-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="register-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <div>
+                    <label for="register-password" class="block text-sm font-medium text-gray-300">Password</label>
+                    <input type="password" id="register-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                 <div>
+                    <label for="register-confirm-password" class="block text-sm font-medium text-gray-300">Confirm Password</label>
+                    <input type="password" id="register-confirm-password" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors">Create Account</button>
+            </form>
+             <p class="text-center text-sm text-gray-400 mt-4">
+                Already have an account? <a href="#" id="show-login-link" class="font-medium text-blue-400 hover:text-blue-300">Login</a>
+            </p>
+        `;
+
+        const forgotPasswordContent = `
+            <h2 class="text-2xl font-bold text-white mb-4 text-center">Reset Password</h2>
+            <p class="text-center text-sm text-gray-400 mb-6">Enter your email and we'll send you a link to reset your password.</p>
+            <form id="forgot-password-form" class="space-y-4">
+                <div>
+                    <label for="forgot-email" class="block text-sm font-medium text-gray-300">Email Address</label>
+                    <input type="email" id="forgot-email" class="themed-input mt-1 block w-full rounded-md p-2" required>
+                </div>
+                <button type="submit" class="w-full p-3 mt-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors">Send Reset Link</button>
+            </form>
+             <p class="text-center text-sm text-gray-400 mt-4">
+                <a href="#" id="back-to-login-link" class="font-medium text-blue-400 hover:text-blue-300">Back to Login</a>
+            </p>
+        `;
+
+        function attachModalEventListeners() {
+            // General Links
+            const showRegisterLink = document.getElementById('show-register-link');
+            if(showRegisterLink) showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); showModal(registerContent); });
+            
+            const showLoginLink = document.getElementById('show-login-link');
+            if(showLoginLink) showLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
+            
+            const backToLoginLink = document.getElementById('back-to-login-link');
+            if(backToLoginLink) backToLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
+
+            // Forms and Buttons
+            const registerForm = document.getElementById('register-form');
+            if(registerForm) registerForm.addEventListener('submit', handleRegister);
+
+            const loginForm = document.getElementById('login-form');
+            if(loginForm) loginForm.addEventListener('submit', handleLogin);
+            
+            const forgotPasswordLink = document.getElementById('forgot-password-link');
+            if(forgotPasswordLink) forgotPasswordLink.addEventListener('click', (e) => { e.preventDefault(); showModal(forgotPasswordContent); });
+
+            const forgotPasswordForm = document.getElementById('forgot-password-form');
+            if(forgotPasswordForm) forgotPasswordForm.addEventListener('submit', handleForgotPassword);
+            
+            const googleSigninBtn = document.getElementById('google-signin-btn');
+            if(googleSigninBtn) googleSigninBtn.addEventListener('click', handleGoogleSignIn);
+            
+            const guestSigninBtn = document.getElementById('guest-signin-btn');
+            if(guestSigninBtn) guestSigninBtn.addEventListener('click', handleGuestSignIn);
+        }
+
+        async function handleRegister(e) {
             e.preventDefault();
             const email = document.getElementById('register-email').value;
             const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+
+            if (password !== confirmPassword) {
+                alert("Passwords do not match.");
+                return;
+            }
+
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 console.log("Registration successful:", userCredential.user);
@@ -482,9 +527,9 @@
             } catch (error) {
                 alert(`Registration failed: ${error.message}`);
             }
-        });
-
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
+        }
+        
+        async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
@@ -498,18 +543,9 @@
             } catch (error) {
                 alert(`Login failed: ${error.message}`);
             }
-        });
-        
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                console.log("Logout successful.");
-            } catch (error) {
-                console.error("Logout failed:", error);
-            }
-        });
+        }
 
-        document.getElementById('forgot-password-form').addEventListener('submit', async (e) => {
+        async function handleForgotPassword(e) {
             e.preventDefault();
             const email = document.getElementById('forgot-email').value;
             try {
@@ -518,6 +554,39 @@
                 hideModals();
             } catch (error) {
                 alert(`Failed to send reset email: ${error.message}`);
+            }
+        }
+        
+        async function handleGoogleSignIn() {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                console.log("Google Sign-In successful:", result.user);
+                hideModals();
+            } catch (error) {
+                console.error("Google Sign-In failed:", error);
+                alert(`Google Sign-In failed: ${error.message}`);
+            }
+        }
+        
+        async function handleGuestSignIn() {
+             try {
+                const userCredential = await signInAnonymously(auth);
+                console.log("Signed in as guest:", userCredential.user);
+                hideModals();
+            } catch (error) {
+                console.error("Guest Sign-In failed:", error);
+                alert(`Guest Sign-In failed: ${error.message}`);
+            }
+        }
+        
+        loginRegisterBtn.addEventListener('click', () => showModal(loginContent));
+        
+        logoutIcon.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                console.log("Logout successful.");
+            } catch (error) {
+                console.error("Logout failed:", error);
             }
         });
 
@@ -534,7 +603,7 @@
         const discoveryGauntlet = ['questionnaire', 'visual-game', 'visual-game-2', 'visual-game-3', 'auditory-game-1', 'auditory-game-2', 'read-write-game', 'read-write-game-2', 'read-write-game-3', 'kinesthetic-game', 'kinesthetic-game-2', 'kinesthetic-game-3'];
 
         async function saveProgress() { 
-            if (currentUser) {
+            if (currentUser && !currentUser.isAnonymous) {
                 await saveProgressToFirebase(currentUser.uid, appState.userData);
             } else {
                 localStorage.setItem(LOCAL_SAVE_KEY, JSON.stringify(appState.userData));
@@ -543,12 +612,17 @@
         
         async function loadProgress() {
             let data = null;
-            if (currentUser) {
+            if (currentUser && !currentUser.isAnonymous) {
                 data = await loadProgressFromFirebase(currentUser.uid);
             } else {
                 const localDataRaw = localStorage.getItem(LOCAL_SAVE_KEY);
                 if (localDataRaw) {
-                    data = JSON.parse(localDataRaw);
+                    try {
+                        data = JSON.parse(localDataRaw);
+                    } catch (error) {
+                        console.error("Error parsing local progress:", error);
+                        localStorage.removeItem(LOCAL_SAVE_KEY);
+                    }
                 }
             }
 
@@ -591,7 +665,6 @@
                 }
             }
         }
-        window.skipGame = nextDiscoveryStage;
 
         function renderQuizQuestion(index) {
             if (index >= quizQuestions.length) { nextDiscoveryStage(); return; }
@@ -614,7 +687,7 @@
                     container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Pattern Recall</h2><p class="mb-6">Memorize this complex pattern. 5 seconds.</p><div class="pattern-grid">${pattern.map(color => `<div class="pattern-tile" style="background-color: ${color};"></div>`).join('')}${Array(3).fill(0).map(() => `<div class="pattern-tile bg-transparent"></div>`).join('')}</div>`;
                     setTimeout(() => { phase = 'recall'; render(); }, 5000);
                 } else if (phase === 'recall') {
-                    container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Recreate the Pattern</h2><p class="mb-6">Click the tiles below in the correct color order.</p><div class="pattern-grid" id="recall-grid">${Array(9).fill(0).map((_, i) => `<div class="pattern-tile ${i < 6 ? 'bg-gray-700/50' : 'bg-transparent'}" id="tile-${i}"></div>`).join('')}</div><div class="mt-6 flex justify-center gap-2 flex-wrap" id="palette">${colors.map(color => `<div class="pattern-palette-tile" style="background-color: ${color};" data-color="${color}"></div>`).join('')}</div><button class="btn mt-4 text-sm bg-gray-700/50" onclick="window.skipGame()">Skip Challenge</button>`;
+                    container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Recreate the Pattern</h2><p class="mb-6">Click the tiles below in the correct color order.</p><div class="pattern-grid" id="recall-grid">${Array(9).fill(0).map((_, i) => `<div class="pattern-tile ${i < 6 ? 'bg-gray-700/50' : 'bg-transparent'}" id="tile-${i}"></div>`).join('')}</div><div class="mt-6 flex justify-center gap-2 flex-wrap" id="palette">${colors.map(color => `<div class="pattern-palette-tile" style="background-color: ${color};" data-color="${color}"></div>`).join('')}</div><button id="skip-pattern-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
                     document.getElementById('palette').addEventListener('click', e => {
                         if (e.target.dataset.color && userPattern.length < 6) {
                             const selectedColor = e.target.dataset.color;
@@ -627,6 +700,7 @@
                             }
                         }
                     });
+                    document.getElementById('skip-pattern-game').addEventListener('click', nextDiscoveryStage);
                 }
             };
             render();
@@ -639,7 +713,8 @@
             const svgImageA = `<svg width="400" height="300" viewBox="0 0 400 300" class="bg-gray-800 rounded-lg"><rect x="150" y="150" width="100" height="100" fill="#a78bfa"/><circle cx="80" cy="80" r="30" fill="#f472b6"/><rect x="280" y="50" width="60" height="40" fill="#38bdf8"/></svg>`;
             const svgImageB = `<svg width="400" height="300" viewBox="0 0 400 300" class="bg-gray-800 rounded-lg"><circle cx="90" cy="80" r="30" fill="#f472b6"/><rect x="280" y="50" width="60" height="40" fill="#38bdf8"/><rect x="220" y="220" width="20" height="40" fill="yellow"/><rect x="150" y="150" width="100" height="100" fill="#a78bfa"/></svg>`; 
 
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spot the Difference</h2><p class="mb-6">Find the 3 differences between the two images by clicking on them in the right-hand image.</p><div class="flex flex-col md:flex-row gap-4"><div class="difference-container">${svgImageA}</div><div class="difference-container" id="diff-container-b">${svgImageB}</div></div><button class="btn mt-4 text-sm bg-gray-700/50" onclick="window.skipGame()">Skip Challenge</button>`;
+            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spot the Difference</h2><p class="mb-6">Find the 3 differences between the two images by clicking on them in the right-hand image.</p><div class="flex flex-col md:flex-row gap-4"><div class="difference-container">${svgImageA}</div><div class="difference-container" id="diff-container-b">${svgImageB}</div></div><button id="skip-difference-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
+            document.getElementById('skip-difference-game').addEventListener('click', nextDiscoveryStage);
             
             document.getElementById('diff-container-b').addEventListener('click', e => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -683,7 +758,8 @@
                 const rotation = isIntruder ? 'rotate(90)' : 'rotate(0)';
                 items += `<div class="intruder-item" data-intruder="${isIntruder}"><svg width="50" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: ${rotation}; transition: transform 0.2s;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>`;
             }
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spot the Intruder</h2><p class="mb-6">One of these icons is rotated differently. Find it!</p><div class="intruder-grid">${items}</div><button class="btn mt-4 text-sm bg-gray-700/50" onclick="window.skipGame()">Skip Challenge</button>`;
+            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spot the Intruder</h2><p class="mb-6">One of these icons is rotated differently. Find it!</p><div class="intruder-grid">${items}</div><button id="skip-intruder-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
+            document.getElementById('skip-intruder-game').addEventListener('click', nextDiscoveryStage);
             
             container.querySelectorAll('.intruder-item').forEach(item => {
                 item.addEventListener('click', (e) => {
@@ -702,8 +778,9 @@
             const options = [...sequence, ...words.filter(w => !sequence.includes(w)).sort(() => 0.5 - Math.random()).slice(0, 4)].sort(() => 0.5 - Math.random());
             let userSequence = [];
 
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spoken Word Recall</h2><p class="mb-6">Listen to the sequence of words, then click the buttons in the same order.</p><button id="play-word-btn" class="btn"><i data-lucide="play" class="mr-2"></i>Play Sequence</button><button class="btn mt-4 text-sm bg-gray-700/50" onclick="window.skipGame()">Skip Challenge</button>`;
+            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spoken Word Recall</h2><p class="mb-6">Listen to the sequence of words, then click the buttons in the same order.</p><button id="play-word-btn" class="btn"><i data-lucide="play" class="mr-2"></i>Play Sequence</button><button id="skip-word-recall-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
             lucide.createIcons();
+            document.getElementById('skip-word-recall-game').addEventListener('click', nextDiscoveryStage);
             
             document.getElementById('play-word-btn').addEventListener('click', (e) => {
                 e.target.disabled = true;
@@ -748,8 +825,9 @@
             const chosenItem = items[Math.floor(Math.random() * items.length)];
             const options = [...items].sort(() => 0.5 - Math.random());
 
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Sound Association</h2><p class="mb-6">Listen to the word, then click the matching image.</p><button id="play-sound-btn" class="btn mb-8"><i data-lucide="volume-2" class="mr-2"></i>Listen</button><div class="flex justify-center gap-8">${options.map(item => `<button class="text-6xl image-choice" data-name="${item.name}">${item.emoji}</button>`).join('')}</div><button class="btn mt-8 text-sm bg-gray-700/50" onclick="window.skipGame()">Skip Challenge</button>`;
+            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Sound Association</h2><p class="mb-6">Listen to the word, then click the matching image.</p><button id="play-sound-btn" class="btn mb-8"><i data-lucide="volume-2" class="mr-2"></i>Listen</button><div class="flex justify-center gap-8">${options.map(item => `<button class="text-6xl image-choice" data-name="${item.name}">${item.emoji}</button>`).join('')}</div><button id="skip-sound-association-game" class="btn mt-8 text-sm bg-gray-700/50">Skip Challenge</button>`;
             lucide.createIcons();
+            document.getElementById('skip-sound-association-game').addEventListener('click', nextDiscoveryStage);
 
             const speak = () => {
                 const utterance = new SpeechSynthesisUtterance(chosenItem.name);
@@ -771,7 +849,8 @@
             const container = document.getElementById('read-write-game-container');
             const data = { 'Web Frontend': ['React', 'CSS', 'HTML'], 'Web Backend': ['Node.js', 'Python', 'Database'], 'General CS': ['Algorithm', 'Data Structure', 'Compiler'] };
             const allItems = Object.values(data).flat().sort(() => Math.random() - 0.5);
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Advanced Categorization</h2><p class="mb-6">Drag each technical term into its correct category.</p><div class="flex gap-4 mb-6 flex-wrap justify-center">${allItems.map(item => `<div class="category-item" draggable="true" data-term="${item}">${item}</div>`).join('')}</div><div class="grid grid-cols-1 md:grid-cols-3 gap-4">${Object.keys(data).map(category => `<div class="category-box" data-category="${category}"><h3 class="font-bold text-center mb-2">${category}</h3></div>`).join('')}</div><div class="mt-6 flex justify-center gap-4"><button class="btn text-sm bg-gray-700/50" onclick="window.skipGame()">Skip Challenge</button><button id="finish-category-btn" class="btn">I'm Done</button></div>`;
+            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Advanced Categorization</h2><p class="mb-6">Drag each technical term into its correct category.</p><div class="flex gap-4 mb-6 flex-wrap justify-center">${allItems.map(item => `<div class="category-item" draggable="true" data-term="${item}">${item}</div>`).join('')}</div><div class="grid grid-cols-1 md:grid-cols-3 gap-4">${Object.keys(data).map(category => `<div class="category-box" data-category="${category}"><h3 class="font-bold text-center mb-2">${category}</h3></div>`).join('')}</div><div class="mt-6 flex justify-center gap-4"><button id="skip-categorization-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button><button id="finish-category-btn" class="btn">I'm Done</button></div>`;
+            document.getElementById('skip-categorization-game').addEventListener('click', nextDiscoveryStage);
 
             let draggedItem = null;
             document.querySelectorAll('.category-item').forEach(item => { item.addEventListener('dragstart', e => { draggedItem = e.target; }); });
@@ -783,7 +862,7 @@
                     const terms = data[category];
                     terms.forEach(term => { if (box.querySelector(`[data-term="${term}"]`)) { score++; } });
                 }
-                if (score > 6) appState.gameScores['read-write'] += 3; else if (score > 3) appState.gameScores['read-write'] += 1;
+                appState.gameScores['read-write'] += Math.floor(score / 3);
                 nextDiscoveryStage();
             });
         }
@@ -791,7 +870,8 @@
         function renderScrambleGame() {
             const container = document.getElementById('read-write-game-2-container');
             const words = [{scrambled: 'vraibale', answer: 'variable'}, {scrambled: 'nifcutno', answer: 'function'}, {scrambled: 'dtoniconi', answer: 'condition'}];
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Word Scramble</h2><p class="mb-6">Unscramble the following programming terms.</p><div class="space-y-4">${words.map((w,i) => `<div class="flex items-center justify-between"><span class="text-lg font-mono">${w.scrambled}</span><input class="scramble-input" data-answer="${w.answer}" id="scramble-${i}"></div>`).join('')}</div><div class="mt-6 flex justify-center gap-4"><button class="btn text-sm bg-gray-700/50" onclick="window.skipGame()">Skip Challenge</button><button id="finish-scramble-btn" class="btn">Check Answers</button></div>`;
+            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Word Scramble</h2><p class="mb-6">Unscramble the following programming terms.</p><div class="space-y-4">${words.map((w,i) => `<div class="flex items-center justify-between"><span class="text-lg font-mono">${w.scrambled}</span><input class="scramble-input" data-answer="${w.answer}" id="scramble-${i}"></div>`).join('')}</div><div class="mt-6 flex justify-center gap-4"><button id="skip-scramble-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button><button id="finish-scramble-btn" class="btn">Check Answers</button></div>`;
+            document.getElementById('skip-scramble-game').addEventListener('click', nextDiscoveryStage);
 
             document.getElementById('finish-scramble-btn').addEventListener('click', () => {
                 let score = 0;
@@ -809,7 +889,8 @@
             const text = "JavaScript is a powerfull programming language used for web developement. It allows for dynamic and interractive web pages. Common mistakes include typos and syntax erors.";
             const errors = ['powerfull', 'developement', 'interractive', 'erors'];
             
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Proofreading Challenge</h2><p class="mb-6">Find and click the 4 spelling mistakes in the text below.</p><p class="proofread-text text-lg leading-relaxed bg-black/20 p-4 rounded-lg">${text.split(' ').map(word => `<span>${word} </span>`).join('')}</p><div class="mt-6 flex justify-center gap-4"><button class="btn text-sm bg-gray-700/50" onclick="window.skipGame()">Skip Challenge</button><button id="finish-proofread-btn" class="btn">Check Answers</button></div>`;
+            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Proofreading Challenge</h2><p class="mb-6">Find and click the 4 spelling mistakes in the text below.</p><p class="proofread-text text-lg leading-relaxed bg-black/20 p-4 rounded-lg">${text.split(' ').map(word => `<span>${word} </span>`).join('')}</p><div class="mt-6 flex justify-center gap-4"><button id="skip-proofread-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button><button id="finish-proofread-btn" class="btn">Check Answers</button></div>`;
+            document.getElementById('skip-proofread-game').addEventListener('click', nextDiscoveryStage);
 
             let foundErrors = new Set();
             container.querySelectorAll('.proofread-text span').forEach(span => {
@@ -834,7 +915,8 @@
         
         function renderAssemblyGame() {
             const container = document.getElementById('kinesthetic-game-container');
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Complex Assembly</h2><p class="mb-6">Use the correct pieces to build the more complex target shape.</p><div class="flex items-center gap-8"><div class="flex-shrink-0"><p class="font-semibold mb-2 text-center">TARGET</p><div class="w-24 h-24 bg-pink-500/50 rounded flex flex-col items-center justify-center relative"><div class="bg-pink-500" style="width: 80px; height: 40px;"></div><div class="bg-pink-500 absolute" style="width: 40px; height: 80px; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div></div></div><div id="assembly-area" class="w-full h-64 assembly-area"></div></div><div id="assembly-pieces" class="mt-6 h-32 relative"><div class="assembly-piece bg-white" style="width: 40px; height: 80px; top: 10px; left: 20px;"></div><div class="assembly-piece bg-white" style="width: 80px; height: 40px; top: 50px; left: 100px;"></div><div class="assembly-piece bg-gray-500" style="width: 60px; height: 60px; top: 10px; left: 220px;"></div></div><div class="mt-6 flex justify-center gap-4"><button class="btn text-sm bg-gray-700/50" onclick="window.skipGame()">Skip Challenge</button><button id="finish-assembly-btn" class="btn">I'm Done</button></div>`;
+            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Complex Assembly</h2><p class="mb-6">Use the correct pieces to build the more complex target shape.</p><div class="flex items-center gap-8"><div class="flex-shrink-0"><p class="font-semibold mb-2 text-center">TARGET</p><div class="w-24 h-24 bg-pink-500/50 rounded flex flex-col items-center justify-center relative"><div class="bg-pink-500" style="width: 80px; height: 40px;"></div><div class="bg-pink-500 absolute" style="width: 40px; height: 80px; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div></div></div><div id="assembly-area" class="w-full h-64 assembly-area"></div></div><div id="assembly-pieces" class="mt-6 h-32 relative"><div class="assembly-piece bg-white" style="width: 40px; height: 80px; top: 10px; left: 20px;"></div><div class="assembly-piece bg-white" style="width: 80px; height: 40px; top: 50px; left: 100px;"></div><div class="assembly-piece bg-gray-500" style="width: 60px; height: 60px; top: 10px; left: 220px;"></div></div><div class="mt-6 flex justify-center gap-4"><button id="skip-assembly-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button><button id="finish-assembly-btn" class="btn">I'm Done</button></div>`;
+            document.getElementById('skip-assembly-game').addEventListener('click', nextDiscoveryStage);
             let draggedPiece = null, offsetX, offsetY;
             const moveHandler = (e) => { if(draggedPiece) { e.preventDefault(); let x = (e.touches ? e.touches[0].clientX : e.clientX); let y = (e.touches ? e.touches[0].clientY : e.clientY); draggedPiece.style.left = `${x - offsetX - container.getBoundingClientRect().left}px`; draggedPiece.style.top = `${y - offsetY - container.getBoundingClientRect().top}px`; } }
             const downHandler = (e) => { draggedPiece = e.target; let x = (e.touches ? e.touches[0].clientX : e.clientX); let y = (e.touches ? e.touches[0].clientY : e.clientY); offsetX = x - draggedPiece.getBoundingClientRect().left; offsetY = y - draggedPiece.getBoundingClientRect().top; draggedPiece.classList.add('dragging'); }
@@ -851,7 +933,7 @@
 
         function renderMazeGame() {
             const container = document.getElementById('kinesthetic-game-2-container');
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Pathfinder Maze</h2><p class="mb-6">Click and drag the ball from the start (S) to the end (E) without touching the walls.</p><canvas id="maze-canvas" width="300" height="300"></canvas><div class="mt-6 flex justify-center gap-4"><button class="btn text-sm bg-gray-700/50" onclick="window.skipGame()">Skip Challenge</button></div>`;
+            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Pathfinder Maze</h2><p class="mb-6">Click and drag the ball from the start (S) to the end (E) without touching the walls.</p><canvas id="maze-canvas" width="300" height="300"></canvas><div class="mt-6 flex justify-center gap-4"><button id="skip-maze-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button></div>`;
             
             const canvas = document.getElementById('maze-canvas');
             const ctx = canvas.getContext('2d');
@@ -903,7 +985,8 @@
         function renderTypingGame() {
              const container = document.getElementById('kinesthetic-game-3-container');
              const codeSnippet = "function greet(name) {\n  return `Hello, ${name}!`;\n}";
-             container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Typing Challenge</h2><p class="mb-4">Type the following code snippet exactly as you see it. You have 20 seconds.</p><pre class="bg-black/30 p-4 rounded-lg text-sm text-pink-400 mb-4 whitespace-pre-wrap"><code>${codeSnippet}</code></pre><textarea id="typing-input" rows="3" class="w-full p-2 rounded-lg themed-input"></textarea><div id="typing-timer" class="mt-4 text-xl font-bold">20</div><button class="btn mt-4 text-sm bg-gray-700/50" onclick="window.skipGame()">Skip Challenge</button>`;
+             container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Typing Challenge</h2><p class="mb-4">Type the following code snippet exactly as you see it. You have 20 seconds.</p><pre class="bg-black/30 p-4 rounded-lg text-sm text-pink-400 mb-4 whitespace-pre-wrap"><code>${codeSnippet}</code></pre><textarea id="typing-input" rows="3" class="w-full p-2 rounded-lg themed-input"></textarea><div id="typing-timer" class="mt-4 text-xl font-bold">20</div><button id="skip-typing-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
+            document.getElementById('skip-typing-game').addEventListener('click', nextDiscoveryStage);
             
              const input = document.getElementById('typing-input');
              const timerEl = document.getElementById('typing-timer');
@@ -946,7 +1029,7 @@
             
             const styleInfo = learningStyles[majorityStyle];
             const resultsContainer = document.getElementById('results-container');
-            resultsContainer.innerHTML = `<i data-lucide="${styleInfo.icon}" class="w-16 h-16 mx-auto text-pink-400 mb-4"></i><h2 class="text-3xl font-bold text-white">Your primary style is ${styleInfo.title}!</h2><p class="mt-4 mb-2 text-lg">${styleInfo.description}</p><div class="my-6"><canvas id="results-chart"></canvas></div><a href="level-1.html" class="btn w-full"><i data-lucide="play-circle" class="mr-2"></i>Start Your Personalized Journey</a>`;
+            resultsContainer.innerHTML = `<i data-lucide="${styleInfo.icon}" class="w-16 h-16 mx-auto text-pink-400 mb-4"></i><h2 class="text-3xl font-bold text-white">Your primary style is ${styleInfo.title}!</h2><p class="mt-4 mb-2 text-lg">${styleInfo.description}</p><div class="my-6"><canvas id="results-chart"></canvas></div><a href="index1.html" class="btn w-full"><i data-lucide="play-circle" class="mr-2"></i>Start Your Personalized Journey</a>`;
 
             const ctx = document.getElementById('results-chart').getContext('2d');
             new Chart(ctx, { type: 'radar', data: { labels: Object.values(learningStyles).map(s => s.title), datasets: [{ label: 'Your Learning Profile', data: Object.values(counts), backgroundColor: 'rgba(236, 72, 153, 0.2)', borderColor: 'rgba(236, 72, 153, 1)', borderWidth: 2, pointBackgroundColor: 'rgba(236, 72, 153, 1)', pointBorderColor: '#fff', }] }, options: { scales: { r: { angleLines: { color: 'rgba(255, 255, 255, 0.2)' }, grid: { color: 'rgba(255, 255, 255, 0.2)' }, pointLabels: { color: '#fff', font: { size: 14 } }, ticks: { color: 'rgba(255, 255, 255, 0.7)', backdropColor: 'rgba(0, 0, 0, 0.5)', stepSize: 1 } } }, plugins: { legend: { display: false } } } });
@@ -963,9 +1046,9 @@
             if (appState.userData.userName && appState.userData.learningStyle) {
                 const styleInfo = learningStyles[appState.userData.learningStyle];
                 welcomeMessage.innerHTML = `<p class="text-xl mb-4">Welcome back, ${appState.userData.userName}!</p><p class="mb-8 text-pink-400 font-semibold">Your dominant style: ${styleInfo.title}</p>`;
-                welcomeActions.innerHTML = `<a href="level-1.html" class="btn w-full mb-4"><i data-lucide="play-circle" class="mr-2"></i>Continue Your Journey</a><button id="reset-btn" class="text-sm text-gray-400 hover:text-white">Start Over / New User?</button>`;
+                welcomeActions.innerHTML = `<a href="index1.html" class="btn w-full mb-4"><i data-lucide="play-circle" class="mr-2"></i>Continue Your Journey</a><button id="reset-btn" class="text-sm text-gray-400 hover:text-white">Start Over / New User?</button>`;
                 document.getElementById('reset-btn').addEventListener('click', () => { 
-                    if (currentUser) {
+                    if (currentUser && !currentUser.isAnonymous) {
                          saveProgressToFirebase(currentUser.uid, { userName: null, learningStyle: null, totalXp: 0, achievements: [] });
                     }
                     localStorage.removeItem(LOCAL_SAVE_KEY); 
@@ -974,8 +1057,17 @@
             } else {
                 welcomeMessage.textContent = `Your personal learning journey awaits. Let's discover your unique learning style.`;
                 welcomeActions.innerHTML = `<button id="discover-style-btn" class="btn w-full text-lg">Discover Your Learning Style</button>`;
-                document.getElementById('discover-style-btn').addEventListener('click', () => navigateTo('name-input'));
+                document.getElementById('discover-style-btn').addEventListener('click', () => {
+                    if (currentUser && !currentUser.isAnonymous) {
+                        appState.userData.userName = currentUser.displayName || currentUser.email;
+                        saveProgress();
+                        navigateTo('gauntlet-intro');
+                    } else {
+                        navigateTo('name-input');
+                    }
+                });
             }
+            lucide.createIcons();
 
             document.getElementById('submit-name-btn').addEventListener('click', () => {
                 const name = document.getElementById('name-input-field').value.trim();
@@ -995,4 +1087,3 @@
     </script>
 </body>
 </html>
-
