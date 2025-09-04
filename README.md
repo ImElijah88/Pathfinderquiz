@@ -47,49 +47,6 @@ Firebase Authentication
 
 Firestore Database
 
-⚙️ Setup and Installation
-Because this is a single-file application, setup is minimal. However, to enable the online progress-saving features, you must connect it to your own Firebase project.
-
-Create a Firebase Project: If you don't have one already, create a new project at the Firebase Console.
-
-Get Your Config:
-
-In your Firebase project, create a new "Web App".
-
-Navigate to Project Settings > General > Your apps.
-
-Find the firebaseConfig object and copy it.
-
-Update the Code:
-
-Open the index7.html file.
-
-Find the const firebaseConfig = { ... }; declaration within the <script type="module"> tag.
-
-Replace the entire placeholder object with the one you copied from your Firebase project.
-
-Enable Authentication Methods:
-
-In the Firebase Console, go to Authentication > Sign-in method.
-
-Enable the Email/Password, Google, and Anonymous sign-in providers.
-
-Configure Firestore Rules:
-
-Go to Firestore Database > Rules.
-
-For testing purposes, you can set the rules to be open. This is not secure for a production application.
-
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-
-
 
 ▶️ How to Play
 Simply open the index.html file in any modern web browser or scan the QR code in the same folder.
