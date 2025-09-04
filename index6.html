@@ -186,7 +186,11 @@
     </style>
 </head>
 <body class="antialiased">
-
+    
+    <button id="menu-toggle" class="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-slate-800/50 text-white">
+        <i data-lucide="menu"></i>
+    </button>
+    
     <!-- Sidebar and Auth Modals Wrapper FROM INDEX.HTML -->
     <div>
         <!-- Hover zone to activate sidebar -->
@@ -336,6 +340,7 @@
         const sidebarHoverZone = document.getElementById('sidebar-hover-zone');
         const authModal = document.getElementById('auth-modal');
         const authModalContent = document.getElementById('auth-modal-content');
+        const menuToggle = document.getElementById('menu-toggle');
 
         const openSidebar = () => {
             sidebar.classList.add('open');
@@ -350,8 +355,9 @@
         };
 
         sidebarHoverZone.addEventListener('mouseenter', openSidebar);
-        // sidebar.addEventListener('mouseleave', closeSidebar); // REMOVED to prevent race condition
+        sidebar.addEventListener('mouseleave', closeSidebar);
         overlay.addEventListener('click', closeSidebar);
+        menuToggle.addEventListener('click', openSidebar);
 
         const showModal = (content) => {
             authModalContent.innerHTML = content;
