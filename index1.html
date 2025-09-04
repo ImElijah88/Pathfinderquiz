@@ -1,386 +1,600 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pathfinder - JS Path (Level 1)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(-45deg, #0d9488, #0f766e, #134e4a, #115e59);
-            background-size: 400% 400%;
-            animation: gradientBG 25s ease infinite;
-            color: #d1d5db;
-        }
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(-45deg, #0d9488, #0f766e, #134e4a, #115e59);
+        background-size: 400% 400%;
+        animation: gradientBG 25s ease infinite;
+        color: #d1d5db;
+      }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
         }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
 
-        .card {
-            background: rgba(15, 23, 42, 0.5);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.5rem;
-            padding: 2rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        .module-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-            background: rgba(15, 23, 42, 0.7);
-        }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            font-weight: 600;
-            transition: all 0.2s ease-in-out;
-            cursor: pointer;
-            border: 1px solid rgba(45, 212, 191, 0.3);
-            background: rgba(45, 212, 191, 0.1);
-            color: #5eead4;
-        }
-        .btn:hover, .btn:focus {
-            background: rgba(45, 212, 191, 0.2);
-            box-shadow: 0 0 15px rgba(45, 212, 191, 0.3);
-        }
-        h1, h2, h3, h4 {
-            color: white;
-        }
-        [data-screen] { display: none; }
-        [data-screen].active { display: block; }
+      .card {
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        position: relative;
+      }
+      .module-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2),
+          0 10px 10px -5px rgba(0, 0, 0, 0.1);
+        background: rgba(15, 23, 42, 0.7);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+        border: 1px solid rgba(45, 212, 191, 0.3);
+        background: rgba(45, 212, 191, 0.1);
+        color: #5eead4;
+      }
+      .btn:hover,
+      .btn:focus {
+        background: rgba(45, 212, 191, 0.2);
+        box-shadow: 0 0 15px rgba(45, 212, 191, 0.3);
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        color: white;
+      }
+      [data-screen] {
+        display: none;
+      }
+      [data-screen].active {
+        display: block;
+      }
 
-        /* Drag and Drop Styles */
-        .drag-item { cursor: grab; user-select: none; background-color: rgba(255, 255, 255, 0.1); color: white; }
-        .drop-target { border: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color 0.2s ease; }
-        .drop-target.drag-over { background-color: rgba(255, 255, 255, 0.1); border-color: #2dd4bf; }
+      /* Drag and Drop Styles */
+      .drag-item {
+        cursor: grab;
+        user-select: none;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+      .drop-target {
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        transition: background-color 0.2s ease;
+      }
+      .drop-target.drag-over {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: #2dd4bf;
+      }
 
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+      /* Animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
-        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        
-        @keyframes xp-animation {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-60px) scale(1.1); opacity: 0; }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .xp-popup {
-            position: absolute;
-            top: 2rem;
-            right: 2rem;
-            padding: 4px 12px;
-            background-color: #34d399;
-            color: white;
-            border-radius: 9999px;
-            font-weight: bold;
-            animation: xp-animation 1.5s ease-out forwards;
-            z-index: 100;
-            pointer-events: none;
-        }
+      }
+      .fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+      }
 
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex; align-items: center; justify-content: center; z-index: 50;
-            opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+      @keyframes xp-animation {
+        0% {
+          transform: translateY(0) scale(1);
+          opacity: 1;
         }
-        .modal-overlay.visible { opacity: 1; visibility: visible; }
-        .modal-content { transform: scale(0.9); transition: transform 0.3s ease; }
-        .modal-overlay.visible .modal-content { transform: scale(1); }
+        100% {
+          transform: translateY(-60px) scale(1.1);
+          opacity: 0;
+        }
+      }
+      .xp-popup {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        padding: 4px 12px;
+        background-color: #34d399;
+        color: white;
+        border-radius: 9999px;
+        font-weight: bold;
+        animation: xp-animation 1.5s ease-out forwards;
+        z-index: 100;
+        pointer-events: none;
+      }
 
-        /* Flash Question Styles */
-        @keyframes pulse { 50% { opacity: .7; } }
-        .flash-indicator { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+      /* Modal Styles */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+      .modal-overlay.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+      .modal-content {
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+      }
+      .modal-overlay.visible .modal-content {
+        transform: scale(1);
+      }
 
-        /* Custom input style for the new theme */
-        .themed-input {
-            background-color: rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            font-family: monospace;
+      /* Flash Question Styles */
+      @keyframes pulse {
+        50% {
+          opacity: 0.7;
         }
-        .themed-input:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.5);
-            border-color: #2dd4bf;
-        }
-        .themed-input::placeholder {
-            color: #9ca3af;
-        }
-        
-        /* Achievement Tooltip Styles */
-        .achievement-icon {
-            position: relative;
-            cursor: pointer;
-        }
-        .tooltip {
-            visibility: hidden;
-            opacity: 0;
-            position: absolute;
-            bottom: 125%; /* Position above the icon */
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0,0,0,0.8);
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px;
-            z-index: 10;
-            transition: opacity 0.3s;
-            width: 200px;
-            font-size: 0.875rem;
-            pointer-events: none;
-        }
-        .achievement-icon:hover .tooltip {
-            visibility: visible;
-            opacity: 1;
-        }
-        .tooltip-title {
-            font-weight: bold;
-            display: block;
-        }
-        .tooltip-desc {
-            font-size: 0.75rem;
-            display: block;
-            margin-top: 4px;
-            color: #ccc;
-        }
+      }
+      .flash-indicator {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
 
-        /* Sidebar, Modal, and other UI component styles FROM INDEX.HTML */
-        #sidebar {
-            transition: transform 0.3s ease-in-out;
-            transform: translateX(-100%);
-            z-index: 100;
-        }
-        #sidebar.open {
-            transform: translateX(0);
-        }
-        #overlay {
-            transition: opacity 0.3s ease-in-out;
-            z-index: 90;
-        }
-        .modal {
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-            z-index: 110;
-        }
-        .modal-content {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .themed-input {
-            background-color: rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-        }
-        .themed-input:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
-            border-color: #60a5fa;
-        }
+      /* Custom input style for the new theme */
+      .themed-input {
+        background-color: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        font-family: monospace;
+      }
+      .themed-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.5);
+        border-color: #2dd4bf;
+      }
+      .themed-input::placeholder {
+        color: #9ca3af;
+      }
+
+      /* Achievement Tooltip Styles */
+      .achievement-icon {
+        position: relative;
+        cursor: pointer;
+      }
+      .tooltip {
+        visibility: hidden;
+        opacity: 0;
+        position: absolute;
+        bottom: 125%; /* Position above the icon */
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px;
+        z-index: 10;
+        transition: opacity 0.3s;
+        width: 200px;
+        font-size: 0.875rem;
+        pointer-events: none;
+      }
+      .achievement-icon:hover .tooltip {
+        visibility: visible;
+        opacity: 1;
+      }
+      .tooltip-title {
+        font-weight: bold;
+        display: block;
+      }
+      .tooltip-desc {
+        font-size: 0.75rem;
+        display: block;
+        margin-top: 4px;
+        color: #ccc;
+      }
+
+      /* Sidebar, Modal, and other UI component styles FROM INDEX.HTML */
+      #sidebar {
+        transition: transform 0.3s ease-in-out;
+        transform: translateX(-100%);
+        z-index: 100;
+      }
+      #sidebar.open {
+        transform: translateX(0);
+      }
+      #overlay {
+        transition: opacity 0.3s ease-in-out;
+        z-index: 90;
+      }
+      .modal {
+        transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        z-index: 110;
+      }
+      .modal-content {
+        background: rgba(17, 24, 39, 0.8);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .themed-input {
+        background-color: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+      }
+      .themed-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+        border-color: #60a5fa;
+      }
     </style>
-</head>
-<body class="antialiased">
-
+  </head>
+  <body class="antialiased">
     <!-- Sidebar and Auth Modals Wrapper FROM INDEX.HTML -->
     <div>
-        <!-- Hover zone to activate sidebar -->
-        <div id="sidebar-hover-zone" class="fixed top-0 left-0 h-full z-50" style="width: 100px;"></div>
+      <!-- Hover zone to activate sidebar -->
+      <div
+        id="sidebar-hover-zone"
+        class="fixed top-0 left-0 h-full z-50"
+        style="width: 70px"
+      ></div>
 
-        <!-- Slide-out Sidebar -->
-        <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 to-slate-800 border-r border-gray-700/50 shadow-2xl p-6 flex flex-col">
-            <!-- Header -->
-            <div class="flex items-center gap-3 mb-8">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-blue-400">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <h1 class="text-2xl font-bold text-white">Pathfinder</h1>
-            </div>
-
-            <!-- Level Navigation -->
-            <nav class="flex-grow">
-                <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Levels</h2>
-                <ul class="space-y-2">
-                    <li><a href="index1.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="flag" class="w-5 h-5 text-gray-400"></i> Level 1: Functions</a></li>
-                    <li><a href="index2.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="list" class="w-5 h-5 text-gray-400"></i> Level 2: Arrays</a></li>
-                    <li><a href="index3.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="git-fork" class="w-5 h-5 text-gray-400"></i> Level 3: Loops</a></li>
-                    <li><a href="index4.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="infinity" class="w-5 h-5 text-gray-400"></i> Level 4: Recursion</a></li>
-                    <li><a href="index5.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="box" class="w-5 h-5 text-gray-400"></i> Level 5: OOP</a></li>
-                    <li><a href="index6.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="database" class="w-5 h-5 text-gray-400"></i> Level 6: Data</a></li>
-                    <li><a href="index7.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="trophy" class="w-5 h-5 text-gray-400"></i> Level 7: Finale</a></li>
-                </ul>
-            </nav>
-
-            <!-- User/Auth Section -->
-            <div id="auth-section">
-                <!-- This button will be dynamically updated -->
-                 <div id="auth-button-container">
-                    <!-- Logged Out State -->
-                    <button id="login-register-btn" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-white font-semibold">
-                        <i data-lucide="log-in" class="w-5 h-5"></i>
-                        <span>Login / Register</span>
-                    </button>
-
-                    <!-- Logged In State (template, hidden initially) -->
-                    <div id="user-profile-btn" class="hidden w-full flex items-center justify-between p-2 rounded-lg bg-gray-800 text-white font-semibold">
-                        <span id="user-display-name" class="truncate flex-grow mr-2"></span>
-                        <div class="flex items-center gap-3">
-                             <a href="index.html" title="Home" class="text-gray-400 hover:text-white transition-colors">
-                                <i data-lucide="home" class="w-5 h-5"></i>
-                            </a>
-                            <i id="logout-icon" data-lucide="log-out" class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer" title="Logout"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Overlay for when sidebar is open -->
-        <div id="overlay" class="fixed inset-0 bg-black opacity-0 pointer-events-none"></div>
-
-        <!-- Modals -->
-        <div id="auth-modal" class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none">
-            <div class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8" id="auth-modal-content">
-                <!-- Content will be injected here -->
-            </div>
+      <!-- Slide-out Sidebar -->
+      <aside
+        id="sidebar"
+        class="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 to-slate-800 border-r border-gray-700/50 shadow-2xl p-6 flex flex-col"
+      >
+        <!-- Header -->
+        <div class="flex items-center gap-3 mb-8">
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            class="text-blue-400"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"
+            />
+            <line
+              x1="4"
+              y1="12"
+              x2="20"
+              y2="12"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <h1 class="text-2xl font-bold text-white">Pathfinder</h1>
         </div>
+
+        <!-- Level Navigation -->
+        <nav class="flex-grow">
+          <h2
+            class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3"
+          >
+            Levels
+          </h2>
+          <ul class="space-y-2">
+            <li>
+              <a
+                href="index1.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors">
+               Level1: Functions</a
+              >
+            </li>
+            <li>
+              <a
+                href="index2.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                > Level
+                2: Arrays</a
+              >
+            </li>
+            <li>
+              <a
+                href="index3.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                ></i>
+                Level 3: Loops</a
+              >
+            </li>
+            <li>
+              <a
+                href="index4.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                ></i>
+                Level 4: Recursion</a
+              >
+            </li>
+            <li>
+              <a
+                href="index5.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                ></i> Level
+                5: OOP</a
+              >
+            </li>
+            <li>
+              <a
+                href="index6.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                ></i>
+                Level 6: Data</a
+              >
+            </li>
+            <li>
+              <a
+                href="index7.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                ></i>
+                Level 7: Finale</a
+              >
+            </li>
+          </ul>
+        </nav>
+
+        <!-- User/Auth Section -->
+        <div id="auth-section">
+          <div id="auth-button-container">
+            <!-- Logged Out State -->
+            <button
+              id="login-register-btn"
+              class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-white font-semibold"
+            >
+              <i data-lucide="log-in" class="w-5 h-5"></i>
+              <span>Login / Register</span>
+            </button>
+
+            <!-- Logged In State (template, hidden initially) -->
+            <div
+              id="user-profile-btn"
+              class="hidden w-full flex items-center justify-between p-2 rounded-lg bg-gray-800 text-white font-semibold"
+            >
+              <span
+                id="user-display-name"
+                class="truncate flex-grow mr-2"
+              ></span>
+              <div class="flex items-center gap-3">
+                <a
+                  href="index.html"
+                  title="Home"
+                  class="text-gray-400 hover:text-white transition-colors"
+                >
+                  <i data-lucide="home" class="w-5 h-5"></i>
+                </a>
+                <button
+                  id="logout-btn"
+                  title="Logout"
+                  class="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                >
+                  <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Overlay for when sidebar is open -->
+      <div
+        id="overlay"
+        class="fixed inset-0 bg-black opacity-0 pointer-events-none"
+      ></div>
+
+      <!-- Modals -->
+      <div
+        id="auth-modal"
+        class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none"
+      >
+        <div
+          class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8"
+          id="auth-modal-content"
+        >
+          <!-- Content will be injected here -->
+        </div>
+      </div>
     </div>
 
-    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
-
-        <!-- Screen 1: Welcome (Level 1) -->
-        <div data-screen="welcome" class="w-full max-w-lg text-center active">
-            <div class="card fade-in">
-                <div class="flex justify-center mb-4">
-                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-teal-400"><path d="M12 21V10M12 21L8 17M12 21L16 17M12 3V5M8.5 5.5L7 4M15.5 5.5L17 4M5 12H3M21 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                </div>
-                <h1 class="text-4xl font-bold mb-2">Welcome to Level 1</h1>
-                <p class="text-lg mb-8 text-gray-300">Master the core concepts of JavaScript by learning all about Functions and Methods.</p>
-                <button id="start-learning-btn" class="btn text-lg">Begin Level 1</button>
-            </div>
+    <div
+      id="app"
+      class="min-h-screen flex flex-col items-center justify-center p-4"
+    >
+      <!-- Screen 1: Welcome (Level 1) -->
+      <div data-screen="welcome" class="w-full max-w-lg text-center active">
+        <div class="card fade-in">
+          <div class="flex justify-center mb-4">
+            <svg
+              width="64"
+              height="64"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              class="text-teal-400"
+            >
+              <path
+                d="M12 21V10M12 21L8 17M12 21L16 17M12 3V5M8.5 5.5L7 4M15.5 5.5L17 4M5 12H3M21 12H19"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+            </svg>
+          </div>
+          <h1 class="text-4xl font-bold mb-2">Welcome to Level 1</h1>
+          <p class="text-lg mb-8 text-gray-300">
+            Master the core concepts of JavaScript by learning all about
+            Functions and Methods.
+          </p>
+          <button id="start-learning-btn" class="btn text-lg">
+            Begin Level 1
+          </button>
         </div>
-        
-        <!-- Screen 2: Learning Dashboard -->
-        <div data-screen="dashboard" class="w-full max-w-6xl">
-            <div class="p-4 md:p-8">
-                
-                <!-- NEW TOP NAV BAR -->
-                <div id="top-nav" class="card !p-4 mb-8">
-                    <!-- Header content and achievements will be injected here by JS -->
-                </div>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-2 space-y-8">
-                        <div class="card" id="activity-container">
-                             <!-- Activity will be injected here -->
-                        </div>
-                    </div>
-                    <div class="lg:col-span-1 space-y-8">
-                        <div class="card sticky top-8">
-                           <h3 class="text-lg font-bold mb-4">Your Journey (Lvl 1)</h3>
-                           <div id="progress-tracker" class="space-y-3">
-                               <!-- Progress items will be injected here -->
-                           </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
 
+      <!-- Screen 2: Learning Dashboard -->
+      <div data-screen="dashboard" class="w-full max-w-6xl">
+        <div class="p-4 md:p-8">
+          <!-- NEW TOP NAV BAR -->
+          <div id="top-nav" class="card !p-4 mb-8">
+            <!-- Header content and achievements will be injected here by JS -->
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+              <div class="card" id="activity-container">
+                <!-- Activity will be injected here -->
+              </div>
+            </div>
+            <div class="lg:col-span-1 space-y-8">
+              <div class="card sticky top-8">
+                <h3 class="text-lg font-bold mb-4">Your Journey (Lvl 1)</h3>
+                <div id="progress-tracker" class="space-y-3">
+                  <!-- Progress items will be injected here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Achievement Modal -->
     <div id="achievement-modal" class="modal-overlay">
-        <div class="modal-content card text-center max-w-sm w-full">
-            <div id="modal-content-inner"></div>
-        </div>
+      <div class="modal-content card text-center max-w-sm w-full">
+        <div id="modal-content-inner"></div>
+      </div>
     </div>
 
     <script type="module">
-        // --- IMPORTS & FIREBASE SETUP (from index.html) ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserSessionPersistence, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+      // --- IMPORTS & FIREBASE SETUP (from index.html) ---
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import {
+        getAuth,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+        sendPasswordResetEmail,
+        browserSessionPersistence,
+        setPersistence,
+        browserLocalPersistence,
+        GoogleAuthProvider,
+        signInWithPopup,
+        signInAnonymously,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        getDoc,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyA76y2Cp0jvLBNiMkkl4Mlklw4SKdBg_Wo",
-            authDomain: "pathfinderquiz.firebaseapp.com",
-            projectId: "pathfinderquiz",
-            storageBucket: "pathfinderquiz.firebasestorage.app",
-            messagingSenderId: "653607161175",
-            appId: "1:653607161175:web:4ffd5922d221f26377c212",
-            measurementId: "G-S7XJTZ1VTZ"
-        };
+      const firebaseConfig = {
+        apiKey: "AIzaSyA76y2Cp0jvLBNiMkkl4Mlklw4SKdBg_Wo",
+        authDomain: "pathfinderquiz.firebaseapp.com",
+        projectId: "pathfinderquiz",
+        storageBucket: "pathfinderquiz.firebasestorage.app",
+        messagingSenderId: "653607161175",
+        appId: "1:653607161175:web:4ffd5922d221f26377c212",
+        measurementId: "G-S7XJTZ1VTZ",
+      };
 
-        const firebaseApp = initializeApp(firebaseConfig);
-        const auth = getAuth(firebaseApp);
-        const db = getFirestore(firebaseApp);
-        const googleProvider = new GoogleAuthProvider();
-        let currentUser = null;
+      const firebaseApp = initializeApp(firebaseConfig);
+      const auth = getAuth(firebaseApp);
+      const db = getFirestore(firebaseApp);
+      const googleProvider = new GoogleAuthProvider();
+      let currentUser = null;
 
-        // --- SHARED UI LOGIC (Sidebar, Modals from index.html) ---
+      // --- SHARED UI LOGIC (Sidebar, Modals from index.html) ---
+      lucide.createIcons();
+
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("overlay");
+      const sidebarHoverZone = document.getElementById("sidebar-hover-zone");
+      const authModal = document.getElementById("auth-modal");
+      const authModalContent = document.getElementById("auth-modal-content");
+
+      const openSidebar = () => {
+        sidebar.classList.add("open");
+        overlay.classList.remove("opacity-0", "pointer-events-none");
+        overlay.classList.add("opacity-50");
+      };
+
+      const closeSidebar = () => {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("opacity-50");
+        overlay.classList.add("opacity-0", "pointer-events-none");
+      };
+
+      sidebarHoverZone.addEventListener("mouseenter", openSidebar);
+      // sidebar.addEventListener('mouseleave', closeSidebar); // REMOVED to prevent race condition
+      overlay.addEventListener("click", closeSidebar);
+
+      const showModal = (content) => {
+        authModalContent.innerHTML = content;
+        authModal.classList.remove("opacity-0", "pointer-events-none");
+        attachModalEventListeners();
         lucide.createIcons();
-        
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
-        const sidebarHoverZone = document.getElementById('sidebar-hover-zone');
-        const authModal = document.getElementById('auth-modal');
-        const authModalContent = document.getElementById('auth-modal-content');
+      };
 
-        const openSidebar = () => {
-            sidebar.classList.add('open');
-            overlay.classList.remove('opacity-0', 'pointer-events-none');
-            overlay.classList.add('opacity-50');
-        };
+      const hideModals = () => {
+        authModal.classList.add("opacity-0", "pointer-events-none");
+      };
 
-        const closeSidebar = () => {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('opacity-50');
-            overlay.classList.add('opacity-0', 'pointer-events-none');
-        };
+      authModal.addEventListener("click", (e) => {
+        if (e.target === authModal) hideModals();
+      });
 
-        sidebarHoverZone.addEventListener('mouseenter', openSidebar);
-        sidebar.addEventListener('mouseleave', closeSidebar);
-        overlay.addEventListener('click', closeSidebar);
+      // --- AUTHENTICATION & DATABASE LOGIC (from index.html) ---
+      const loginRegisterBtn = document.getElementById("login-register-btn");
+      const userProfileBtn = document.getElementById("user-profile-btn");
+      const userDisplayName = document.getElementById("user-display-name");
 
-        const showModal = (content) => {
-            authModalContent.innerHTML = content;
-            authModal.classList.remove('opacity-0', 'pointer-events-none');
-            attachModalEventListeners();
-            lucide.createIcons();
-        };
-        
-        const hideModals = () => {
-            authModal.classList.add('opacity-0', 'pointer-events-none');
-        };
-
-        authModal.addEventListener('click', (e) => {
-            if (e.target === authModal) hideModals();
-        });
-        
-        // --- AUTHENTICATION & DATABASE LOGIC (from index.html) ---
-        const loginRegisterBtn = document.getElementById('login-register-btn');
-        const userProfileBtn = document.getElementById('user-profile-btn');
-        const userDisplayName = document.getElementById('user-display-name');
-        const logoutIcon = document.getElementById('logout-icon');
-
-        const loginContent = `
+      const loginContent = `
             <h2 class="text-2xl font-bold text-white mb-6 text-center">Login to Pathfinder</h2>
             <div class="space-y-3">
                 <button id="google-signin-btn" class="w-full flex items-center justify-center gap-2 p-3 rounded-lg bg-white text-gray-800 font-semibold hover:bg-gray-200 transition-colors">
@@ -414,7 +628,7 @@
             </p>
         `;
 
-        const registerContent = `
+      const registerContent = `
             <h2 class="text-2xl font-bold text-white mb-6 text-center">Create an Account</h2>
             <form id="register-form" class="space-y-4">
                 <div>
@@ -436,7 +650,7 @@
             </p>
         `;
 
-        const forgotPasswordContent = `
+      const forgotPasswordContent = `
             <h2 class="text-2xl font-bold text-white mb-4 text-center">Reset Password</h2>
             <p class="text-center text-sm text-gray-400 mb-6">Enter your email and we'll send you a link to reset your password.</p>
             <form id="forgot-password-form" class="space-y-4">
@@ -451,215 +665,743 @@
             </p>
         `;
 
-        function attachModalEventListeners() {
-            const showRegisterLink = document.getElementById('show-register-link');
-            if(showRegisterLink) showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); showModal(registerContent); });
-            const showLoginLink = document.getElementById('show-login-link');
-            if(showLoginLink) showLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
-            const backToLoginLink = document.getElementById('back-to-login-link');
-            if(backToLoginLink) backToLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
-            const registerForm = document.getElementById('register-form');
-            if(registerForm) registerForm.addEventListener('submit', handleRegister);
-            const loginForm = document.getElementById('login-form');
-            if(loginForm) loginForm.addEventListener('submit', handleLogin);
-            const forgotPasswordLink = document.getElementById('forgot-password-link');
-            if(forgotPasswordLink) forgotPasswordLink.addEventListener('click', (e) => { e.preventDefault(); showModal(forgotPasswordContent); });
-            const forgotPasswordForm = document.getElementById('forgot-password-form');
-            if(forgotPasswordForm) forgotPasswordForm.addEventListener('submit', handleForgotPassword);
-            const googleSigninBtn = document.getElementById('google-signin-btn');
-            if(googleSigninBtn) googleSigninBtn.addEventListener('click', handleGoogleSignIn);
-            const guestSigninBtn = document.getElementById('guest-signin-btn');
-            if(guestSigninBtn) guestSigninBtn.addEventListener('click', handleGuestSignIn);
+      function attachModalEventListeners() {
+        const showRegisterLink = document.getElementById("show-register-link");
+        if (showRegisterLink)
+          showRegisterLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            showModal(registerContent);
+          });
+        const showLoginLink = document.getElementById("show-login-link");
+        if (showLoginLink)
+          showLoginLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            showModal(loginContent);
+          });
+        const backToLoginLink = document.getElementById("back-to-login-link");
+        if (backToLoginLink)
+          backToLoginLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            showModal(loginContent);
+          });
+        const registerForm = document.getElementById("register-form");
+        if (registerForm)
+          registerForm.addEventListener("submit", handleRegister);
+        const loginForm = document.getElementById("login-form");
+        if (loginForm) loginForm.addEventListener("submit", handleLogin);
+        const forgotPasswordLink = document.getElementById(
+          "forgot-password-link"
+        );
+        if (forgotPasswordLink)
+          forgotPasswordLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            showModal(forgotPasswordContent);
+          });
+        const forgotPasswordForm = document.getElementById(
+          "forgot-password-form"
+        );
+        if (forgotPasswordForm)
+          forgotPasswordForm.addEventListener("submit", handleForgotPassword);
+        const googleSigninBtn = document.getElementById("google-signin-btn");
+        if (googleSigninBtn)
+          googleSigninBtn.addEventListener("click", handleGoogleSignIn);
+        const guestSigninBtn = document.getElementById("guest-signin-btn");
+        if (guestSigninBtn)
+          guestSigninBtn.addEventListener("click", handleGuestSignIn);
+      }
+
+      async function handleRegister(e) {
+        e.preventDefault();
+        const email = document.getElementById("register-email").value,
+          password = document.getElementById("register-password").value,
+          confirmPassword = document.getElementById(
+            "register-confirm-password"
+          ).value;
+        if (password !== confirmPassword) {
+          alert("Passwords do not match.");
+          return;
         }
+        try {
+          const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+          console.log("Registration successful:", userCredential.user);
+          hideModals();
+        } catch (error) {
+          alert(`Registration failed: ${error.message}`);
+        }
+      }
+      async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById("login-email").value,
+          password = document.getElementById("login-password").value,
+          rememberMe = document.getElementById("remember-me").checked;
+        try {
+          await setPersistence(
+            auth,
+            rememberMe ? browserLocalPersistence : browserSessionPersistence
+          );
+          const userCredential = await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+          console.log("Login successful:", userCredential.user);
+          hideModals();
+        } catch (error) {
+          alert(`Login failed: ${error.message}`);
+        }
+      }
+      async function handleForgotPassword(e) {
+        e.preventDefault();
+        const email = document.getElementById("forgot-email").value;
+        try {
+          await sendPasswordResetEmail(auth, email);
+          alert("Password reset email sent! Please check your inbox.");
+          hideModals();
+        } catch (error) {
+          alert(`Failed to send reset email: ${error.message}`);
+        }
+      }
+      async function handleGoogleSignIn() {
+        try {
+          const result = await signInWithPopup(auth, googleProvider);
+          console.log("Google Sign-In successful:", result.user);
+          hideModals();
+        } catch (error) {
+          console.error("Google Sign-In failed:", error);
+          alert(`Google Sign-In failed: ${error.message}`);
+        }
+      }
+      async function handleGuestSignIn() {
+        try {
+          const userCredential = await signInAnonymously(auth);
+          console.log("Signed in as guest:", userCredential.user);
+          hideModals();
+        } catch (error) {
+          console.error("Guest Sign-In failed:", error);
+          alert(`Guest Sign-In failed: ${error.message}`);
+        }
+      }
 
-        async function handleRegister(e) { e.preventDefault(); const email = document.getElementById('register-email').value, password = document.getElementById('register-password').value, confirmPassword = document.getElementById('register-confirm-password').value; if (password !== confirmPassword) { alert("Passwords do not match."); return; } try { const userCredential = await createUserWithEmailAndPassword(auth, email, password); console.log("Registration successful:", userCredential.user); hideModals(); } catch (error) { alert(`Registration failed: ${error.message}`); } }
-        async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('login-email').value, password = document.getElementById('login-password').value, rememberMe = document.getElementById('remember-me').checked; try { await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence); const userCredential = await signInWithEmailAndPassword(auth, email, password); console.log("Login successful:", userCredential.user); hideModals(); } catch (error) { alert(`Login failed: ${error.message}`); } }
-        async function handleForgotPassword(e) { e.preventDefault(); const email = document.getElementById('forgot-email').value; try { await sendPasswordResetEmail(auth, email); alert('Password reset email sent! Please check your inbox.'); hideModals(); } catch (error) { alert(`Failed to send reset email: ${error.message}`); } }
-        async function handleGoogleSignIn() { try { const result = await signInWithPopup(auth, googleProvider); console.log("Google Sign-In successful:", result.user); hideModals(); } catch (error) { console.error("Google Sign-In failed:", error); alert(`Google Sign-In failed: ${error.message}`); } }
-        async function handleGuestSignIn() { try { const userCredential = await signInAnonymously(auth); console.log("Signed in as guest:", userCredential.user); hideModals(); } catch (error) { console.error("Guest Sign-In failed:", error); alert(`Guest Sign-In failed: ${error.message}`); } }
-        
-        loginRegisterBtn.addEventListener('click', () => showModal(loginContent));
-        logoutIcon.addEventListener('click', async () => { try { await signOut(auth); console.log("Logout successful."); } catch (error) { console.error("Logout failed:", error); } });
+      loginRegisterBtn.addEventListener("click", () => showModal(loginContent));
 
-        // --- LEVEL 1: CONTENT & GAME LOGIC (from index1.html) ---
-        const contentLibrary = {
-            javascript: {
-                title: "Functions and Methods",
-                modules: [
-                    {
-                        title: "Function Basics", icon: "function-square",
-                        quiz: {
-                            questions: [
-                                { type: 'multiple-choice', question: "What is the primary keyword to declare a function?", options: ["method", "function", "def", "sub"], answer: "function", explanation: "The `function` keyword is used to define a function in JavaScript, which can then be called elsewhere in the code." },
-                                { type: 'code-correction', question: "This function is missing something to send its result back. Correct it.", code: "function multiply(a, b) { a * b; }", answer: "function multiply(a, b) { return a * b; }", explanation: "The `return` statement is necessary for a function to output a value. Without it, the function returns `undefined`." },
-                                { type: 'multiple-choice', question: "In `function greet(name)`, `name` is a...?", options: ["Argument", "Variable", "Parameter", "Constant"], answer: "Parameter", explanation: "Parameters are placeholders for the data that a function expects to receive. Arguments are the actual values passed in when the function is called." },
-                                { type: 'fill-in-the-blank', question: "A function assigned to a variable is known as a function `_________`.", answer: "expression", explanation: "A function expression allows a function to be stored in a variable, which can be useful for passing functions as arguments to other functions.", flash: true, suggestions: ['declaration', 'statement', 'expression', 'type'] },
-                                { type: 'multiple-choice', question: "What is the correct way to call the function `doSomething`?", options: ["call doSomething", "doSomething", "doSomething()", "run doSomething()"], answer: "doSomething()", explanation: "To execute or 'call' a function, you use its name followed by parentheses `()`." },
-                                { type: 'multiple-choice', question: "A function without a name is called an ________ function.", options: ["empty", "unnamed", "void", "anonymous"], answer: "anonymous", explanation: "Anonymous functions are often used as arguments to other functions (callbacks) or in function expressions." },
-                                { type: 'drag-and-drop', question: "Arrange these parts to create a function that returns the string 'Hi'.", items: [{ id: 'd1', text: 'function sayHi()' }, { id: 'd2', text: "{ return 'Hi'; }" }], targets: [{ id: 't1', text: 'Part 1' }, { id: 't2', text: 'Part 2' }], matches: { d1: 't1', d2: 't2' }, explanation: "A proper function declaration starts with the `function` keyword, its name, parentheses, and a body enclosed in curly braces." },
-                            ]
-                        }
-                    },
-                    {
-                        title: "Scope & Hoisting", icon: "target",
-                        quiz: {
-                            questions: [
-                                { type: 'multiple-choice', question: "A variable declared outside any function has what kind of scope?", options: ["Local", "Function", "Global", "Block"], answer: "Global", explanation: "Global variables can be accessed from anywhere in your code, which can sometimes lead to unexpected behavior." },
-                                { type: 'multiple-choice', question: "Variables declared with `let` and `const` have _______ scope.", options: ["Function", "Block", "Global", "Object"], answer: "Block", explanation: "Block scope means the variable is confined to the block (`{...}`) in which it's defined, like inside an `if` statement or a `for` loop." },
-                                { type: 'multiple-choice', question: "What is hoisting?", options: ["Lifting a function to the top of the file", "JavaScript's default behavior of moving declarations to the top of the current scope", "An error that occurs when a variable is used before declaration", "A way to optimize code"], answer: "JavaScript's default behavior of moving declarations to the top of the current scope", explanation: "Function declarations are fully hoisted, but variables declared with `var` are hoisted with a value of `undefined`." },
-                                { type: 'code-correction', question: "Due to hoisting, what will `console.log(x)` show before its declaration? Fix the code so it works as expected.", code: "console.log(x);\nvar x = 5;", answer: "var x = 5;\nconsole.log(x);", explanation: "While `var x` is hoisted, its assignment (`= 5`) is not. So, `console.log(x)` would print `undefined`. The declaration must come before access." },
-                                { type: 'fill-in-the-blank', question: "The area between a block-scoped variable's entry into scope and its declaration is called the `Temporal ____ ____`.", answer: "Dead Zone", explanation: "In the Temporal Dead Zone (TDZ), the variable cannot be accessed. This prevents errors that were common with `var`.", flash: true, suggestions: ["Danger Zone", "Error Zone", "Dead Zone", "Null Zone"]},
-                                { type: 'multiple-choice', question: "Which type of function is NOT hoisted?", options: ["Function Declarations", "Function Expressions", "Arrow Functions", "Both B and C"], answer: "Both B and C", explanation: "Function expressions and arrow functions are assigned to variables, and only the variable declaration (`var`, `let`, `const`) is hoisted, not the function body itself." },
-                                { type: 'multiple-choice', question: "Can a function defined inside another function access the outer function's variables?", options: ["Yes, this is called lexical scoping", "No, they are in different scopes", "Only if the outer variable is global", "Only with the `return` keyword"], answer: "Yes, this is called lexical scoping", explanation: "Lexical (or static) scope means that a function's scope is determined by its location within the source code." },
-                            ]
-                        }
-                    },
-                    {
-                        title: "Arrow Functions & 'this'", icon: "mouse-pointer-click",
-                        quiz: {
-                            questions: [
-                                { type: 'multiple-choice', question: "What is the correct syntax for a basic arrow function?", options: ["=> {}", "() => {}", "-> {}", "function => {}"], answer: "() => {}", explanation: "The core syntax for an arrow function is `(parameters) => { statements }`." },
-                                { type: 'code-correction', question: "Convert this function expression to an arrow function.", code: "const add = function(a, b) {\n  return a + b;\n};", answer: "const add = (a, b) => a + b;", explanation: "Arrow functions with a single return statement can use a concise body without the `return` keyword or curly braces." },
-                                { type: 'multiple-choice', question: "How does an arrow function handle the `this` keyword?", options: ["It has its own `this`", "It doesn't have `this`", "It inherits `this` from the parent scope (lexical `this`)", "It always refers to the global object"], answer: "It inherits `this` from the parent scope (lexical `this`)", explanation: "This is a key difference. Traditional functions get their own `this` depending on how they're called, while arrow functions 'lexically' bind `this`." },
-                                { type: 'fill-in-the-blank', question: "If an arrow function has only one parameter, the `()` are _________.", answer: "optional", explanation: "For example, `x => x * 2` is a valid arrow function, which is shorter than `(x) => x * 2`.", flash: true, suggestions: ['required', 'forbidden', 'optional', 'recommended'] },
-                                { type: 'multiple-choice', question: "In which case is it generally a bad idea to use an arrow function?", options: ["As a callback for `.map()`", "For short, simple functions", "As a method in an object literal", "For asynchronous code"], answer: "As a method in an object literal", explanation: "Because arrow functions don't have their own `this`, using one as an object method will cause `this` to refer to the wrong context (e.g., the global object)." },
-                                { type: 'multiple-choice', question: "What is the purpose of the `.bind()` method?", options: ["To tie two functions together", "To set the value of `this` for a function, regardless of how it's called", "To copy a function", "To make a function an arrow function"], answer: "To set the value of `this` for a function, regardless of how it's called", explanation: "`.bind()` creates a new function that, when called, has its `this` keyword set to the provided value." },
-                                { type: 'drag-and-drop', question: "Match the concept to its correct `this` behavior.", items: [{ id: 'd1', text: 'Traditional Function' }, { id: 'd2', text: 'Arrow Function' }], targets: [{ id: 't1', text: 'Determined by how it is called' }, { id: 't2', text: 'Inherited from parent scope' }], matches: { d1: 't1', d2: 't2' }, explanation: "The dynamic `this` of traditional functions is a common source of bugs, which the lexical `this` of arrow functions helps to solve." },
-                            ]
-                        }
-                    },
-                    {
-                        title: "Callbacks & Higher-Order Functions", icon: "git-merge",
-                        quiz: {
-                            questions: [
-                                { type: 'multiple-choice', question: "What is a 'callback' function?", options: ["A function that calls another function", "A function passed as an argument to another function, to be executed later", "The last function to run in a script", "A function that can only be called once"], answer: "A function passed as an argument to another function, to be executed later", explanation: "Callbacks are the foundation of asynchronous behavior in JavaScript, used in event listeners, timers, and more." },
-                                { type: 'multiple-choice', question: "A function that accepts another function as an argument is called a...", options: ["Callback Function", "Super Function", "Higher-Order Function", "Master Function"], answer: "Higher-Order Function", explanation: "Functions like `.map()`, `.filter()`, and `.reduce()` are classic examples of higher-order functions because they take a function as an argument." },
-                                { type: 'code-correction', question: "This code should log 'Done!' after 1 second. Correct the `setTimeout` call.", code: "setTimeout(console.log('Done!'), 1000);", answer: "setTimeout(() => console.log('Done!'), 1000);", explanation: "`setTimeout` expects a function reference as its first argument. The original code immediately calls `console.log`, passing its return value (`undefined`) to `setTimeout`." },
-                                { type: 'fill-in-the-blank', question: "A function that 'remembers' the environment in which it was created is called a ________.", answer: "closure", explanation: "Closures give you access to an outer function’s scope from an inner function, even after the outer function has finished executing.", flash: true, suggestions: ['callback', 'promise', 'closure', 'snapshot'] },
-                                { type: 'multiple-choice', question: "Which of these is a built-in Higher-Order Function for arrays?", options: [".length", ".toString()", ".push()", ".filter()"], answer: ".filter()", explanation: "`.filter()` is a HOF because it takes a callback function that it uses to test each element of the array." },
-                                { type: 'multiple-choice', question: "Why are Higher-Order Functions useful?", options: ["They are faster than regular functions", "They help write more abstract, reusable, and composable code", "They are the only way to create objects", "They don't use memory"], answer: "They help write more abstract, reusable, and composable code", explanation: "They allow you to create flexible and generic functions that can be adapted with different callbacks, reducing code duplication." },
-                                { type: 'multiple-choice', question: "What is the role of the callback in an event listener like `btn.addEventListener('click', ...)`?", options: ["To define the event type", "To provide the function that runs when the event occurs", "To stop the event", "To count the number of clicks"], answer: "To provide the function that runs when the event occurs", explanation: "The event listener is a HOF that takes the event name and a callback function to execute whenever that event happens." },
-                            ]
-                        }
-                    }
+      // --- LEVEL 1: CONTENT & GAME LOGIC (from index1.html) ---
+      const contentLibrary = {
+        javascript: {
+          title: "Functions and Methods",
+          modules: [
+            {
+              title: "Function Basics",
+              icon: "function-square",
+              quiz: {
+                questions: [
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "What is the primary keyword to declare a function?",
+                    options: ["method", "function", "def", "sub"],
+                    answer: "function",
+                    explanation:
+                      "The `function` keyword is used to define a function in JavaScript, which can then be called elsewhere in the code.",
+                  },
+                  {
+                    type: "code-correction",
+                    question:
+                      "This function is missing something to send its result back. Correct it.",
+                    code: "function multiply(a, b) { a * b; }",
+                    answer: "function multiply(a, b) { return a * b; }",
+                    explanation:
+                      "The `return` statement is necessary for a function to output a value. Without it, the function returns `undefined`.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question: "In `function greet(name)`, `name` is a...?",
+                    options: ["Argument", "Variable", "Parameter", "Constant"],
+                    answer: "Parameter",
+                    explanation:
+                      "Parameters are placeholders for the data that a function expects to receive. Arguments are the actual values passed in when the function is called.",
+                  },
+                  {
+                    type: "fill-in-the-blank",
+                    question:
+                      "A function assigned to a variable is known as a function `_________`.",
+                    answer: "expression",
+                    explanation:
+                      "A function expression allows a function to be stored in a variable, which can be useful for passing functions as arguments to other functions.",
+                    flash: true,
+                    suggestions: [
+                      "declaration",
+                      "statement",
+                      "expression",
+                      "type",
+                    ],
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "What is the correct way to call the function `doSomething`?",
+                    options: [
+                      "call doSomething",
+                      "doSomething",
+                      "doSomething()",
+                      "run doSomething()",
+                    ],
+                    answer: "doSomething()",
+                    explanation:
+                      "To execute or 'call' a function, you use its name followed by parentheses `()`.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "A function without a name is called an ________ function.",
+                    options: ["empty", "unnamed", "void", "anonymous"],
+                    answer: "anonymous",
+                    explanation:
+                      "Anonymous functions are often used as arguments to other functions (callbacks) or in function expressions.",
+                  },
+                  {
+                    type: "drag-and-drop",
+                    question:
+                      "Arrange these parts to create a function that returns the string 'Hi'.",
+                    items: [
+                      { id: "d1", text: "function sayHi()" },
+                      { id: "d2", text: "{ return 'Hi'; }" },
+                    ],
+                    targets: [
+                      { id: "t1", text: "Part 1" },
+                      { id: "t2", text: "Part 2" },
+                    ],
+                    matches: { d1: "t1", d2: "t2" },
+                    explanation:
+                      "A proper function declaration starts with the `function` keyword, its name, parentheses, and a body enclosed in curly braces.",
+                  },
                 ],
-                finalExam: { 
-                    title: "Final Exam (Lvl 1)", 
-                    icon: "award", 
-                    quiz: { 
-                        questions: [
-                            { type: 'multiple-choice', question: "What does a function return if it doesn't have a `return` statement?", options: ["null", "0", "An error", "undefined"], answer: "undefined", explanation: "All functions in JavaScript return a value. If an explicit `return` is omitted, `undefined` is returned by default." },
-                            { type: 'code-correction', question: "This arrow function is trying to return an object, but it's incorrect. Fix the syntax.", code: "const user = () => { name: 'Alex' };", answer: "const user = () => ({ name: 'Alex' });", explanation: "To implicitly return an object literal from an arrow function, you must wrap the object in parentheses `()` to distinguish it from a function body's curly braces." },
-                            { type: 'multiple-choice', question: "In a browser, what is `this` inside a traditional function called from the global scope?", options: ["The function itself", "The `window` object", "null", "undefined"], answer: "The `window` object", explanation: "In non-strict mode, `this` defaults to the global object, which is `window` in browsers. In strict mode, it would be `undefined`." },
-                            { type: 'fill-in-the-blank', question: "Passing a function into `Array.prototype.map` is an example of using a `________`.", answer: "callback", explanation: "`.map()` is a higher-order function that executes the provided callback function once for each element in an array.", flash: true, suggestions: ['closure', 'callback', 'promise', 'hoist'] },
-                            { type: 'multiple-choice', question: "What is a key advantage of `const` over `var` for variable declaration?", options: ["`const` is hoisted", "`const` allows reassignment", "`const` respects block scope", "`const` can only be used for numbers"], answer: "`const` respects block scope", explanation: "Block scope (`const` and `let`) reduces bugs by limiting a variable's visibility to the block it was defined in, unlike `var` which is function-scoped." },
-                            { type: 'multiple-choice', question: "A function that returns another function is an example of a...", options: ["Callback", "Recursive Function", "Higher-Order Function", "Promise"], answer: "Higher-Order Function", explanation: "A higher-order function is one that either takes a function as an argument, returns a function, or both." },
-                            { type: 'drag-and-drop', question: "Match the term to its definition.", items: [{ id: 'd1', text: 'Hoisting' }, { id: 'd2', text: 'Scope' }], targets: [{ id: 't1', text: 'Moving declarations to the top' }, { id: 't2', text: 'Determines the accessibility of variables' }], matches: { d1: 't1', d2: 't2' }, explanation: "Scope defines where variables can be accessed, while hoisting is the mechanism that moves their declarations before code execution." },
-                        ] 
-                    } 
-                }
+              },
+            },
+            {
+              title: "Scope & Hoisting",
+              icon: "target",
+              quiz: {
+                questions: [
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "A variable declared outside any function has what kind of scope?",
+                    options: ["Local", "Function", "Global", "Block"],
+                    answer: "Global",
+                    explanation:
+                      "Global variables can be accessed from anywhere in your code, which can sometimes lead to unexpected behavior.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "Variables declared with `let` and `const` have _______ scope.",
+                    options: ["Function", "Block", "Global", "Object"],
+                    answer: "Block",
+                    explanation:
+                      "Block scope means the variable is confined to the block (`{...}`) in which it's defined, like inside an `if` statement or a `for` loop.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question: "What is hoisting?",
+                    options: [
+                      "Lifting a function to the top of the file",
+                      "JavaScript's default behavior of moving declarations to the top of the current scope",
+                      "An error that occurs when a variable is used before declaration",
+                      "A way to optimize code",
+                    ],
+                    answer:
+                      "JavaScript's default behavior of moving declarations to the top of the current scope",
+                    explanation:
+                      "Function declarations are fully hoisted, but variables declared with `var` are hoisted with a value of `undefined`.",
+                  },
+                  {
+                    type: "code-correction",
+                    question:
+                      "Due to hoisting, what will `console.log(x)` show before its declaration? Fix the code so it works as expected.",
+                    code: "console.log(x);\nvar x = 5;",
+                    answer: "var x = 5;\nconsole.log(x);",
+                    explanation:
+                      "While `var x` is hoisted, its assignment (`= 5`) is not. So, `console.log(x)` would print `undefined`. The declaration must come before access.",
+                  },
+                  {
+                    type: "fill-in-the-blank",
+                    question:
+                      "The area between a block-scoped variable's entry into scope and its declaration is called the `Temporal ____ ____`.",
+                    answer: "Dead Zone",
+                    explanation:
+                      "In the Temporal Dead Zone (TDZ), the variable cannot be accessed. This prevents errors that were common with `var`.",
+                    flash: true,
+                    suggestions: [
+                      "Danger Zone",
+                      "Error Zone",
+                      "Dead Zone",
+                      "Null Zone",
+                    ],
+                  },
+                  {
+                    type: "multiple-choice",
+                    question: "Which type of function is NOT hoisted?",
+                    options: [
+                      "Function Declarations",
+                      "Function Expressions",
+                      "Arrow Functions",
+                      "Both B and C",
+                    ],
+                    answer: "Both B and C",
+                    explanation:
+                      "Function expressions and arrow functions are assigned to variables, and only the variable declaration (`var`, `let`, `const`) is hoisted, not the function body itself.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "Can a function defined inside another function access the outer function's variables?",
+                    options: [
+                      "Yes, this is called lexical scoping",
+                      "No, they are in different scopes",
+                      "Only if the outer variable is global",
+                      "Only with the `return` keyword",
+                    ],
+                    answer: "Yes, this is called lexical scoping",
+                    explanation:
+                      "Lexical (or static) scope means that a function's scope is determined by its location within the source code.",
+                  },
+                ],
+              },
+            },
+            {
+              title: "Arrow Functions & 'this'",
+              icon: "mouse-pointer-click",
+              quiz: {
+                questions: [
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "What is the correct syntax for a basic arrow function?",
+                    options: ["=> {}", "() => {}", "-> {}", "function => {}"],
+                    answer: "() => {}",
+                    explanation:
+                      "The core syntax for an arrow function is `(parameters) => { statements }`.",
+                  },
+                  {
+                    type: "code-correction",
+                    question:
+                      "Convert this function expression to an arrow function.",
+                    code: "const add = function(a, b) {\n  return a + b;\n};",
+                    answer: "const add = (a, b) => a + b;",
+                    explanation:
+                      "Arrow functions with a single return statement can use a concise body without the `return` keyword or curly braces.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "How does an arrow function handle the `this` keyword?",
+                    options: [
+                      "It has its own `this`",
+                      "It doesn't have `this`",
+                      "It inherits `this` from the parent scope (lexical `this`)",
+                      "It always refers to the global object",
+                    ],
+                    answer:
+                      "It inherits `this` from the parent scope (lexical `this`)",
+                    explanation:
+                      "This is a key difference. Traditional functions get their own `this` depending on how they're called, while arrow functions 'lexically' bind `this`.",
+                  },
+                  {
+                    type: "fill-in-the-blank",
+                    question:
+                      "If an arrow function has only one parameter, the `()` are _________.",
+                    answer: "optional",
+                    explanation:
+                      "For example, `x => x * 2` is a valid arrow function, which is shorter than `(x) => x * 2`.",
+                    flash: true,
+                    suggestions: [
+                      "required",
+                      "forbidden",
+                      "optional",
+                      "recommended",
+                    ],
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "In which case is it generally a bad idea to use an arrow function?",
+                    options: [
+                      "As a callback for `.map()`",
+                      "For short, simple functions",
+                      "As a method in an object literal",
+                      "For asynchronous code",
+                    ],
+                    answer: "As a method in an object literal",
+                    explanation:
+                      "Because arrow functions don't have their own `this`, using one as an object method will cause `this` to refer to the wrong context (e.g., the global object).",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question: "What is the purpose of the `.bind()` method?",
+                    options: [
+                      "To tie two functions together",
+                      "To set the value of `this` for a function, regardless of how it's called",
+                      "To copy a function",
+                      "To make a function an arrow function",
+                    ],
+                    answer:
+                      "To set the value of `this` for a function, regardless of how it's called",
+                    explanation:
+                      "`.bind()` creates a new function that, when called, has its `this` keyword set to the provided value.",
+                  },
+                  {
+                    type: "drag-and-drop",
+                    question:
+                      "Match the concept to its correct `this` behavior.",
+                    items: [
+                      { id: "d1", text: "Traditional Function" },
+                      { id: "d2", text: "Arrow Function" },
+                    ],
+                    targets: [
+                      { id: "t1", text: "Determined by how it is called" },
+                      { id: "t2", text: "Inherited from parent scope" },
+                    ],
+                    matches: { d1: "t1", d2: "t2" },
+                    explanation:
+                      "The dynamic `this` of traditional functions is a common source of bugs, which the lexical `this` of arrow functions helps to solve.",
+                  },
+                ],
+              },
+            },
+            {
+              title: "Callbacks & Higher-Order Functions",
+              icon: "git-merge",
+              quiz: {
+                questions: [
+                  {
+                    type: "multiple-choice",
+                    question: "What is a 'callback' function?",
+                    options: [
+                      "A function that calls another function",
+                      "A function passed as an argument to another function, to be executed later",
+                      "The last function to run in a script",
+                      "A function that can only be called once",
+                    ],
+                    answer:
+                      "A function passed as an argument to another function, to be executed later",
+                    explanation:
+                      "Callbacks are the foundation of asynchronous behavior in JavaScript, used in event listeners, timers, and more.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "A function that accepts another function as an argument is called a...",
+                    options: [
+                      "Callback Function",
+                      "Super Function",
+                      "Higher-Order Function",
+                      "Master Function",
+                    ],
+                    answer: "Higher-Order Function",
+                    explanation:
+                      "Functions like `.map()`, `.filter()`, and `.reduce()` are classic examples of higher-order functions because they take a function as an argument.",
+                  },
+                  {
+                    type: "code-correction",
+                    question:
+                      "This code should log 'Done!' after 1 second. Correct the `setTimeout` call.",
+                    code: "setTimeout(console.log('Done!'), 1000);",
+                    answer: "setTimeout(() => console.log('Done!'), 1000);",
+                    explanation:
+                      "`setTimeout` expects a function reference as its first argument. The original code immediately calls `console.log`, passing its return value (`undefined`) to `setTimeout`.",
+                  },
+                  {
+                    type: "fill-in-the-blank",
+                    question:
+                      "A function that 'remembers' the environment in which it was created is called a ________.",
+                    answer: "closure",
+                    explanation:
+                      "Closures give you access to an outer function’s scope from an inner function, even after the outer function has finished executing.",
+                    flash: true,
+                    suggestions: ["callback", "promise", "closure", "snapshot"],
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "Which of these is a built-in Higher-Order Function for arrays?",
+                    options: [".length", ".toString()", ".push()", ".filter()"],
+                    answer: ".filter()",
+                    explanation:
+                      "`.filter()` is a HOF because it takes a callback function that it uses to test each element of the array.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question: "Why are Higher-Order Functions useful?",
+                    options: [
+                      "They are faster than regular functions",
+                      "They help write more abstract, reusable, and composable code",
+                      "They are the only way to create objects",
+                      "They don't use memory",
+                    ],
+                    answer:
+                      "They help write more abstract, reusable, and composable code",
+                    explanation:
+                      "They allow you to create flexible and generic functions that can be adapted with different callbacks, reducing code duplication.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "What is the role of the callback in an event listener like `btn.addEventListener('click', ...)`?",
+                    options: [
+                      "To define the event type",
+                      "To provide the function that runs when the event occurs",
+                      "To stop the event",
+                      "To count the number of clicks",
+                    ],
+                    answer:
+                      "To provide the function that runs when the event occurs",
+                    explanation:
+                      "The event listener is a HOF that takes the event name and a callback function to execute whenever that event happens.",
+                  },
+                ],
+              },
+            },
+          ],
+          finalExam: {
+            title: "Final Exam (Lvl 1)",
+            icon: "award",
+            quiz: {
+              questions: [
+                {
+                  type: "multiple-choice",
+                  question:
+                    "What does a function return if it doesn't have a `return` statement?",
+                  options: ["null", "0", "An error", "undefined"],
+                  answer: "undefined",
+                  explanation:
+                    "All functions in JavaScript return a value. If an explicit `return` is omitted, `undefined` is returned by default.",
+                },
+                {
+                  type: "code-correction",
+                  question:
+                    "This arrow function is trying to return an object, but it's incorrect. Fix the syntax.",
+                  code: "const user = () => { name: 'Alex' };",
+                  answer: "const user = () => ({ name: 'Alex' });",
+                  explanation:
+                    "To implicitly return an object literal from an arrow function, you must wrap the object in parentheses `()` to distinguish it from a function body's curly braces.",
+                },
+                {
+                  type: "multiple-choice",
+                  question:
+                    "In a browser, what is `this` inside a traditional function called from the global scope?",
+                  options: [
+                    "The function itself",
+                    "The `window` object",
+                    "null",
+                    "undefined",
+                  ],
+                  answer: "The `window` object",
+                  explanation:
+                    "In non-strict mode, `this` defaults to the global object, which is `window` in browsers. In strict mode, it would be `undefined`.",
+                },
+                {
+                  type: "fill-in-the-blank",
+                  question:
+                    "Passing a function into `Array.prototype.map` is an example of using a `________`.",
+                  answer: "callback",
+                  explanation:
+                    "`.map()` is a higher-order function that executes the provided callback function once for each element in an array.",
+                  flash: true,
+                  suggestions: ["closure", "callback", "promise", "hoist"],
+                },
+                {
+                  type: "multiple-choice",
+                  question:
+                    "What is a key advantage of `const` over `var` for variable declaration?",
+                  options: [
+                    "`const` is hoisted",
+                    "`const` allows reassignment",
+                    "`const` respects block scope",
+                    "`const` can only be used for numbers",
+                  ],
+                  answer: "`const` respects block scope",
+                  explanation:
+                    "Block scope (`const` and `let`) reduces bugs by limiting a variable's visibility to the block it was defined in, unlike `var` which is function-scoped.",
+                },
+                {
+                  type: "multiple-choice",
+                  question:
+                    "A function that returns another function is an example of a...",
+                  options: [
+                    "Callback",
+                    "Recursive Function",
+                    "Higher-Order Function",
+                    "Promise",
+                  ],
+                  answer: "Higher-Order Function",
+                  explanation:
+                    "A higher-order function is one that either takes a function as an argument, returns a function, or both.",
+                },
+                {
+                  type: "drag-and-drop",
+                  question: "Match the term to its definition.",
+                  items: [
+                    { id: "d1", text: "Hoisting" },
+                    { id: "d2", text: "Scope" },
+                  ],
+                  targets: [
+                    { id: "t1", text: "Moving declarations to the top" },
+                    {
+                      id: "t2",
+                      text: "Determines the accessibility of variables",
+                    },
+                  ],
+                  matches: { d1: "t1", d2: "t2" },
+                  explanation:
+                    "Scope defines where variables can be accessed, while hoisting is the mechanism that moves their declarations before code execution.",
+                },
+              ],
+            },
+          },
+        },
+      };
+
+      const SAVE_KEY = "pathfinderSaveData_level1"; // Use a unique key for local saves
+      const appState = {
+        currentScreen: "welcome",
+        userName: "",
+        learningPlan: null,
+        quizState: null,
+        achievements: new Set(),
+        flashTimerInterval: null,
+      };
+
+      // --- NEW UNIFIED SAVE/LOAD LOGIC ---
+      async function savePlayerState() {
+        try {
+          const stateToSave = {
+            ...appState,
+            achievements: [...appState.achievements], // Convert Set to Array for JSON
+          };
+          if (currentUser && !currentUser.isAnonymous) {
+            const userLevelRef = doc(
+              db,
+              "users",
+              currentUser.uid,
+              "levelProgress",
+              "level1"
+            );
+            await setDoc(userLevelRef, stateToSave, { merge: true });
+            console.log("Level 1 progress saved to Firebase.");
+          } else {
+            localStorage.setItem(SAVE_KEY, JSON.stringify(stateToSave));
+            console.log("Level 1 progress saved to Local Storage.");
+          }
+        } catch (e) {
+          console.error("Failed to save state:", e);
+        }
+      }
+
+      async function loadPlayerState() {
+        try {
+          let savedState = null;
+          if (currentUser && !currentUser.isAnonymous) {
+            console.log(
+              "Attempting to load Level 1 progress from Firebase for user:",
+              currentUser.uid
+            );
+            const userLevelRef = doc(
+              db,
+              "users",
+              currentUser.uid,
+              "levelProgress",
+              "level1"
+            );
+            const docSnap = await getDoc(userLevelRef);
+            if (docSnap.exists()) {
+              savedState = docSnap.data();
+              console.log("Level 1 progress loaded from Firebase.");
             }
+          } else {
+            const savedStateJSON = localStorage.getItem(SAVE_KEY);
+            if (savedStateJSON) {
+              savedState = JSON.parse(savedStateJSON);
+              console.log("Level 1 progress loaded from Local Storage.");
+            }
+          }
+
+          if (savedState) {
+            savedState.achievements = new Set(savedState.achievements); // Convert back to Set
+            return savedState;
+          }
+        } catch (e) {
+          console.error("Failed to load or parse state:", e);
+        }
+        console.log("No saved state found for Level 1.");
+        return null;
+      }
+
+      // --- Utils (from index1.html) ---
+      const shuffleArray = (array) => {
+        return [...array].sort(() => Math.random() - 0.5);
+      };
+      const calculateLevel = (xp) => ({
+        level: Math.floor(xp / 100) + 1,
+        nextLevelXp: (Math.floor(xp / 100) + 1) * 100,
+      });
+      function showXpAnimation() {
+        const activityContainer = document.getElementById("activity-container");
+        if (!activityContainer) return;
+        const xpEl = document.createElement("div");
+        xpEl.textContent = "+10 XP";
+        xpEl.className = "xp-popup";
+        activityContainer.appendChild(xpEl);
+        setTimeout(() => {
+          xpEl.remove();
+        }, 1500);
+      }
+
+      // --- UI Navigation & Setup (from index1.html) ---
+      function navigateTo(screenName) {
+        document
+          .querySelectorAll("[data-screen]")
+          .forEach((screen) => screen.classList.remove("active"));
+        const newScreen = document.querySelector(
+          `[data-screen="${screenName}"]`
+        );
+        if (newScreen) {
+          newScreen.classList.add("active");
+          newScreen.querySelector(".card, .p-4")?.classList.add("fade-in");
+          appState.currentScreen = screenName;
+        }
+      }
+
+      function startLearningPath() {
+        appState.userName = currentUser?.displayName || "Learner";
+        const planData = contentLibrary.javascript;
+        appState.learningPlan = {
+          ...planData,
+          progress: planData.modules.reduce(
+            (acc, _, index) => ({ ...acc, [`module_${index}`]: 0 }),
+            { finalExam: 0 }
+          ),
+          xp: 0,
         };
+        appState.achievements = new Set();
+        savePlayerState();
+        renderDashboard();
+        navigateTo("dashboard");
+      }
 
-        const SAVE_KEY = 'pathfinderSaveData_level1'; // Use a unique key for local saves
-        const appState = {
-            currentScreen: 'welcome',
-            userName: '',
-            learningPlan: null,
-            quizState: null,
-            achievements: new Set(),
-            flashTimerInterval: null,
-        };
+      // --- Dashboard and Activity Rendering (from index1.html) ---
+      function renderDashboard() {
+        const { learningPlan } = appState;
+        const userName =
+          appState.userName || currentUser?.displayName || "Learner";
+        if (!learningPlan) return;
+        const { level, nextLevelXp } = calculateLevel(learningPlan.xp);
+        const topNav = document.getElementById("top-nav");
 
-        // --- NEW UNIFIED SAVE/LOAD LOGIC ---
-        async function savePlayerState() {
-            try {
-                const stateToSave = {
-                    ...appState,
-                    achievements: [...appState.achievements], // Convert Set to Array for JSON
-                };
-                if (currentUser && !currentUser.isAnonymous) {
-                    const userLevelRef = doc(db, "users", currentUser.uid, "levelProgress", "level1");
-                    await setDoc(userLevelRef, stateToSave, { merge: true });
-                    console.log("Level 1 progress saved to Firebase.");
-                } else {
-                    localStorage.setItem(SAVE_KEY, JSON.stringify(stateToSave));
-                    console.log("Level 1 progress saved to Local Storage.");
-                }
-            } catch (e) {
-                console.error("Failed to save state:", e);
-            }
-        }
-
-        async function loadPlayerState() {
-            try {
-                let savedState = null;
-                if (currentUser && !currentUser.isAnonymous) {
-                    console.log("Attempting to load Level 1 progress from Firebase for user:", currentUser.uid);
-                    const userLevelRef = doc(db, "users", currentUser.uid, "levelProgress", "level1");
-                    const docSnap = await getDoc(userLevelRef);
-                    if (docSnap.exists()) {
-                        savedState = docSnap.data();
-                        console.log("Level 1 progress loaded from Firebase.");
-                    }
-                } else {
-                    const savedStateJSON = localStorage.getItem(SAVE_KEY);
-                    if (savedStateJSON) {
-                        savedState = JSON.parse(savedStateJSON);
-                        console.log("Level 1 progress loaded from Local Storage.");
-                    }
-                }
-                
-                if (savedState) {
-                    savedState.achievements = new Set(savedState.achievements); // Convert back to Set
-                    return savedState;
-                }
-            } catch (e) {
-                console.error("Failed to load or parse state:", e);
-            }
-            console.log("No saved state found for Level 1.");
-            return null;
-        }
-
-        // --- Utils (from index1.html) ---
-        const shuffleArray = (array) => { return [...array].sort(() => Math.random() - 0.5); };
-        const calculateLevel = (xp) => ({ level: Math.floor(xp / 100) + 1, nextLevelXp: (Math.floor(xp / 100) + 1) * 100 });
-        function showXpAnimation() { const activityContainer = document.getElementById('activity-container'); if (!activityContainer) return; const xpEl = document.createElement('div'); xpEl.textContent = '+10 XP'; xpEl.className = 'xp-popup'; activityContainer.appendChild(xpEl); setTimeout(() => { xpEl.remove(); }, 1500); }
-
-        // --- UI Navigation & Setup (from index1.html) ---
-        function navigateTo(screenName) {
-            document.querySelectorAll('[data-screen]').forEach(screen => screen.classList.remove('active'));
-            const newScreen = document.querySelector(`[data-screen="${screenName}"]`);
-            if (newScreen) {
-                newScreen.classList.add('active');
-                newScreen.querySelector('.card, .p-4')?.classList.add('fade-in');
-                appState.currentScreen = screenName;
-            }
-        }
-
-        function startLearningPath() {
-            appState.userName = currentUser?.displayName || "Learner";
-            const planData = contentLibrary.javascript;
-            appState.learningPlan = {
-                ...planData,
-                progress: planData.modules.reduce((acc, _, index) => ({ ...acc, [`module_${index}`]: 0 }), { finalExam: 0 }),
-                xp: 0,
-            };
-            appState.achievements = new Set();
-            savePlayerState();
-            renderDashboard();
-            navigateTo('dashboard');
-        }
-        
-        // --- Dashboard and Activity Rendering (from index1.html) ---
-        function renderDashboard() {
-            const { learningPlan } = appState;
-            const userName = appState.userName || (currentUser?.displayName || "Learner");
-            if (!learningPlan) return;
-            const {level, nextLevelXp} = calculateLevel(learningPlan.xp);
-            const topNav = document.getElementById('top-nav');
-
-            topNav.innerHTML = `
+        topNav.innerHTML = `
                 <div class="flex flex-wrap justify-between items-center gap-4">
                     <div>
                         <h1 class="text-2xl font-bold">Level 1: Functions and Methods</h1>
@@ -674,28 +1416,32 @@
                 </div>
             `;
 
-            renderProgressTracker();
-            renderAchievements();
-            showModuleList();
-            lucide.createIcons();
-        }
+        renderProgressTracker();
+        renderAchievements();
+        showModuleList();
+        lucide.createIcons();
+      }
 
-        function showModuleList() {
-            if (appState.quizState && appState.quizState.timerId) clearInterval(appState.quizState.timerId);
-            if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval);
-            appState.quizState = null;
-            
-            const { modules, finalExam, progress } = appState.learningPlan;
-             document.getElementById('activity-container').innerHTML = `
+      function showModuleList() {
+        if (appState.quizState && appState.quizState.timerId)
+          clearInterval(appState.quizState.timerId);
+        if (appState.flashTimerInterval)
+          clearInterval(appState.flashTimerInterval);
+        appState.quizState = null;
+
+        const { modules, finalExam, progress } = appState.learningPlan;
+        document.getElementById("activity-container").innerHTML = `
                 <h2 class="text-2xl font-bold mb-6">Level 1 Modules</h2>
                 <div class="space-y-4">
-                    ${modules.map((mod, i) => createModuleCard(mod, i)).join('')}
-                    ${createModuleCard(finalExam, 'finalExam', true)}
+                    ${modules
+                      .map((mod, i) => createModuleCard(mod, i))
+                      .join("")}
+                    ${createModuleCard(finalExam, "finalExam", true)}
                 </div>
             `;
-            
-            if (progress.finalExam > 0) {
-                 document.getElementById('activity-container').innerHTML += `
+
+        if (progress.finalExam > 0) {
+          document.getElementById("activity-container").innerHTML += `
                     <div class="mt-8 text-center fade-in">
                         <h3 class="text-2xl font-bold text-green-400">Level 1 Complete!</h3>
                         <p class="mt-2 text-gray-300">You've mastered functions and methods. The next challenge awaits.</p>
@@ -705,151 +1451,522 @@
                         </a>
                     </div>
                 `;
-            }
-
-            document.getElementById('activity-container').classList.add('fade-in');
-            lucide.createIcons();
         }
 
-        function createModuleCard(module, index, isExam = false) {
-             const progress = appState.learningPlan.progress;
-             const id = isExam ? 'finalExam' : `module_${index}`;
-             const isDone = progress[id] > 0;
+        document.getElementById("activity-container").classList.add("fade-in");
+        lucide.createIcons();
+      }
 
-            return `
-            <div class="card module-card !p-4 flex items-center gap-4 cursor-pointer ${isDone ? 'bg-green-500/20' : ''}" onclick="window.startActivity('${id}')">
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center ${isExam ? 'bg-yellow-500' : 'bg-teal-500'} text-white flex-shrink-0">
+      function createModuleCard(module, index, isExam = false) {
+        const progress = appState.learningPlan.progress;
+        const id = isExam ? "finalExam" : `module_${index}`;
+        const isDone = progress[id] > 0;
+
+        return `
+            <div class="card module-card !p-4 flex items-center gap-4 cursor-pointer ${
+              isDone ? "bg-green-500/20" : ""
+            }" onclick="window.startActivity('${id}')">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center ${
+                  isExam ? "bg-yellow-500" : "bg-teal-500"
+                } text-white flex-shrink-0">
                      <i data-lucide="${module.icon}"></i>
                 </div>
                 <div class="flex-grow">
                      <h3 class="text-xl font-bold">${module.title}</h3>
-                     <p class="text-sm text-gray-400">${module.quiz.questions.length} Questions</p>
+                     <p class="text-sm text-gray-400">${
+                       module.quiz.questions.length
+                     } Questions</p>
                 </div>
-                ${isDone ? '<i data-lucide="check-circle-2" class="w-8 h-8 text-green-400"></i>' : '<i data-lucide="chevron-right" class="w-8 h-8 text-gray-400"></i>'}
+                ${
+                  isDone
+                    ? '<i data-lucide="check-circle-2" class="w-8 h-8 text-green-400"></i>'
+                    : '<i data-lucide="chevron-right" class="w-8 h-8 text-gray-400"></i>'
+                }
             </div>
             `;
-        }
+      }
 
-        function renderProgressTracker() {
-            const { progress, modules, finalExam } = appState.learningPlan;
-            const tracker = document.getElementById('progress-tracker');
-            
-            const createTrackerItem = (id, icon, title, isDone) => `<div class="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/10 ${isDone ? 'opacity-50' : ''}" onclick="${isDone ? '' : `window.startActivity('${id}')`}"><div class="w-8 h-8 rounded-full flex items-center justify-center ${isDone ? 'bg-green-500' : 'bg-teal-500'} text-white"><i data-lucide="${isDone ? 'check' : icon}"></i></div><div><p class="font-semibold text-gray-200">${title}</p></div>${isDone ? '<i data-lucide="sparkles" class="w-5 h-5 text-yellow-400 ml-auto"></i>' : ''}</div>`;
+      function renderProgressTracker() {
+        const { progress, modules, finalExam } = appState.learningPlan;
+        const tracker = document.getElementById("progress-tracker");
 
-            let html = modules.map((mod, i) => createTrackerItem(`module_${i}`, mod.icon, mod.title, progress[`module_${i}`] > 0)).join('');
-            html += createTrackerItem('finalExam', finalExam.icon, finalExam.title, progress.finalExam > 0);
-            tracker.innerHTML = html;
-        }
+        const createTrackerItem = (id, icon, title, isDone) =>
+          `<div class="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/10 ${
+            isDone ? "opacity-50" : ""
+          }" onclick="${
+            isDone ? "" : `window.startActivity('${id}')`
+          }"><div class="w-8 h-8 rounded-full flex items-center justify-center ${
+            isDone ? "bg-green-500" : "bg-teal-500"
+          } text-white"><i data-lucide="${
+            isDone ? "check" : icon
+          }"></i></div><div><p class="font-semibold text-gray-200">${title}</p></div>${
+            isDone
+              ? '<i data-lucide="sparkles" class="w-5 h-5 text-yellow-400 ml-auto"></i>'
+              : ""
+          }</div>`;
 
-        // --- Achievements (from index1.html) ---
-        const allAchievements = {
-            functionCaller: { icon: 'phone-forwarded', title: 'Function Caller', description: 'Complete your first Functions module.' },
-            scopeMaster: { icon: 'scan-search', title: 'Scope Master', description: 'Get a perfect score on a Level 1 module.' },
-            hofHero: { icon: 'star', title: 'Higher-Order Hero', description: 'Complete the entire Functions and Methods path.' }
-        };
+        let html = modules
+          .map((mod, i) =>
+            createTrackerItem(
+              `module_${i}`,
+              mod.icon,
+              mod.title,
+              progress[`module_${i}`] > 0
+            )
+          )
+          .join("");
+        html += createTrackerItem(
+          "finalExam",
+          finalExam.icon,
+          finalExam.title,
+          progress.finalExam > 0
+        );
+        tracker.innerHTML = html;
+      }
 
-        function awardAchievement(id) {
-            if (appState.achievements.has(id)) return;
-            appState.achievements.add(id);
-            const achievement = allAchievements[id];
-            
-            const modal = document.getElementById('achievement-modal');
-            document.getElementById('modal-content-inner').innerHTML = `<i data-lucide="award" class="w-16 h-16 mx-auto text-yellow-400 mb-4"></i><h2 class="text-2xl font-bold">Achievement Unlocked!</h2><p class="mt-2 font-semibold text-gray-200">${achievement.title}</p><p class="text-sm text-gray-300">${achievement.description}</p><button class="btn mt-6" onclick="this.closest('.modal-overlay').classList.remove('visible')">Continue</button>`;
-            lucide.createIcons();
-            modal.classList.add('visible');
-            renderAchievements();
-            savePlayerState();
-        }
+      // --- Achievements (from index1.html) ---
+      const allAchievements = {
+        functionCaller: {
+          icon: "phone-forwarded",
+          title: "Function Caller",
+          description: "Complete your first Functions module.",
+        },
+        scopeMaster: {
+          icon: "scan-search",
+          title: "Scope Master",
+          description: "Get a perfect score on a Level 1 module.",
+        },
+        hofHero: {
+          icon: "star",
+          title: "Higher-Order Hero",
+          description: "Complete the entire Functions and Methods path.",
+        },
+      };
 
-        function renderAchievements() {
-            const barEl = document.getElementById('achievements-bar');
-            if (!barEl) return; 
+      function awardAchievement(id) {
+        if (appState.achievements.has(id)) return;
+        appState.achievements.add(id);
+        const achievement = allAchievements[id];
 
-            let html = '<h3 class="text-lg font-bold mr-2 text-gray-300 hidden md:block">Achievements</h3>';
-            
-            for (const id in allAchievements) {
-                const achievement = allAchievements[id];
-                const isEarned = appState.achievements.has(id);
-                
-                html += `
-                    <div class="achievement-icon ${isEarned ? '' : 'opacity-30'}">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center ${isEarned ? 'bg-yellow-400' : 'bg-gray-500'} text-white">
+        const modal = document.getElementById("achievement-modal");
+        document.getElementById(
+          "modal-content-inner"
+        ).innerHTML = `<i data-lucide="award" class="w-16 h-16 mx-auto text-yellow-400 mb-4"></i><h2 class="text-2xl font-bold">Achievement Unlocked!</h2><p class="mt-2 font-semibold text-gray-200">${achievement.title}</p><p class="text-sm text-gray-300">${achievement.description}</p><button class="btn mt-6" onclick="this.closest('.modal-overlay').classList.remove('visible')">Continue</button>`;
+        lucide.createIcons();
+        modal.classList.add("visible");
+        renderAchievements();
+        savePlayerState();
+      }
+
+      function renderAchievements() {
+        const barEl = document.getElementById("achievements-bar");
+        if (!barEl) return;
+
+        let html =
+          '<h3 class="text-lg font-bold mr-2 text-gray-300 hidden md:block">Achievements</h3>';
+
+        for (const id in allAchievements) {
+          const achievement = allAchievements[id];
+          const isEarned = appState.achievements.has(id);
+
+          html += `
+                    <div class="achievement-icon ${
+                      isEarned ? "" : "opacity-30"
+                    }">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center ${
+                          isEarned ? "bg-yellow-400" : "bg-gray-500"
+                        } text-white">
                             <i data-lucide="${achievement.icon}"></i>
                         </div>
                         <div class="tooltip">
-                            <span class="tooltip-title">${achievement.title}</span>
-                            <span class="tooltip-desc">${achievement.description}</span>
+                            <span class="tooltip-title">${
+                              achievement.title
+                            }</span>
+                            <span class="tooltip-desc">${
+                              achievement.description
+                            }</span>
                         </div>
                     </div>
                 `;
-            }
-            
-            barEl.innerHTML = html;
-            lucide.createIcons();
         }
-        
-        window.markComplete = (activityId, score) => {
-            if (appState.quizState && appState.quizState.timerId) clearInterval(appState.quizState.timerId);
-            if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval);
 
-            const oldXp = appState.learningPlan.xp;
-            const newXp = oldXp - (appState.learningPlan.progress[activityId] || 0) + score * 10;
-            appState.learningPlan.progress[activityId] = score * 10;
-            appState.learningPlan.xp = newXp;
+        barEl.innerHTML = html;
+        lucide.createIcons();
+      }
 
-            if (activityId !== 'finalExam') awardAchievement('functionCaller');
-            const module = activityId === 'finalExam' ? appState.learningPlan.finalExam : appState.learningPlan.modules[activityId.split('_')[1]];
-            if (score === module.quiz.questions.length) awardAchievement('scopeMaster');
-            const allDone = appState.learningPlan.modules.every((_, i) => appState.learningPlan.progress[`module_${i}`] > 0) && appState.learningPlan.progress.finalExam > 0;
-            if(allDone) awardAchievement('hofHero');
+      window.markComplete = (activityId, score) => {
+        if (appState.quizState && appState.quizState.timerId)
+          clearInterval(appState.quizState.timerId);
+        if (appState.flashTimerInterval)
+          clearInterval(appState.flashTimerInterval);
 
-            renderDashboard();
-            savePlayerState();
+        const oldXp = appState.learningPlan.xp;
+        const newXp =
+          oldXp -
+          (appState.learningPlan.progress[activityId] || 0) +
+          score * 10;
+        appState.learningPlan.progress[activityId] = score * 10;
+        appState.learningPlan.xp = newXp;
+
+        if (activityId !== "finalExam") awardAchievement("functionCaller");
+        const module =
+          activityId === "finalExam"
+            ? appState.learningPlan.finalExam
+            : appState.learningPlan.modules[activityId.split("_")[1]];
+        if (score === module.quiz.questions.length)
+          awardAchievement("scopeMaster");
+        const allDone =
+          appState.learningPlan.modules.every(
+            (_, i) => appState.learningPlan.progress[`module_${i}`] > 0
+          ) && appState.learningPlan.progress.finalExam > 0;
+        if (allDone) awardAchievement("hofHero");
+
+        renderDashboard();
+        savePlayerState();
+      };
+
+      // --- Quiz Logic (from index1.html) ---
+      window.startActivity = (activityId) => {
+        const isExam = activityId === "finalExam";
+        const moduleData = isExam
+          ? appState.learningPlan.finalExam
+          : appState.learningPlan.modules[activityId.split("_")[1]];
+        appState.quizState = {
+          activityId,
+          questions: shuffleArray(moduleData.quiz.questions),
+          currentIndex: 0,
+          score: 0,
+          timerId: null,
+          timeLeft: moduleData.quiz.questions.length * 30,
+        };
+        appState.quizState.timerId = setInterval(updateTimer, 1000);
+        renderQuizActivityQuestion();
+      };
+      function updateTimer() {
+        if (!appState.quizState) return;
+        appState.quizState.timeLeft--;
+        const timerEl = document.getElementById("quiz-timer");
+        if (timerEl) {
+          const m = Math.floor(appState.quizState.timeLeft / 60);
+          const s = appState.quizState.timeLeft % 60;
+          timerEl.textContent = `${m}:${s.toString().padStart(2, "0")}`;
         }
-        
-        // --- Quiz Logic (from index1.html) ---
-        window.startActivity = (activityId) => {
-            const isExam = activityId === 'finalExam';
-            const moduleData = isExam ? appState.learningPlan.finalExam : appState.learningPlan.modules[activityId.split('_')[1]];
-            appState.quizState = { activityId, questions: shuffleArray(moduleData.quiz.questions), currentIndex: 0, score: 0, timerId: null, timeLeft: moduleData.quiz.questions.length * 30 };
-            appState.quizState.timerId = setInterval(updateTimer, 1000);
-            renderQuizActivityQuestion();
+        if (appState.quizState.timeLeft <= 0) finishQuiz(true);
+      }
+      function finishQuiz(timesUp = false) {
+        if (!appState.quizState) return;
+        if (appState.quizState.timerId)
+          clearInterval(appState.quizState.timerId);
+        if (appState.flashTimerInterval)
+          clearInterval(appState.flashTimerInterval);
+        const activityContainer = document.getElementById("activity-container");
+        activityContainer.innerHTML = `<div class="text-center fade-in"><h2 class="text-2xl font-bold">${
+          timesUp ? "Time's Up!" : "Module Complete!"
+        }</h2><p class="text-lg mt-2 text-gray-300">You scored</p><p class="text-5xl font-bold text-teal-400 my-4">${
+          appState.quizState.score
+        } / ${
+          appState.quizState.questions.length
+        }</p><button onclick="window.markComplete('${
+          appState.quizState.activityId
+        }', ${appState.quizState.score})" class="btn">Continue</button></div>`;
+      }
+
+      function renderQuizActivityQuestion() {
+        if (appState.flashTimerInterval)
+          clearInterval(appState.flashTimerInterval);
+        const { quizState } = appState;
+        if (!quizState) return;
+        const quizData = quizState.questions[quizState.currentIndex];
+        const activityContainer = document.getElementById("activity-container");
+        let questionHTML = "",
+          flashHeaderHTML = "";
+
+        if (quizData.flash) {
+          flashHeaderHTML = `<div class="mb-4 p-3 rounded-lg bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center gap-4"><i data-lucide="zap" class="text-yellow-400 flash-indicator"></i><span class="font-semibold text-yellow-200">Flash Question!</span><span id="flash-timer" class="font-bold text-yellow-300 text-lg">15s</span></div>`;
         }
-        function updateTimer() { if (!appState.quizState) return; appState.quizState.timeLeft--; const timerEl = document.getElementById('quiz-timer'); if (timerEl) { const m = Math.floor(appState.quizState.timeLeft / 60); const s = appState.quizState.timeLeft % 60; timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`; } if (appState.quizState.timeLeft <= 0) finishQuiz(true); }
-        function finishQuiz(timesUp = false) { if (!appState.quizState) return; if (appState.quizState.timerId) clearInterval(appState.quizState.timerId); if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const activityContainer = document.getElementById('activity-container'); activityContainer.innerHTML = `<div class="text-center fade-in"><h2 class="text-2xl font-bold">${timesUp ? "Time's Up!" : "Module Complete!"}</h2><p class="text-lg mt-2 text-gray-300">You scored</p><p class="text-5xl font-bold text-teal-400 my-4">${appState.quizState.score} / ${appState.quizState.questions.length}</p><button onclick="window.markComplete('${appState.quizState.activityId}', ${appState.quizState.score})" class="btn">Continue</button></div>`; }
-        function renderQuizActivityQuestion() { if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const { quizState } = appState; if (!quizState) return; const quizData = quizState.questions[quizState.currentIndex]; const activityContainer = document.getElementById('activity-container'); let questionHTML = '', flashHeaderHTML = ''; if (quizData.flash) { flashHeaderHTML = `<div class="mb-4 p-3 rounded-lg bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center gap-4"><i data-lucide="zap" class="text-yellow-400 flash-indicator"></i><span class="font-semibold text-yellow-200">Flash Question!</span><span id="flash-timer" class="font-bold text-yellow-300 text-lg">15s</span></div>`; } if (quizData.type === 'multiple-choice') quizData.options = shuffleArray(quizData.options); switch(quizData.type) { case 'fill-in-the-blank': { let sHTML = ''; if (quizData.suggestions) { sHTML = `<datalist id="suggestions-list">${quizData.suggestions.map(s => `<option value="${s}"></option>`).join('')}</datalist>`; } const iHTML = `<input type="text" id="fill-in-blank-input" ${quizData.suggestions ? 'list="suggestions-list"' : ''} class="mx-2 p-1 border-b-2 border-teal-400 focus:outline-none focus:border-teal-500 bg-transparent text-white">`; questionHTML = `<p class="text-lg mb-6">${quizData.question.replace('______', iHTML).replace('____', iHTML)}</p>${sHTML}<button id="submit-fill-btn" class="btn">Submit</button>`; break; } case 'drag-and-drop': { questionHTML = `<p class="text-lg mb-6">${quizData.question}</p><div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Items</h4>${quizData.items.map(item => `<div id="${item.id}" draggable="true" class="drag-item p-3 rounded-lg">${item.text}</div>`).join('')}</div><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Targets</h4>${quizData.targets.map(target => `<div id="${target.id}" class="drop-target p-3 rounded-lg min-h-[50px]">${target.text}</div>`).join('')}</div></div><button id="submit-drag-btn" class="btn mt-6">Check Answer</button>`; break; } case 'code-correction': { questionHTML = `<p class="text-lg mb-4">${quizData.question}</p><pre class="bg-black/20 p-4 rounded-lg text-gray-400 text-sm mb-4"><code>${quizData.code}</code></pre><textarea id="code-correction-input" rows="3" class="w-full p-2 rounded-lg themed-input" placeholder="Enter corrected code here..."></textarea><button id="submit-code-btn" class="btn mt-4">Submit</button>`; break; } case 'multiple-choice': default: { questionHTML = `<p class="text-lg mb-6">${quizData.question}</p><div class="space-y-3">${quizData.options.map(opt => `<button class="w-full text-left p-4 rounded-lg quiz-act-option border-2 border-transparent hover:border-teal-400 bg-white/5 transition-colors" data-answer="${opt}">${opt}</button>`).join('')}</div>`; break; } } activityContainer.innerHTML = `<div class="fade-in"><div class="flex justify-between items-center mb-4"><button onclick="showModuleList()" class="text-sm text-teal-300 hover:text-teal-200">&larr; Back to Modules</button><div class="text-lg font-bold text-gray-300" id="quiz-timer"></div></div>${flashHeaderHTML}<h2 class="text-2xl font-bold mb-6">${quizState.questions[quizState.currentIndex].title || 'Question '+(quizState.currentIndex+1)}</h2><div id="question-content">${questionHTML}</div><div id="quiz-feedback-container" class="mt-6"></div></div>`; if (quizData.flash) { let t = 15; const ft = document.getElementById('flash-timer'); ft.textContent = `${t}s`; appState.flashTimerInterval = setInterval(() => { t--; ft.textContent = `${t}s`; if (t <= 0) { clearInterval(appState.flashTimerInterval); handleAnswer('__timeout__', quizData); } }, 1000); } setupQuestionEventListeners(quizData); lucide.createIcons(); }
-        function setupQuestionEventListeners(quizData) { switch(quizData.type) { case 'multiple-choice': document.querySelectorAll('.quiz-act-option').forEach(btn => btn.addEventListener('click', (e) => handleAnswer(e.target.dataset.answer, quizData))); break; case 'fill-in-the-blank': document.getElementById('submit-fill-btn').addEventListener('click', () => handleAnswer(document.getElementById('fill-in-blank-input').value, quizData)); document.getElementById('fill-in-blank-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('submit-fill-btn').click(); }); break; case 'drag-and-drop': let dId = null; document.querySelectorAll('.drag-item').forEach(i => i.addEventListener('dragstart', e => { dId = e.target.id; e.dataTransfer.setData('text/plain', e.target.id); })); document.querySelectorAll('.drop-target').forEach(t => { t.addEventListener('dragover', e => { e.preventDefault(); t.classList.add('drag-over'); }); t.addEventListener('dragleave', () => t.classList.remove('drag-over')); t.addEventListener('drop', e => { e.preventDefault(); t.classList.remove('drag-over'); const dItem = document.getElementById(dId); if (dItem && t.children.length === 0) { t.appendChild(dItem); dItem.style.cursor = 'default'; }}); }); document.getElementById('submit-drag-btn').addEventListener('click', () => { let isCorrect = Object.entries(quizData.matches).every(([iId, tId]) => document.getElementById(tId).querySelector(`#${iId}`)); handleAnswer(isCorrect, quizData); }); break; case 'code-correction': document.getElementById('submit-code-btn').addEventListener('click', () => handleAnswer(document.getElementById('code-correction-input').value, quizData)); break; } }
-        function handleAnswer(selectedAnswer, quizData) { if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const { quizState } = appState; let isCorrect = false, wasTimeout = selectedAnswer === '__timeout__'; if (!wasTimeout) { if (quizData.type === 'code-correction') { isCorrect = selectedAnswer.trim() === quizData.answer.trim(); } else if (typeof selectedAnswer === 'string') { isCorrect = selectedAnswer.trim().toLowerCase() === quizData.answer.trim().toLowerCase(); } else { isCorrect = selectedAnswer === true; } } if (isCorrect) { quizState.score++; showXpAnimation(); } const isLastQuestion = quizState.currentIndex === quizState.questions.length - 1; const feedbackContainer = document.getElementById('quiz-feedback-container'); let feedbackTitle = 'Correct!'; if (wasTimeout) feedbackTitle = "Time's Up!"; else if (!isCorrect) feedbackTitle = 'Not quite.'; feedbackContainer.innerHTML = `<div class="fade-in p-4 rounded-lg ${isCorrect ? 'bg-green-500/20' : 'bg-red-500/20'}"><p class="font-semibold ${isCorrect ? 'text-green-300' : 'text-red-300'}">${feedbackTitle}</p><p class="mt-2 text-sm ${isCorrect ? 'text-green-400' : 'text-red-400'}">${quizData.explanation}</p></div><button id="next-quiz-btn" class="btn mt-4">${isLastQuestion ? 'Finish Quiz' : 'Next Question'}</button>`; document.querySelectorAll('button, input, textarea').forEach(el => { if(el.id !== 'next-quiz-btn') el.disabled = true; }); document.getElementById('next-quiz-btn').addEventListener('click', () => { if (isLastQuestion) finishQuiz(); else { quizState.currentIndex++; renderQuizActivityQuestion(); } }); }
-        
-        // --- APP INITIALIZATION ---
-        async function initializePathfinderApp() {
-            const loadedState = await loadPlayerState();
-            if (loadedState && loadedState.learningPlan) {
-                Object.assign(appState, loadedState);
-                renderDashboard();
-                navigateTo('dashboard');
+
+        if (quizData.type === "multiple-choice") {
+          quizData.options = shuffleArray(quizData.options);
+        }
+
+        switch (quizData.type) {
+          case "fill-in-the-blank": {
+            const blankSpace = `<span class="inline-block border-b-2 border-gray-400 align-bottom w-32 mx-1"></span>`;
+            const questionText = quizData.question.replace(
+              /_{4,}/g,
+              blankSpace
+            ); // Replaces four or more underscores with a visual blank
+            questionHTML = `<p class="text-lg mb-6 leading-relaxed">${questionText}</p>`;
+
+            if (quizData.suggestions) {
+              // If suggestions exist, render them as clickable buttons
+              questionHTML += `<div class="mt-4 flex flex-wrap justify-center gap-3">${quizData.suggestions
+                .map(
+                  (opt) =>
+                    `<button class="btn quiz-act-option bg-white/5 hover:bg-white/10" data-answer="${opt}">${opt}</button>`
+                )
+                .join("")}</div>`;
             } else {
-                navigateTo('welcome');
+              // Otherwise, fall back to a simple text input field
+              questionHTML += `<div class="mt-4 flex gap-2 justify-center"><input type="text" id="fill-in-blank-input" placeholder="Type your answer" class="themed-input p-2 rounded-lg text-center"><button id="submit-fill-btn" class="btn">Submit</button></div>`;
             }
-            document.getElementById('start-learning-btn').addEventListener('click', startLearningPath);
+            break;
+          }
+          case "drag-and-drop": {
+            questionHTML = `<p class="text-lg mb-6">${
+              quizData.question
+            }</p><div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Items</h4>${quizData.items
+              .map(
+                (item) =>
+                  `<div id="${item.id}" draggable="true" class="drag-item p-3 rounded-lg">${item.text}</div>`
+              )
+              .join(
+                ""
+              )}</div><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Targets</h4>${quizData.targets
+              .map(
+                (target) =>
+                  `<div id="${target.id}" class="drop-target p-3 rounded-lg min-h-[50px]">${target.text}</div>`
+              )
+              .join(
+                ""
+              )}</div></div><button id="submit-drag-btn" class="btn mt-6">Check Answer</button>`;
+            break;
+          }
+          case "code-correction": {
+            questionHTML = `<p class="text-lg mb-4">${quizData.question}</p><pre class="bg-black/20 p-4 rounded-lg text-gray-400 text-sm mb-4"><code>${quizData.code}</code></pre><textarea id="code-correction-input" rows="3" class="w-full p-2 rounded-lg themed-input" placeholder="Enter corrected code here..."></textarea><button id="submit-code-btn" class="btn mt-4">Submit</button>`;
+            break;
+          }
+          case "multiple-choice":
+          default: {
+            questionHTML = `<p class="text-lg mb-6">${
+              quizData.question
+            }</p><div class="space-y-3">${quizData.options
+              .map(
+                (opt) =>
+                  `<button class="w-full text-left p-4 rounded-lg quiz-act-option border-2 border-transparent hover:border-teal-400 bg-white/5 transition-colors" data-answer="${opt}">${opt}</button>`
+              )
+              .join("")}</div>`;
+            break;
+          }
         }
+        activityContainer.innerHTML = `<div class="fade-in"><div class="flex justify-between items-center mb-4"><button onclick="showModuleList()" class="text-sm text-teal-300 hover:text-teal-200">&larr; Back to Modules</button><div class="text-lg font-bold text-gray-300" id="quiz-timer"></div></div>${flashHeaderHTML}<h2 class="text-2xl font-bold mb-6">${
+          quizState.questions[quizState.currentIndex].title ||
+          "Question " + (quizState.currentIndex + 1)
+        }</h2><div id="question-content">${questionHTML}</div><div id="quiz-feedback-container" class="mt-6"></div></div>`;
 
-        onAuthStateChanged(auth, async (user) => {
-            currentUser = user;
-            if (user) {
-                console.log("User is logged in:", user.displayName || user.email);
-                userDisplayName.textContent = user.displayName || user.email || `Guest-${user.uid.substring(0,5)}`;
-                userProfileBtn.classList.remove('hidden');
-                loginRegisterBtn.classList.add('hidden');
-            } else {
-                console.log("User is logged out.");
-                userProfileBtn.classList.add('hidden');
-                loginRegisterBtn.classList.remove('hidden');
+        if (quizData.flash) {
+          let t = 15;
+          const ft = document.getElementById("flash-timer");
+          ft.textContent = `${t}s`;
+          appState.flashTimerInterval = setInterval(() => {
+            t--;
+            ft.textContent = `${t}s`;
+            if (t <= 0) {
+              clearInterval(appState.flashTimerInterval);
+              handleAnswer("__timeout__", quizData);
             }
-            // Initialize or re-initialize the app with the current user state
-            initializePathfinderApp();
+          }, 1000);
+        }
+        setupQuestionEventListeners(quizData);
+        lucide.createIcons();
+      }
+
+      function setupQuestionEventListeners(quizData) {
+        switch (quizData.type) {
+          case "multiple-choice":
+            document
+              .querySelectorAll(".quiz-act-option")
+              .forEach((btn) =>
+                btn.addEventListener("click", (e) =>
+                  handleAnswer(e.target.dataset.answer, quizData)
+                )
+              );
+            break;
+          case "fill-in-the-blank":
+            // Handles both new suggestion buttons and the text input fallback
+            document
+              .querySelectorAll(".quiz-act-option")
+              .forEach((btn) =>
+                btn.addEventListener("click", (e) =>
+                  handleAnswer(e.target.dataset.answer, quizData)
+                )
+              );
+
+            const fillSubmitBtn = document.getElementById("submit-fill-btn");
+            if (fillSubmitBtn) {
+              fillSubmitBtn.addEventListener("click", () =>
+                handleAnswer(
+                  document.getElementById("fill-in-blank-input").value,
+                  quizData
+                )
+              );
+              document
+                .getElementById("fill-in-blank-input")
+                .addEventListener("keypress", (e) => {
+                  if (e.key === "Enter")
+                    document.getElementById("submit-fill-btn").click();
+                });
+            }
+            break;
+          case "drag-and-drop":
+            let dId = null;
+            document.querySelectorAll(".drag-item").forEach((i) =>
+              i.addEventListener("dragstart", (e) => {
+                dId = e.target.id;
+                e.dataTransfer.setData("text/plain", e.target.id);
+              })
+            );
+            document.querySelectorAll(".drop-target").forEach((t) => {
+              t.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                t.classList.add("drag-over");
+              });
+              t.addEventListener("dragleave", () =>
+                t.classList.remove("drag-over")
+              );
+              t.addEventListener("drop", (e) => {
+                e.preventDefault();
+                t.classList.remove("drag-over");
+                const dItem = document.getElementById(dId);
+                if (dItem && t.children.length === 0) {
+                  t.appendChild(dItem);
+                  dItem.style.cursor = "default";
+                }
+              });
+            });
+            document
+              .getElementById("submit-drag-btn")
+              .addEventListener("click", () => {
+                let isCorrect = Object.entries(quizData.matches).every(
+                  ([iId, tId]) =>
+                    document.getElementById(tId).querySelector(`#${iId}`)
+                );
+                handleAnswer(isCorrect, quizData);
+              });
+            break;
+          case "code-correction":
+            document
+              .getElementById("submit-code-btn")
+              .addEventListener("click", () =>
+                handleAnswer(
+                  document.getElementById("code-correction-input").value,
+                  quizData
+                )
+              );
+            break;
+        }
+      }
+      function handleAnswer(selectedAnswer, quizData) {
+        if (appState.flashTimerInterval)
+          clearInterval(appState.flashTimerInterval);
+        const { quizState } = appState;
+        let isCorrect = false,
+          wasTimeout = selectedAnswer === "__timeout__";
+        if (!wasTimeout) {
+          if (quizData.type === "code-correction") {
+            isCorrect = selectedAnswer.trim() === quizData.answer.trim();
+          } else if (typeof selectedAnswer === "string") {
+            isCorrect =
+              selectedAnswer.trim().toLowerCase() ===
+              quizData.answer.trim().toLowerCase();
+          } else {
+            isCorrect = selectedAnswer === true;
+          }
+        }
+        if (isCorrect) {
+          quizState.score++;
+          showXpAnimation();
+        }
+        const isLastQuestion =
+          quizState.currentIndex === quizState.questions.length - 1;
+        const feedbackContainer = document.getElementById(
+          "quiz-feedback-container"
+        );
+        let feedbackTitle = "Correct!";
+        if (wasTimeout) feedbackTitle = "Time's Up!";
+        else if (!isCorrect) feedbackTitle = "Not quite.";
+        feedbackContainer.innerHTML = `<div class="fade-in p-4 rounded-lg ${
+          isCorrect ? "bg-green-500/20" : "bg-red-500/20"
+        }"><p class="font-semibold ${
+          isCorrect ? "text-green-300" : "text-red-300"
+        }">${feedbackTitle}</p><p class="mt-2 text-sm ${
+          isCorrect ? "text-green-400" : "text-red-400"
+        }">${
+          quizData.explanation
+        }</p></div><button id="next-quiz-btn" class="btn mt-4">${
+          isLastQuestion ? "Finish Quiz" : "Next Question"
+        }</button>`;
+        document.querySelectorAll("button, input, textarea").forEach((el) => {
+          if (el.id !== "next-quiz-btn") el.disabled = true;
         });
-        
+        document
+          .getElementById("next-quiz-btn")
+          .addEventListener("click", () => {
+            if (isLastQuestion) finishQuiz();
+            else {
+              quizState.currentIndex++;
+              renderQuizActivityQuestion();
+            }
+          });
+      }
+
+      // --- APP INITIALIZATION ---
+      async function initializePathfinderApp() {
+        const loadedState = await loadPlayerState();
+        if (loadedState && loadedState.learningPlan) {
+          Object.assign(appState, loadedState);
+          renderDashboard();
+          navigateTo("dashboard");
+        } else {
+          navigateTo("welcome");
+        }
+        document
+          .getElementById("start-learning-btn")
+          .addEventListener("click", startLearningPath);
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
+        if (user) {
+          console.log("User is logged in:", user.displayName || user.email);
+          userDisplayName.textContent =
+            user.displayName ||
+            user.email ||
+            `Guest-${user.uid.substring(0, 5)}`;
+          userProfileBtn.classList.remove("hidden");
+          loginRegisterBtn.classList.add("hidden");
+
+          // MOVED: Attach logout listener here to ensure it's always active when a user is logged in
+          document
+            .getElementById("logout-btn")
+            .addEventListener("click", async () => {
+              closeSidebar();
+              try {
+                // 1. Save current progress to Local Storage for a seamless transition
+                if (appState.learningPlan) {
+                  const stateToSave = {
+                    ...appState,
+                    achievements: [...appState.achievements],
+                  };
+                  localStorage.setItem(SAVE_KEY, JSON.stringify(stateToSave));
+                  console.log("Progress saved locally before logout.");
+                }
+
+                // 2. Sign out from Firebase
+                await signOut(auth);
+                console.log("Logout successful.");
+              } catch (error) {
+                console.error("Logout failed:", error);
+              }
+            });
+        } else {
+          console.log("User is logged out.");
+          userProfileBtn.classList.add("hidden");
+          loginRegisterBtn.classList.remove("hidden");
+        }
+        // Initialize or re-initialize the app with the current user state
+        initializePathfinderApp();
+      });
     </script>
-</body>
+  </body>
 </html>
