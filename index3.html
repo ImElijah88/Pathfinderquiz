@@ -1,386 +1,607 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pathfinder - JS Path (Level 3)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(-45deg, #be123c, #b91c1c, #991b1b, #c2410c);
-            background-size: 400% 400%;
-            animation: gradientBG 25s ease infinite;
-            color: #d1d5db;
-        }
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(-45deg, #be123c, #b91c1c, #991b1b, #c2410c);
+        background-size: 400% 400%;
+        animation: gradientBG 25s ease infinite;
+        color: #d1d5db;
+      }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
         }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
 
-        .card {
-            background: rgba(15, 23, 42, 0.5);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.5rem;
-            padding: 2rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        .module-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-            background: rgba(15, 23, 42, 0.7);
-        }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            font-weight: 600;
-            transition: all 0.2s ease-in-out;
-            cursor: pointer;
-            border: 1px solid rgba(248, 113, 113, 0.3);
-            background: rgba(248, 113, 113, 0.1);
-            color: #fca5a5;
-        }
-        .btn:hover, .btn:focus {
-            background: rgba(248, 113, 113, 0.2);
-            box-shadow: 0 0 15px rgba(248, 113, 113, 0.3);
-        }
-        h1, h2, h3, h4 {
-            color: white;
-        }
-        [data-screen] { display: none; }
-        [data-screen].active { display: block; }
+      .card {
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        position: relative;
+      }
+      .module-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2),
+          0 10px 10px -5px rgba(0, 0, 0, 0.1);
+        background: rgba(15, 23, 42, 0.7);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+        border: 1px solid rgba(248, 113, 113, 0.3);
+        background: rgba(248, 113, 113, 0.1);
+        color: #fca5a5;
+      }
+      .btn:hover,
+      .btn:focus {
+        background: rgba(248, 113, 113, 0.2);
+        box-shadow: 0 0 15px rgba(248, 113, 113, 0.3);
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        color: white;
+      }
+      [data-screen] {
+        display: none;
+      }
+      [data-screen].active {
+        display: block;
+      }
 
-        /* Drag and Drop Styles */
-        .drag-item { cursor: grab; user-select: none; background-color: rgba(255, 255, 255, 0.1); color: white; }
-        .drop-target { border: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color 0.2s ease; }
-        .drop-target.drag-over { background-color: rgba(255, 255, 255, 0.1); border-color: #f87171; }
+      /* Drag and Drop Styles */
+      .drag-item {
+        cursor: grab;
+        user-select: none;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+      .drop-target {
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        transition: background-color 0.2s ease;
+      }
+      .drop-target.drag-over {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: #f87171;
+      }
 
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+      /* Animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
-        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        
-        @keyframes xp-animation {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-60px) scale(1.1); opacity: 0; }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .xp-popup {
-            position: absolute;
-            top: 2rem;
-            right: 2rem;
-            padding: 4px 12px;
-            background-color: #f87171;
-            color: white;
-            border-radius: 9999px;
-            font-weight: bold;
-            animation: xp-animation 1.5s ease-out forwards;
-            z-index: 100;
-            pointer-events: none;
-        }
+      }
+      .fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+      }
 
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex; align-items: center; justify-content: center; z-index: 50;
-            opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+      @keyframes xp-animation {
+        0% {
+          transform: translateY(0) scale(1);
+          opacity: 1;
         }
-        .modal-overlay.visible { opacity: 1; visibility: visible; }
-        .modal-content { transform: scale(0.9); transition: transform 0.3s ease; }
-        .modal-overlay.visible .modal-content { transform: scale(1); }
+        100% {
+          transform: translateY(-60px) scale(1.1);
+          opacity: 0;
+        }
+      }
+      .xp-popup {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        padding: 4px 12px;
+        background-color: #f87171;
+        color: white;
+        border-radius: 9999px;
+        font-weight: bold;
+        animation: xp-animation 1.5s ease-out forwards;
+        z-index: 100;
+        pointer-events: none;
+      }
 
-        /* Flash Question Styles */
-        @keyframes pulse { 50% { opacity: .7; } }
-        .flash-indicator { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+      /* Modal Styles */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+      .modal-overlay.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+      .modal-content {
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+      }
+      .modal-overlay.visible .modal-content {
+        transform: scale(1);
+      }
 
-        /* Custom input style for the new theme */
-        .themed-input {
-            background-color: rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            font-family: monospace;
+      /* Flash Question Styles */
+      @keyframes pulse {
+        50% {
+          opacity: 0.7;
         }
-        .themed-input:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.5);
-            border-color: #f87171;
-        }
-        .themed-input::placeholder {
-            color: #9ca3af;
-        }
-        
-        /* Achievement Tooltip Styles */
-        .achievement-icon {
-            position: relative;
-            cursor: pointer;
-        }
-        .tooltip {
-            visibility: hidden;
-            opacity: 0;
-            position: absolute;
-            bottom: 125%; /* Position above the icon */
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0,0,0,0.8);
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px;
-            z-index: 10;
-            transition: opacity 0.3s;
-            width: 200px;
-            font-size: 0.875rem;
-            pointer-events: none;
-        }
-        .achievement-icon:hover .tooltip {
-            visibility: visible;
-            opacity: 1;
-        }
-        .tooltip-title {
-            font-weight: bold;
-            display: block;
-        }
-        .tooltip-desc {
-            font-size: 0.75rem;
-            display: block;
-            margin-top: 4px;
-            color: #ccc;
-        }
+      }
+      .flash-indicator {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
 
-        /* Sidebar, Modal, and other UI component styles FROM INDEX.HTML */
-        #sidebar {
-            transition: transform 0.3s ease-in-out;
-            transform: translateX(-100%);
-            z-index: 100;
-        }
-        #sidebar.open {
-            transform: translateX(0);
-        }
-        #overlay {
-            transition: opacity 0.3s ease-in-out;
-            z-index: 90;
-        }
-        .modal {
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-            z-index: 110;
-        }
-        .modal-content {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .themed-input {
-            background-color: rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-        }
-        .themed-input:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.5);
-            border-color: #f87171;
-        }
+      /* Custom input style for the new theme */
+      .themed-input {
+        background-color: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        font-family: monospace;
+      }
+      .themed-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.5);
+        border-color: #f87171;
+      }
+      .themed-input::placeholder {
+        color: #9ca3af;
+      }
+
+      /* Achievement Tooltip Styles */
+      .achievement-icon {
+        position: relative;
+        cursor: pointer;
+      }
+      .tooltip {
+        visibility: hidden;
+        opacity: 0;
+        position: absolute;
+        bottom: 125%; /* Position above the icon */
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px;
+        z-index: 10;
+        transition: opacity 0.3s;
+        width: 200px;
+        font-size: 0.875rem;
+        pointer-events: none;
+      }
+      .achievement-icon:hover .tooltip {
+        visibility: visible;
+        opacity: 1;
+      }
+      .tooltip-title {
+        font-weight: bold;
+        display: block;
+      }
+      .tooltip-desc {
+        font-size: 0.75rem;
+        display: block;
+        margin-top: 4px;
+        color: #ccc;
+      }
+
+      /* Sidebar, Modal, and other UI component styles FROM INDEX.HTML */
+      #sidebar {
+        transition: transform 0.3s ease-in-out;
+        transform: translateX(-100%);
+        z-index: 100;
+      }
+      #sidebar.open {
+        transform: translateX(0);
+      }
+      #overlay {
+        transition: opacity 0.3s ease-in-out;
+        z-index: 90;
+      }
+      .modal {
+        transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        z-index: 110;
+      }
+      .modal-content {
+        background: rgba(17, 24, 39, 0.8);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .themed-input {
+        background-color: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+      }
+      .themed-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.5);
+        border-color: #f87171;
+      }
     </style>
-</head>
-<body class="antialiased">
-
+  </head>
+  <body class="antialiased">
     <!-- Sidebar and Auth Modals Wrapper FROM INDEX.HTML -->
     <div>
-        <!-- Hover zone to activate sidebar -->
-        <div id="sidebar-hover-zone" class="fixed top-0 left-0 h-full z-50" style="width: 100px;"></div>
+      <!-- Hover zone to activate sidebar -->
+      <div
+        id="sidebar-hover-zone"
+        class="fixed top-0 left-0 h-full z-50"
+        style="width: 70px"
+      ></div>
 
-        <!-- Slide-out Sidebar -->
-        <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 to-slate-800 border-r border-gray-700/50 shadow-2xl p-6 flex flex-col">
-            <!-- Header -->
-            <div class="flex items-center gap-3 mb-8">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-red-400">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <h1 class="text-2xl font-bold text-white">Pathfinder</h1>
-            </div>
-
-            <!-- Level Navigation -->
-            <nav class="flex-grow">
-                <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Levels</h2>
-                <ul class="space-y-2">
-                    <li><a href="index1.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="flag" class="w-5 h-5 text-gray-400"></i> Level 1: Functions</a></li>
-                    <li><a href="index2.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="list" class="w-5 h-5 text-gray-400"></i> Level 2: Arrays</a></li>
-                    <li><a href="index3.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="git-fork" class="w-5 h-5 text-gray-400"></i> Level 3: Loops</a></li>
-                    <li><a href="index4.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="infinity" class="w-5 h-5 text-gray-400"></i> Level 4: Recursion</a></li>
-                    <li><a href="index5.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="box" class="w-5 h-5 text-gray-400"></i> Level 5: OOP</a></li>
-                    <li><a href="index6.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="database" class="w-5 h-5 text-gray-400"></i> Level 6: Data</a></li>
-                    <li><a href="index7.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="trophy" class="w-5 h-5 text-gray-400"></i> Level 7: Finale</a></li>
-                </ul>
-            </nav>
-
-            <!-- User/Auth Section -->
-            <div id="auth-section">
-                <!-- This button will be dynamically updated -->
-                 <div id="auth-button-container">
-                    <!-- Logged Out State -->
-                    <button id="login-register-btn" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-white font-semibold">
-                        <i data-lucide="log-in" class="w-5 h-5"></i>
-                        <span>Login / Register</span>
-                    </button>
-
-                    <!-- Logged In State (template, hidden initially) -->
-                    <div id="user-profile-btn" class="hidden w-full flex items-center justify-between p-2 rounded-lg bg-gray-800 text-white font-semibold">
-                        <span id="user-display-name" class="truncate flex-grow mr-2"></span>
-                        <div class="flex items-center gap-3">
-                             <a href="index.html" title="Home" class="text-gray-400 hover:text-white transition-colors">
-                                <i data-lucide="home" class="w-5 h-5"></i>
-                            </a>
-                            <i id="logout-icon" data-lucide="log-out" class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer" title="Logout"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Overlay for when sidebar is open -->
-        <div id="overlay" class="fixed inset-0 bg-black opacity-0 pointer-events-none"></div>
-
-        <!-- Modals -->
-        <div id="auth-modal" class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none">
-            <div class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8" id="auth-modal-content">
-                <!-- Content will be injected here -->
-            </div>
+      <!-- Slide-out Sidebar -->
+      <aside
+        id="sidebar"
+        class="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 to-slate-800 border-r border-gray-700/50 shadow-2xl p-6 flex flex-col"
+      >
+        <!-- Header -->
+        <div class="flex items-center gap-3 mb-8">
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            class="text-red-400"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"
+            />
+            <line
+              x1="4"
+              y1="12"
+              x2="20"
+              y2="12"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <h1 class="text-2xl font-bold text-white">Pathfinder</h1>
         </div>
+
+        <!-- Level Navigation -->
+        <nav class="flex-grow">
+          <h2
+            class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3"
+          >
+            Levels
+          </h2>
+          <ul class="space-y-2">
+            <li>
+              <a
+                href="index1.html"
+                class="flex items-center p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >Level 1: Functions</a
+              >
+            </li>
+            <li>
+              <a
+                href="index2.html"
+                class="flex items-center p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >Level 2: Arrays</a
+              >
+            </li>
+            <li>
+              <a
+                href="index3.html"
+                class="flex items-center p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >Level 3: Loops</a
+              >
+            </li>
+            <li>
+              <a
+                href="index4.html"
+                class="flex items-center p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >Level 4: Recursion</a
+              >
+            </li>
+            <li>
+              <a
+                href="index5.html"
+                class="flex items-center p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >Level 5: OOP</a
+              >
+            </li>
+            <li>
+              <a
+                href="index6.html"
+                class="flex items-center p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >Level 6: Data</a
+              >
+            </li>
+            <li>
+              <a
+                href="index7.html"
+                class="flex items-center p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >Level 7: Finale</a
+              >
+            </li>
+          </ul>
+        </nav>
+
+        <!-- User/Auth Section -->
+        <div id="auth-section">
+          <div id="auth-button-container">
+            <!-- Logged Out State -->
+            <button
+              id="login-register-btn"
+              class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-white font-semibold"
+            >
+              <i data-lucide="log-in" class="w-5 h-5"></i>
+              <span>Login / Register</span>
+            </button>
+
+            <!-- Logged In State (template, hidden initially) -->
+            <div
+              id="user-profile-btn"
+              class="hidden w-full flex items-center justify-between p-2 rounded-lg bg-gray-800 text-white font-semibold"
+            >
+              <span
+                id="user-display-name"
+                class="truncate flex-grow mr-2"
+              ></span>
+              <div class="flex items-center gap-3">
+                <a
+                  href="index.html"
+                  title="Home"
+                  class="text-gray-400 hover:text-white transition-colors"
+                >
+                  <i data-lucide="home" class="w-5 h-5"></i>
+                </a>
+                <button
+                  id="logout-btn"
+                  title="Logout"
+                  class="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                >
+                  <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Overlay for when sidebar is open -->
+      <div
+        id="overlay"
+        class="fixed inset-0 bg-black opacity-0 pointer-events-none"
+      ></div>
+
+      <!-- Modals -->
+      <div
+        id="auth-modal"
+        class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none"
+      >
+        <div
+          class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8"
+          id="auth-modal-content"
+        >
+          <!-- Content will be injected here -->
+        </div>
+      </div>
     </div>
 
-    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
-
-        <!-- Screen 1: Welcome (Level 3) -->
-        <div data-screen="welcome" class="w-full max-w-lg text-center active">
-            <div class="card fade-in">
-                <div class="flex justify-center mb-4">
-                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-red-400"><path d="M10 7L15 12L10 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 21V19M12 5V3M21 12H19M5 12H3M18.364 18.364L16.95 16.95M7.05 7.05L5.636 5.636M18.364 5.636L16.95 7.05M7.05 16.95L5.636 18.364" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                </div>
-                <h1 class="text-4xl font-bold mb-2">Welcome to Level 3</h1>
-                <p class="text-lg mb-8 text-gray-300">Learn to automate repetitive tasks and control program flow with JavaScript Loops.</p>
-                <button id="start-learning-btn" class="btn text-lg">Begin Level 3</button>
-            </div>
+    <div
+      id="app"
+      class="min-h-screen flex flex-col items-center justify-center p-4"
+    >
+      <!-- Screen 1: Welcome (Level 3) -->
+      <div data-screen="welcome" class="w-full max-w-lg text-center active">
+        <div class="card fade-in">
+          <div class="flex justify-center mb-4">
+            <svg
+              width="64"
+              height="64"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              class="text-red-400"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+              />
+              <line
+                x1="4"
+                y1="12"
+                x2="20"
+                y2="12"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <h1 class="text-4xl font-bold mb-2">Welcome to Level 3</h1>
+          <p class="text-lg mb-8 text-gray-300">
+            Learn to automate repetitive tasks and control program flow with
+            JavaScript Loops.
+          </p>
+          <button id="start-learning-btn" class="btn text-lg">
+            Begin Level 3
+          </button>
         </div>
-        
-        <!-- Screen 2: Learning Dashboard -->
-        <div data-screen="dashboard" class="w-full max-w-6xl">
-            <div class="p-4 md:p-8">
-                
-                <!-- NEW TOP NAV BAR -->
-                <div id="top-nav" class="card !p-4 mb-8">
-                    <!-- Header content and achievements will be injected here by JS -->
-                </div>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-2 space-y-8">
-                        <div class="card" id="activity-container">
-                             <!-- Activity will be injected here -->
-                        </div>
-                    </div>
-                    <div class="lg:col-span-1 space-y-8">
-                        <div class="card sticky top-8">
-                           <h3 class="text-lg font-bold mb-4">Your Journey (Lvl 3)</h3>
-                           <div id="progress-tracker" class="space-y-3">
-                               <!-- Progress items will be injected here -->
-                           </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
 
+      <!-- Screen 2: Learning Dashboard -->
+      <div data-screen="dashboard" class="w-full max-w-6xl">
+        <div class="p-4 md:p-8">
+          <!-- NEW TOP NAV BAR -->
+          <div id="top-nav" class="card !p-4 mb-8">
+            <!-- Header content and achievements will be injected here by JS -->
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+              <div class="card" id="activity-container">
+                <!-- Activity will be injected here -->
+              </div>
+            </div>
+            <div class="lg:col-span-1 space-y-8">
+              <div class="card sticky top-8">
+                <h3 class="text-lg font-bold mb-4">Your Journey (Lvl 3)</h3>
+                <div id="progress-tracker" class="space-y-3">
+                  <!-- Progress items will be injected here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Achievement Modal -->
     <div id="achievement-modal" class="modal-overlay">
-        <div class="modal-content card text-center max-w-sm w-full">
-            <div id="modal-content-inner"></div>
-        </div>
+      <div class="modal-content card text-center max-w-sm w-full">
+        <div id="modal-content-inner"></div>
+      </div>
     </div>
 
     <script type="module">
-        // --- IMPORTS & FIREBASE SETUP (from index.html) ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserSessionPersistence, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+      // --- IMPORTS & FIREBASE SETUP (from index.html) ---
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import {
+        getAuth,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+        sendPasswordResetEmail,
+        browserSessionPersistence,
+        setPersistence,
+        browserLocalPersistence,
+        GoogleAuthProvider,
+        signInWithPopup,
+        signInAnonymously,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        getDoc,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyA76y2Cp0jvLBNiMkkl4Mlklw4SKdBg_Wo",
-            authDomain: "pathfinderquiz.firebaseapp.com",
-            projectId: "pathfinderquiz",
-            storageBucket: "pathfinderquiz.firebasestorage.app",
-            messagingSenderId: "653607161175",
-            appId: "1:653607161175:web:4ffd5922d221f26377c212",
-            measurementId: "G-S7XJTZ1VTZ"
-        };
+      const firebaseConfig = {
+        apiKey: "AIzaSyA76y2Cp0jvLBNiMkkl4Mlklw4SKdBg_Wo",
+        authDomain: "pathfinderquiz.firebaseapp.com",
+        projectId: "pathfinderquiz",
+        storageBucket: "pathfinderquiz.firebasestorage.app",
+        messagingSenderId: "653607161175",
+        appId: "1:653607161175:web:4ffd5922d221f26377c212",
+        measurementId: "G-S7XJTZ1VTZ",
+      };
 
-        const firebaseApp = initializeApp(firebaseConfig);
-        const auth = getAuth(firebaseApp);
-        const db = getFirestore(firebaseApp);
-        const googleProvider = new GoogleAuthProvider();
-        let currentUser = null;
+      const firebaseApp = initializeApp(firebaseConfig);
+      const auth = getAuth(firebaseApp);
+      const db = getFirestore(firebaseApp);
+      const googleProvider = new GoogleAuthProvider();
+      let currentUser = null;
 
-        // --- SHARED UI LOGIC (Sidebar, Modals from index.html) ---
+      // --- SHARED UI LOGIC (Sidebar, Modals from index.html) ---
+      lucide.createIcons();
+
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("overlay");
+      const sidebarHoverZone = document.getElementById("sidebar-hover-zone");
+      const authModal = document.getElementById("auth-modal");
+      const authModalContent = document.getElementById("auth-modal-content");
+
+      const openSidebar = () => {
+        sidebar.classList.add("open");
+        overlay.classList.remove("opacity-0", "pointer-events-none");
+        overlay.classList.add("opacity-50");
+      };
+
+      const closeSidebar = () => {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("opacity-50");
+        overlay.classList.add("opacity-0", "pointer-events-none");
+      };
+
+      sidebarHoverZone.addEventListener("mouseenter", openSidebar);
+      // sidebar.addEventListener('mouseleave', closeSidebar); // REMOVED to prevent race condition
+      overlay.addEventListener("click", closeSidebar);
+
+      const showModal = (content) => {
+        authModalContent.innerHTML = content;
+        authModal.classList.remove("opacity-0", "pointer-events-none");
+        attachModalEventListeners();
         lucide.createIcons();
-        
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
-        const sidebarHoverZone = document.getElementById('sidebar-hover-zone');
-        const authModal = document.getElementById('auth-modal');
-        const authModalContent = document.getElementById('auth-modal-content');
+      };
 
-        const openSidebar = () => {
-            sidebar.classList.add('open');
-            overlay.classList.remove('opacity-0', 'pointer-events-none');
-            overlay.classList.add('opacity-50');
-        };
+      const hideModals = () => {
+        authModal.classList.add("opacity-0", "pointer-events-none");
+      };
 
-        const closeSidebar = () => {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('opacity-50');
-            overlay.classList.add('opacity-0', 'pointer-events-none');
-        };
+      authModal.addEventListener("click", (e) => {
+        if (e.target === authModal) hideModals();
+      });
 
-        sidebarHoverZone.addEventListener('mouseenter', openSidebar);
-        sidebar.addEventListener('mouseleave', closeSidebar);
-        overlay.addEventListener('click', closeSidebar);
+      // --- AUTHENTICATION & DATABASE LOGIC (from index.html) ---
+      const loginRegisterBtn = document.getElementById("login-register-btn");
+      const userProfileBtn = document.getElementById("user-profile-btn");
+      const userDisplayName = document.getElementById("user-display-name");
 
-        const showModal = (content) => {
-            authModalContent.innerHTML = content;
-            authModal.classList.remove('opacity-0', 'pointer-events-none');
-            attachModalEventListeners();
-            lucide.createIcons();
-        };
-        
-        const hideModals = () => {
-            authModal.classList.add('opacity-0', 'pointer-events-none');
-        };
-
-        authModal.addEventListener('click', (e) => {
-            if (e.target === authModal) hideModals();
-        });
-        
-        // --- AUTHENTICATION & DATABASE LOGIC (from index.html) ---
-        const loginRegisterBtn = document.getElementById('login-register-btn');
-        const userProfileBtn = document.getElementById('user-profile-btn');
-        const userDisplayName = document.getElementById('user-display-name');
-        const logoutIcon = document.getElementById('logout-icon');
-
-        const loginContent = `
+      const loginContent = `
             <h2 class="text-2xl font-bold text-white mb-6 text-center">Login to Pathfinder</h2>
             <div class="space-y-3">
                 <button id="google-signin-btn" class="w-full flex items-center justify-center gap-2 p-3 rounded-lg bg-white text-gray-800 font-semibold hover:bg-gray-200 transition-colors">
@@ -414,7 +635,7 @@
             </p>
         `;
 
-        const registerContent = `
+      const registerContent = `
             <h2 class="text-2xl font-bold text-white mb-6 text-center">Create an Account</h2>
             <form id="register-form" class="space-y-4">
                 <div>
@@ -436,7 +657,7 @@
             </p>
         `;
 
-        const forgotPasswordContent = `
+      const forgotPasswordContent = `
             <h2 class="text-2xl font-bold text-white mb-4 text-center">Reset Password</h2>
             <p class="text-center text-sm text-gray-400 mb-6">Enter your email and we'll send you a link to reset your password.</p>
             <form id="forgot-password-form" class="space-y-4">
@@ -451,229 +672,848 @@
             </p>
         `;
 
-        function attachModalEventListeners() {
-            const showRegisterLink = document.getElementById('show-register-link');
-            if(showRegisterLink) showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); showModal(registerContent); });
-            const showLoginLink = document.getElementById('show-login-link');
-            if(showLoginLink) showLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
-            const backToLoginLink = document.getElementById('back-to-login-link');
-            if(backToLoginLink) backToLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
-            const registerForm = document.getElementById('register-form');
-            if(registerForm) registerForm.addEventListener('submit', handleRegister);
-            const loginForm = document.getElementById('login-form');
-            if(loginForm) loginForm.addEventListener('submit', handleLogin);
-            const forgotPasswordLink = document.getElementById('forgot-password-link');
-            if(forgotPasswordLink) forgotPasswordLink.addEventListener('click', (e) => { e.preventDefault(); showModal(forgotPasswordContent); });
-            const forgotPasswordForm = document.getElementById('forgot-password-form');
-            if(forgotPasswordForm) forgotPasswordForm.addEventListener('submit', handleForgotPassword);
-            const googleSigninBtn = document.getElementById('google-signin-btn');
-            if(googleSigninBtn) googleSigninBtn.addEventListener('click', handleGoogleSignIn);
-            const guestSigninBtn = document.getElementById('guest-signin-btn');
-            if(guestSigninBtn) guestSigninBtn.addEventListener('click', handleGuestSignIn);
+      function attachModalEventListeners() {
+        const showRegisterLink = document.getElementById("show-register-link");
+        if (showRegisterLink)
+          showRegisterLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            showModal(registerContent);
+          });
+        const showLoginLink = document.getElementById("show-login-link");
+        if (showLoginLink)
+          showLoginLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            showModal(loginContent);
+          });
+        const backToLoginLink = document.getElementById("back-to-login-link");
+        if (backToLoginLink)
+          backToLoginLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            showModal(loginContent);
+          });
+        const registerForm = document.getElementById("register-form");
+        if (registerForm)
+          registerForm.addEventListener("submit", handleRegister);
+        const loginForm = document.getElementById("login-form");
+        if (loginForm) loginForm.addEventListener("submit", handleLogin);
+        const forgotPasswordLink = document.getElementById(
+          "forgot-password-link"
+        );
+        if (forgotPasswordLink)
+          forgotPasswordLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            showModal(forgotPasswordContent);
+          });
+        const forgotPasswordForm = document.getElementById(
+          "forgot-password-form"
+        );
+        if (forgotPasswordForm)
+          forgotPasswordForm.addEventListener("submit", handleForgotPassword);
+        const googleSigninBtn = document.getElementById("google-signin-btn");
+        if (googleSigninBtn)
+          googleSigninBtn.addEventListener("click", handleGoogleSignIn);
+        const guestSigninBtn = document.getElementById("guest-signin-btn");
+        if (guestSigninBtn)
+          guestSigninBtn.addEventListener("click", handleGuestSignIn);
+      }
+
+      async function handleRegister(e) {
+        e.preventDefault();
+        const email = document.getElementById("register-email").value,
+          password = document.getElementById("register-password").value,
+          confirmPassword = document.getElementById(
+            "register-confirm-password"
+          ).value;
+        if (password !== confirmPassword) {
+          alert("Passwords do not match.");
+          return;
         }
+        try {
+          const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+          console.log("Registration successful:", userCredential.user);
+          hideModals();
+        } catch (error) {
+          alert(`Registration failed: ${error.message}`);
+        }
+      }
+      async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById("login-email").value,
+          password = document.getElementById("login-password").value,
+          rememberMe = document.getElementById("remember-me").checked;
+        try {
+          await setPersistence(
+            auth,
+            rememberMe ? browserLocalPersistence : browserSessionPersistence
+          );
+          const userCredential = await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+          console.log("Login successful:", userCredential.user);
+          hideModals();
+        } catch (error) {
+          alert(`Login failed: ${error.message}`);
+        }
+      }
+      async function handleForgotPassword(e) {
+        e.preventDefault();
+        const email = document.getElementById("forgot-email").value;
+        try {
+          await sendPasswordResetEmail(auth, email);
+          alert("Password reset email sent! Please check your inbox.");
+          hideModals();
+        } catch (error) {
+          alert(`Failed to send reset email: ${error.message}`);
+        }
+      }
+      async function handleGoogleSignIn() {
+        try {
+          const result = await signInWithPopup(auth, googleProvider);
+          console.log("Google Sign-In successful:", result.user);
+          hideModals();
+        } catch (error) {
+          console.error("Google Sign-In failed:", error);
+          alert(`Google Sign-In failed: ${error.message}`);
+        }
+      }
+      async function handleGuestSignIn() {
+        try {
+          const userCredential = await signInAnonymously(auth);
+          console.log("Signed in as guest:", userCredential.user);
+          hideModals();
+        } catch (error) {
+          console.error("Guest Sign-In failed:", error);
+          alert(`Guest Sign-In failed: ${error.message}`);
+        }
+      }
 
-        async function handleRegister(e) { e.preventDefault(); const email = document.getElementById('register-email').value, password = document.getElementById('register-password').value, confirmPassword = document.getElementById('register-confirm-password').value; if (password !== confirmPassword) { alert("Passwords do not match."); return; } try { const userCredential = await createUserWithEmailAndPassword(auth, email, password); console.log("Registration successful:", userCredential.user); hideModals(); } catch (error) { alert(`Registration failed: ${error.message}`); } }
-        async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('login-email').value, password = document.getElementById('login-password').value, rememberMe = document.getElementById('remember-me').checked; try { await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence); const userCredential = await signInWithEmailAndPassword(auth, email, password); console.log("Login successful:", userCredential.user); hideModals(); } catch (error) { alert(`Login failed: ${error.message}`); } }
-        async function handleForgotPassword(e) { e.preventDefault(); const email = document.getElementById('forgot-email').value; try { await sendPasswordResetEmail(auth, email); alert('Password reset email sent! Please check your inbox.'); hideModals(); } catch (error) { alert(`Failed to send reset email: ${error.message}`); } }
-        async function handleGoogleSignIn() { try { const result = await signInWithPopup(auth, googleProvider); console.log("Google Sign-In successful:", result.user); hideModals(); } catch (error) { console.error("Google Sign-In failed:", error); alert(`Google Sign-In failed: ${error.message}`); } }
-        async function handleGuestSignIn() { try { const userCredential = await signInAnonymously(auth); console.log("Signed in as guest:", userCredential.user); hideModals(); } catch (error) { console.error("Guest Sign-In failed:", error); alert(`Guest Sign-In failed: ${error.message}`); } }
-        
-        loginRegisterBtn.addEventListener('click', () => showModal(loginContent));
-        logoutIcon.addEventListener('click', async () => { try { await signOut(auth); console.log("Logout successful."); } catch (error) { console.error("Logout failed:", error); } });
+      loginRegisterBtn.addEventListener("click", () => showModal(loginContent));
 
-        // --- LEVEL 3: CONTENT & GAME LOGIC ---
-        const contentLibrary = {
-            javascript: {
-                title: "Loops",
-                modules: [
-                    {
-                        title: "For Loops", icon: "rotate-cw",
-                        quiz: {
-                            questions: [
-                                { type: 'multiple-choice', question: "What is the correct syntax for a for loop?", options: ["for (i=0; i<5; i++)", "for i=0 to 5", "for i from 0 to 5", "loop (i=0; i<5; i++)"], answer: "for (i=0; i<5; i++)", explanation: "The `for` loop has three parts in its parentheses: initialization, condition, and final expression." },
-                                { type: 'code-correction', question: "This loop has an off-by-one error. It should print 'Hello' 5 times. Correct it.", code: "for (let i = 0; i <= 5; i++) {\n  console.log('Hello');\n}", answer: "for (let i = 0; i < 5; i++) {\n  console.log('Hello');\n}", explanation: "A loop from 0 to less than 5 will iterate 5 times (0, 1, 2, 3, 4). The original code iterates 6 times (0-5)." },
-                                { type: 'multiple-choice', question: "What is the purpose of the `break` statement?", options: ["To skip the current iteration of a loop", "To exit the loop entirely", "To start the loop from the beginning", "To return a value from the loop"], answer: "To exit the loop entirely", explanation: "The `break` statement immediately terminates the loop it is in." },
-                                { type: 'fill-in-the-blank', question: "The `__` statement is used to skip the current iteration and move to the next.", answer: "continue", explanation: "The `continue` statement skips the rest of the code in the current iteration of the loop and jumps to the next one.", flash: true, suggestions: ['break', 'skip', 'exit', 'continue'] },
-                                { type: 'multiple-choice', question: "What will `for(let i=1; i<5; i++) { console.log(i); }` print?", options: ["1, 2, 3, 4", "1, 2, 3, 4, 5", "2, 3, 4, 5", "0, 1, 2, 3, 4"], answer: "1, 2, 3, 4", explanation: "The loop starts at 1 and continues as long as `i` is less than 5." },
-                                { type: 'code-correction', question: "This code is meant to print the numbers from 10 down to 1. Fix it.", code: "for (let i = 1; i <= 10; i--) {\n  console.log(i);\n}", answer: "for (let i = 10; i >= 1; i--) {\n  console.log(i);\n}", explanation: "The loop needs to start at a higher number and decrement until it reaches a lower one." },
-                                { type: 'drag-and-drop', question: "Order the parts of a `for` loop correctly.", items: [{ id: 'd1', text: 'Condition' }, { id: 'd2', text: 'Final Expression' }, { id: 'd3', text: 'Initialization' }], targets: [{ id: 't1', text: 'Part 1' }, { id: 't2', text: 'Part 2' }, { id: 't3', text: 'Part 3' }], matches: { d3: 't1', d1: 't2', d2: 't3' }, explanation: "The order is `initialization`, `condition`, then `final expression`." },
-                            ]
-                        }
-                    },
-                    {
-                        title: "While & Do-While Loops", icon: "refresh-cw",
-                        quiz: {
-                            questions: [
-                                { type: 'multiple-choice', question: "When is the condition checked in a `while` loop?", options: ["Before the loop runs", "After the loop runs", "After each iteration", "Both before and after"], answer: "Before the loop runs", explanation: "A `while` loop checks the condition first. If it's false, the loop never runs." },
-                                { type: 'code-correction', question: "This `while` loop is an infinite loop. Fix it to print numbers from 1 to 3.", code: "let i = 1;\nwhile (i <= 3) {\n  console.log(i);\n}", answer: "let i = 1;\nwhile (i <= 3) {\n  console.log(i);\n  i++;\n}", explanation: "You must increment the counter variable `i` inside the loop to eventually make the condition false and terminate the loop." },
-                                { type: 'multiple-choice', question: "What is the main difference between `while` and `do-while`?", options: ["`do-while` is faster", "`do-while` always runs at least once", "`while` is for objects, `do-while` for arrays", "There is no difference"], answer: "`do-while` always runs at least once", explanation: "The `do-while` loop's condition is checked at the end, guaranteeing at least one execution of the loop body." },
-                                { type: 'fill-in-the-blank', question: "A loop that never terminates is known as an `__` loop.", answer: "infinite", explanation: "An infinite loop occurs when the loop's termination condition is never met.", flash: true, suggestions: ['eternal', 'unending', 'infinite', 'forever'] },
-                                { type: 'code-correction', question: "Use a `do-while` loop to print 'Hi!' at least once.", code: "let x = false;\ndo {\n  console.log('Hi!');\n} while (x);", answer: "let x = false;\ndo {\n  console.log('Hi!');\n} while (x);", explanation: "The provided code is already correct, demonstrating that `do-while` runs once even if the condition is initially false." },
-                                { type: 'multiple-choice', question: "When should a `while` loop be used instead of a `for` loop?", options: ["When you know the exact number of iterations", "When the condition is complex and depends on outside factors", "Never, `for` is always better", "When looping through an array"], answer: "When the condition is complex and depends on outside factors", explanation: "For a known number of iterations, a `for` loop is cleaner. `while` is better for cases where the loop's end condition is less predictable, like reading from a file until an end-of-file marker is found." },
-                                { type: 'drag-and-drop', question: "Match the loop type to its primary characteristic.", items: [{ id: 'd1', text: '`for` loop' }, { id: 'd2', text: '`do-while` loop' }], targets: [{ id: 't1', text: 'Guaranteed to run once' }, { id: 't2', text: 'Best for a fixed number of iterations' }], matches: { d1: 't2', d2: 't1' }, explanation: "The structured syntax of the `for` loop is ideal for counting, while the post-check of `do-while` ensures it runs at least once." },
-                            ]
-                        }
-                    },
-                    {
-                        title: "Iteration Over Data", icon: "layers",
-                        quiz: {
-                            questions: [
-                                { type: 'multiple-choice', question: "Which loop is used to iterate over the properties of an object?", options: ["`for...of`", "`for...in`", "`for`", "`forEach`"], answer: "`for...in`", explanation: "The `for...in` loop iterates over the enumerable properties of an object." },
-                                { type: 'code-correction', question: "This loop should print each item in the `fruits` array. Fix it.", code: "const fruits = ['apple', 'banana', 'orange'];\nfor (const i in fruits) {\n  console.log(i);\n}", answer: "const fruits = ['apple', 'banana', 'orange'];\nfor (const fruit of fruits) {\n  console.log(fruit);\n}", explanation: "The `for...of` loop is used to iterate over the *values* of an iterable object like an array. `for...in` iterates over the *keys* (indices)." },
-                                { type: 'multiple-choice', question: "What is the most modern way to iterate through an array?", options: ["A `for` loop", "A `while` loop", "A `for...of` loop", "A `do-while` loop"], answer: "A `for...of` loop", explanation: "The `for...of` loop provides a simple and clean way to loop over the values of an array without needing to manage a counter variable." },
-                                { type: 'fill-in-the-blank', question: "The `__` loop is commonly used when you need to iterate based on an index.", answer: "for", explanation: "The classic `for` loop is perfect when you need fine-grained control over the index, such as looping backward or skipping elements.", flash: true, suggestions: ['for', 'while', 'for-in', 'for-of'] },
-                                { type: 'code-correction', question: "Fix the `for` loop to print the values of the `user` object.", code: "const user = { name: 'Alice', age: 30 };\nfor (const value of user) {\n  console.log(value);\n}", answer: "const user = { name: 'Alice', age: 30 };\nfor (const key in user) {\n  console.log(user[key]);\n}", explanation: "`for...of` cannot be used on a plain object. You can use `for...in` to get the keys and then use bracket notation to access the values." },
-                                { type: 'multiple-choice', question: "Which of these methods is best for creating a new array from an existing one?", options: [".forEach()", ".reduce()", ".map()", ".for()"], answer: ".map()", explanation: "The `.map()` method is specifically designed for transforming each item in an array and returning a new array of the same length." },
-                                { type: 'drag-and-drop', question: "Match the loop type to its best use case.", items: [{ id: 'd1', text: '`for...of`' }, { id: 'd2', text: '`for` loop' }], targets: [{ id: 't1', text: 'Iterating over object properties' }, { id: 't2', text: 'Iterating over array values' }, { id: 't3', text: 'Counting a specific number of times' }], matches: { d1: 't2', d2: 't3' }, explanation: "`for...of` simplifies array iteration, while the `for` loop is more traditional and useful for counting scenarios." },
-                            ]
-                        }
-                    },
-                     {
-                        title: "Advanced Loops", icon: "box",
-                        quiz: {
-                            questions: [
-                                { type: 'multiple-choice', question: "What does the `break` statement do when used inside a nested loop?", options: ["Exits only the inner loop", "Exits both the inner and outer loops", "Restarts the inner loop", "Skips to the next iteration of the outer loop"], answer: "Exits only the inner loop", explanation: "A `break` statement will only terminate the innermost loop it is contained within." },
-                                { type: 'code-correction', question: "Use a label to break out of the outer loop when `j` is 2.", code: "outerLoop: for (let i = 0; i < 3; i++) {\n  for (let j = 0; j < 3; j++) {\n    if (j === 2) { break; }\n    console.log(`i: ${i}, j: ${j}`);\n  }\n}", answer: "outerLoop: for (let i = 0; i < 3; i++) {\n  for (let j = 0; j < 3; j++) {\n    if (j === 2) { break outerLoop; }\n    console.log(`i: ${i}, j: ${j}`);\n  }\n}", explanation: "A label is a name followed by a colon (`:`). You can use it with `break` to exit a specific loop, including an outer one." },
-                                { type: 'multiple-choice', question: "What is the purpose of the `continue` statement in a nested loop?", options: ["To skip the entire inner loop", "To skip the current iteration of the inner loop", "To skip to the next iteration of the outer loop", "To restart the inner loop"], answer: "To skip the current iteration of the inner loop", explanation: "The `continue` statement jumps to the next iteration of the same loop it is in." },
-                                { type: 'fill-in-the-blank', question: "A loop inside another loop is called a `__` loop.", answer: "nested", explanation: "Nested loops are used for iterating over multi-dimensional data structures like matrices or for combining elements from different collections.", flash: true, suggestions: ['inner', 'nested', 'recursive', 'double'] },
-                                { type: 'multiple-choice', question: "Which statement is true about nested loops?", options: ["The inner loop runs once for each run of the outer loop", "The outer loop runs once for each run of the inner loop", "They must have the same number of iterations", "The outer loop always completes before the inner loop starts"], answer: "The inner loop runs once for each run of the outer loop", explanation: "The inner loop fully completes all of its iterations for every single iteration of the outer loop." },
-                                { type: 'multiple-choice', question: "What is the primary reason to use a label with `break`?", options: ["To make the code more readable", "To improve performance", "To exit a specific outer loop from within an inner loop", "To handle errors gracefully"], answer: "To exit a specific outer loop from within an inner loop", explanation: "Labels are a way to escape from a specific loop when you are many levels deep in a nested structure." },
-                                { type: 'drag-and-drop', question: "Match the loop control statement to its function.", items: [{ id: 'd1', text: '`break`' }, { id: 'd2', text: '`continue`' }], targets: [{ id: 't1', text: 'Skips the rest of the current iteration' }, { id: 't2', text: 'Terminates the loop entirely' }], matches: { d1: 't2', d2: 't1' }, explanation: "Both statements are used for flow control, but with different effects." },
-                            ]
-                        }
-                    },
-                    {
-                        title: "Performance & Best Practices", icon: "bolt",
-                        quiz: {
-                            questions: [
-                                { type: 'multiple-choice', question: "For simple array iteration, which is generally considered the most performant?", options: ["`for...of` loop", "A traditional `for` loop", "`.forEach()` method", "`.map()` method"], answer: "A traditional `for` loop", explanation: "In most modern JavaScript engines, a traditional `for` loop is often the fastest because it avoids the overhead of function calls associated with methods like `.forEach()` or `.map()`." },
-                                { type: 'code-correction', question: "Improve the performance of this `for` loop.", code: "for (let i = 0; i < myArray.length; i++) {\n  // do something\n}", answer: "const len = myArray.length;\nfor (let i = 0; i < len; i++) {\n  // do something\n}", explanation: "Caching the array's length in a variable prevents the `length` property from being re-evaluated on every iteration, which can be a minor performance improvement." },
-                                { type: 'multiple-choice', question: "What is a major advantage of `.map()` or `.filter()` over a traditional `for` loop?", options: ["They are always faster", "They are more readable and expressive", "They can be used for any data type", "They do not require a variable for iteration"], answer: "They are more readable and expressive", explanation: "These methods use a declarative style that makes the code's intent clearer without exposing the low-level looping logic." },
-                                { type: 'fill-in-the-blank', question: "The choice of loop should prioritize `__` over micro-optimizations.", answer: "readability", explanation: "Readable, maintainable code is more important than small performance gains unless a specific bottleneck is identified.", flash: true, suggestions: ['speed', 'readability', 'efficiency', 'syntax'] },
-                                { type: 'multiple-choice', question: "When is a `while` loop a better choice than a `for` loop?", options: ["When you know the exact number of iterations", "When the loop condition is based on an external state or input", "When iterating over an array", "When you need to iterate backward"], answer: "When the loop condition is based on an external state or input", explanation: "`while` loops are better when the termination condition isn't based on a simple counter." },
-                                { type: 'multiple-choice', question: "Why is a `for...in` loop not recommended for iterating over arrays?", options: ["It is too slow", "It only iterates over the keys (indices), not the values", "It can iterate over inherited properties, leading to unexpected behavior", "It is no longer supported in modern JavaScript"], answer: "It can iterate over inherited properties, leading to unexpected behavior", explanation: "Because `for...in` iterates over all enumerable properties (including inherited ones), it is safer to use `for...of` for arrays." },
-                                { type: 'drag-and-drop', question: "Match the use case to the best loop method.", items: [{ id: 'd1', text: 'Transform an array to a new one' }, { id: 'd2', text: 'Loop through elements of an array' }], targets: [{ id: 't1', text: '`.forEach()`' }, { id: 't2', text: '`.map()`' }], matches: { d1: 't2', d2: 't1' }, explanation: "`.map()` is for transformation, while `.forEach()` is for performing an action on each element without returning a new array." },
-                            ]
-                        }
-                    }
+      // --- LEVEL 3: CONTENT & GAME LOGIC ---
+      const contentLibrary = {
+        javascript: {
+          title: "Loops",
+          modules: [
+            {
+              title: "For Loops",
+              icon: "rotate-cw",
+              quiz: {
+                questions: [
+                  {
+                    type: "multiple-choice",
+                    question: "What is the correct syntax for a for loop?",
+                    options: [
+                      "for (i=0; i<5; i++)",
+                      "for i=0 to 5",
+                      "for i from 0 to 5",
+                      "loop (i=0; i<5; i++)",
+                    ],
+                    answer: "for (i=0; i<5; i++)",
+                    explanation:
+                      "The `for` loop has three parts in its parentheses: initialization, condition, and final expression.",
+                  },
+                  {
+                    type: "code-correction",
+                    question:
+                      "This loop has an off-by-one error. It should print 'Hello' 5 times. Correct it.",
+                    code: "for (let i = 0; i <= 5; i++) {\n  console.log('Hello');\n}",
+                    answer:
+                      "for (let i = 0; i < 5; i++) {\n  console.log('Hello');\n}",
+                    explanation:
+                      "A loop from 0 to less than 5 will iterate 5 times (0, 1, 2, 3, 4). The original code iterates 6 times (0-5).",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question: "What is the purpose of the `break` statement?",
+                    options: [
+                      "To skip the current iteration of a loop",
+                      "To exit the loop entirely",
+                      "To start the loop from the beginning",
+                      "To return a value from the loop",
+                    ],
+                    answer: "To exit the loop entirely",
+                    explanation:
+                      "The `break` statement immediately terminates the loop it is in.",
+                  },
+                  {
+                    type: "fill-in-the-blank",
+                    question:
+                      "The `__` statement is used to skip the current iteration and move to the next.",
+                    answer: "continue",
+                    explanation:
+                      "The `continue` statement skips the rest of the code in the current iteration of the loop and jumps to the next one.",
+                    flash: true,
+                    suggestions: ["break", "skip", "exit", "continue"],
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "What will `for(let i=1; i<5; i++) { console.log(i); }` print?",
+                    options: [
+                      "1, 2, 3, 4",
+                      "1, 2, 3, 4, 5",
+                      "2, 3, 4, 5",
+                      "0, 1, 2, 3, 4",
+                    ],
+                    answer: "1, 2, 3, 4",
+                    explanation:
+                      "The loop starts at 1 and continues as long as `i` is less than 5.",
+                  },
+                  {
+                    type: "code-correction",
+                    question:
+                      "This code is meant to print the numbers from 10 down to 1. Fix it.",
+                    code: "for (let i = 1; i <= 10; i--) {\n  console.log(i);\n}",
+                    answer:
+                      "for (let i = 10; i >= 1; i--) {\n  console.log(i);\n}",
+                    explanation:
+                      "The loop needs to start at a higher number and decrement until it reaches a lower one.",
+                  },
+                  {
+                    type: "drag-and-drop",
+                    question: "Order the parts of a `for` loop correctly.",
+                    items: [
+                      { id: "d1", text: "Condition" },
+                      { id: "d2", text: "Final Expression" },
+                      { id: "d3", text: "Initialization" },
+                    ],
+                    targets: [
+                      { id: "t1", text: "Part 1" },
+                      { id: "t2", text: "Part 2" },
+                      { id: "t3", text: "Part 3" },
+                    ],
+                    matches: { d3: "t1", d1: "t2", d2: "t3" },
+                    explanation:
+                      "The order is `initialization`, `condition`, then `final expression`.",
+                  },
                 ],
-                finalExam: { 
-                    title: "Final Exam (Lvl 3)", 
-                    icon: "award", 
-                    quiz: { 
-                        questions: [
-                            { type: 'multiple-choice', question: "Which loop is guaranteed to execute its body at least once?", options: ["`for`", "`while`", "`do-while`", "`for...of`"], answer: "`do-while`", explanation: "The `do-while` loop checks its condition at the end of the loop, ensuring it runs at least once." },
-                            { type: 'code-correction', question: "This loop is counting down incorrectly. It should print 3, 2, 1. Fix it.", code: "for (let i = 3; i < 0; i--) {\n  console.log(i);\n}", answer: "for (let i = 3; i > 0; i--) {\n  console.log(i);\n}", explanation: "The condition `i < 0` is false from the start. It should be `i > 0` to count down from 3." },
-                            { type: 'multiple-choice', question: "What will `console.log(i)` print in this `for...in` loop? `const arr = ['a', 'b', 'c']; for (let i in arr) { console.log(i); }`", options: ["'a', 'b', 'c'", "0, 1, 2", "a, b, c", "undefined"], answer: "0, 1, 2", explanation: "`for...in` iterates over the indices (keys) of an array, not the values. For values, use `for...of`." },
-                            { type: 'fill-in-the-blank', question: "To exit a loop prematurely based on a condition, you would use the `__` statement.", answer: "break", explanation: "The `break` statement halts the execution of the loop and moves on to the next statement after the loop.", flash: true, suggestions: ['continue', 'break', 'return', 'exit'] },
-                            { type: 'multiple-choice', question: "A `for...of` loop can be used on all of the following EXCEPT:", options: ["Strings", "Arrays", "Objects", "Maps"], answer: "Objects", explanation: "Plain JavaScript objects are not iterable and require other methods like `for...in` or `Object.keys()`." },
-                            { type: 'multiple-choice', question: "In a `for` loop, what happens if you omit the condition?", options: ["It runs once", "It throws an error", "It is an infinite loop", "It skips to the next loop"], answer: "It is an infinite loop", explanation: "Without a condition, the loop will never evaluate to false and will run indefinitely." },
-                            { type: 'drag-and-drop', question: "Match the statement to its effect.", items: [{ id: 'd1', text: '`continue`' }, { id: 'd2', text: '`break`' }], targets: [{ id: 't1', text: 'Skips current iteration' }, { id: 't2', text: 'Exits the loop' }], matches: { d1: 't1', d2: 't2' }, explanation: "These control statements give you fine-grained control over loop execution." },
-                        ] 
-                    } 
-                }
+              },
+            },
+            {
+              title: "While & Do-While Loops",
+              icon: "refresh-cw",
+              quiz: {
+                questions: [
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "When is the condition checked in a `while` loop?",
+                    options: [
+                      "Before the loop runs",
+                      "After the loop runs",
+                      "After each iteration",
+                      "Both before and after",
+                    ],
+                    answer: "Before the loop runs",
+                    explanation:
+                      "A `while` loop checks the condition first. If it's false, the loop never runs.",
+                  },
+                  {
+                    type: "code-correction",
+                    question:
+                      "This `while` loop is an infinite loop. Fix it to print numbers from 1 to 3.",
+                    code: "let i = 1;\nwhile (i <= 3) {\n  console.log(i);\n}",
+                    answer:
+                      "let i = 1;\nwhile (i <= 3) {\n  console.log(i);\n  i++;\n}",
+                    explanation:
+                      "You must increment the counter variable `i` inside the loop to eventually make the condition false and terminate the loop.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "What is the main difference between `while` and `do-while`?",
+                    options: [
+                      "`do-while` is faster",
+                      "`do-while` always runs at least once",
+                      "`while` is for objects, `do-while` for arrays",
+                      "There is no difference",
+                    ],
+                    answer: "`do-while` always runs at least once",
+                    explanation:
+                      "The `do-while` loop's condition is checked at the end, guaranteeing at least one execution of the loop body.",
+                  },
+                  {
+                    type: "fill-in-the-blank",
+                    question:
+                      "A loop that never terminates is known as an `__` loop.",
+                    answer: "infinite",
+                    explanation:
+                      "An infinite loop occurs when the loop's termination condition is never met.",
+                    flash: true,
+                    suggestions: ["eternal", "unending", "infinite", "forever"],
+                  },
+                  {
+                    type: "code-correction",
+                    question:
+                      "Use a `do-while` loop to print 'Hi!' at least once.",
+                    code: "let x = false;\ndo {\n  console.log('Hi!');\n} while (x);",
+                    answer:
+                      "let x = false;\ndo {\n  console.log('Hi!');\n} while (x);",
+                    explanation:
+                      "The provided code is already correct, demonstrating that `do-while` runs once even if the condition is initially false.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "When should a `while` loop be used instead of a `for` loop?",
+                    options: [
+                      "When you know the exact number of iterations",
+                      "When the condition is complex and depends on outside factors",
+                      "Never, `for` is always better",
+                      "When looping through an array",
+                    ],
+                    answer:
+                      "When the condition is complex and depends on outside factors",
+                    explanation:
+                      "For a known number of iterations, a `for` loop is cleaner. `while` is better for cases where the loop's end condition is less predictable, like reading from a file until an end-of-file marker is found.",
+                  },
+                  {
+                    type: "drag-and-drop",
+                    question:
+                      "Match the loop type to its primary characteristic.",
+                    items: [
+                      { id: "d1", text: "`for` loop" },
+                      { id: "d2", text: "`do-while` loop" },
+                    ],
+                    targets: [
+                      { id: "t1", text: "Guaranteed to run once" },
+                      {
+                        id: "t2",
+                        text: "Best for a fixed number of iterations",
+                      },
+                    ],
+                    matches: { d1: "t2", d2: "t1" },
+                    explanation:
+                      "The structured syntax of the `for` loop is ideal for counting, while the post-check of `do-while` ensures it runs at least once.",
+                  },
+                ],
+              },
+            },
+            {
+              title: "Iteration Over Data",
+              icon: "layers",
+              quiz: {
+                questions: [
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "Which loop is used to iterate over the properties of an object?",
+                    options: ["`for...of`", "`for...in`", "`for`", "`forEach`"],
+                    answer: "`for...in`",
+                    explanation:
+                      "The `for...in` loop iterates over the enumerable properties of an object.",
+                  },
+                  {
+                    type: "code-correction",
+                    question:
+                      "This loop should print each item in the `fruits` array. Fix it.",
+                    code: "const fruits = ['apple', 'banana', 'orange'];\nfor (const i in fruits) {\n  console.log(i);\n}",
+                    answer:
+                      "const fruits = ['apple', 'banana', 'orange'];\nfor (const fruit of fruits) {\n  console.log(fruit);\n}",
+                    explanation:
+                      "The `for...of` loop is used to iterate over the *values* of an iterable object like an array. `for...in` iterates over the *keys* (indices).",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "What is the most modern way to iterate through an array?",
+                    options: [
+                      "A `for` loop",
+                      "A `while` loop",
+                      "A `for...of` loop",
+                      "A `do-while` loop",
+                    ],
+                    answer: "A `for...of` loop",
+                    explanation:
+                      "The `for...of` loop provides a simple and clean way to loop over the values of an array without needing to manage a counter variable.",
+                  },
+                  {
+                    type: "fill-in-the-blank",
+                    question:
+                      "The `__` loop is commonly used when you need to iterate based on an index.",
+                    answer: "for",
+                    explanation:
+                      "The classic `for` loop is perfect when you need fine-grained control over the index, such as looping backward or skipping elements.",
+                    flash: true,
+                    suggestions: ["for", "while", "for-in", "for-of"],
+                  },
+                  {
+                    type: "code-correction",
+                    question:
+                      "Fix the `for` loop to print the values of the `user` object.",
+                    code: "const user = { name: 'Alice', age: 30 };\nfor (const value of user) {\n  console.log(value);\n}",
+                    answer:
+                      "const user = { name: 'Alice', age: 30 };\nfor (const key in user) {\n  console.log(user[key]);\n}",
+                    explanation:
+                      "`for...of` cannot be used on a plain object. You can use `for...in` to get the keys and then use bracket notation to access the values.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "Which of these methods is best for creating a new array from an existing one?",
+                    options: [".forEach()", ".reduce()", ".map()", ".for()"],
+                    answer: ".map()",
+                    explanation:
+                      "The `.map()` method is specifically designed for transforming each item in an array and returning a new array of the same length.",
+                  },
+                  {
+                    type: "drag-and-drop",
+                    question: "Match the loop type to its best use case.",
+                    items: [
+                      { id: "d1", text: "`for...of`" },
+                      { id: "d2", text: "`for` loop" },
+                    ],
+                    targets: [
+                      { id: "t1", text: "Iterating over object properties" },
+                      { id: "t2", text: "Iterating over array values" },
+                      { id: "t3", text: "Counting a specific number of times" },
+                    ],
+                    matches: { d1: "t2", d2: "t3" },
+                    explanation:
+                      "`for...of` simplifies array iteration, while the `for` loop is more traditional and useful for counting scenarios.",
+                  },
+                ],
+              },
+            },
+            {
+              title: "Advanced Loops",
+              icon: "box",
+              quiz: {
+                questions: [
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "What does the `break` statement do when used inside a nested loop?",
+                    options: [
+                      "Exits only the inner loop",
+                      "Exits both the inner and outer loops",
+                      "Restarts the inner loop",
+                      "Skips to the next iteration of the outer loop",
+                    ],
+                    answer: "Exits only the inner loop",
+                    explanation:
+                      "A `break` statement will only terminate the innermost loop it is contained within.",
+                  },
+                  {
+                    type: "code-correction",
+                    question:
+                      "Use a label to break out of the outer loop when `j` is 2.",
+                    code: "outerLoop: for (let i = 0; i < 3; i++) {\n  for (let j = 0; j < 3; j++) {\n    if (j === 2) { break; }\n    console.log(`i: ${i}, j: ${j}`);\n  }\n}",
+                    answer:
+                      "outerLoop: for (let i = 0; i < 3; i++) {\n  for (let j = 0; j < 3; j++) {\n    if (j === 2) { break outerLoop; }\n    console.log(`i: ${i}, j: ${j}`);\n  }\n}",
+                    explanation:
+                      "A label is a name followed by a colon (`:`). You can use it with `break` to exit a specific loop, including an outer one.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "What is the purpose of the `continue` statement in a nested loop?",
+                    options: [
+                      "To skip the entire inner loop",
+                      "To skip the current iteration of the inner loop",
+                      "To skip to the next iteration of the outer loop",
+                      "To restart the inner loop",
+                    ],
+                    answer: "To skip the current iteration of the inner loop",
+                    explanation:
+                      "The `continue` statement jumps to the next iteration of the same loop it is in.",
+                  },
+                  {
+                    type: "fill-in-the-blank",
+                    question:
+                      "A loop inside another loop is called a `__` loop.",
+                    answer: "nested",
+                    explanation:
+                      "Nested loops are used for iterating over multi-dimensional data structures like matrices or for combining elements from different collections.",
+                    flash: true,
+                    suggestions: ["inner", "nested", "recursive", "double"],
+                  },
+                  {
+                    type: "multiple-choice",
+                    question: "Which statement is true about nested loops?",
+                    options: [
+                      "The inner loop runs once for each run of the outer loop",
+                      "The outer loop runs once for each run of the inner loop",
+                      "They must have the same number of iterations",
+                      "The outer loop always completes before the inner loop starts",
+                    ],
+                    answer:
+                      "The inner loop runs once for each run of the outer loop",
+                    explanation:
+                      "The inner loop fully completes all of its iterations for every single iteration of the outer loop.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "What is the primary reason to use a label with `break`?",
+                    options: [
+                      "To make the code more readable",
+                      "To improve performance",
+                      "To exit a specific outer loop from within an inner loop",
+                      "To handle errors gracefully",
+                    ],
+                    answer:
+                      "To exit a specific outer loop from within an inner loop",
+                    explanation:
+                      "Labels are a way to escape from a specific loop when you are many levels deep in a nested structure.",
+                  },
+                  {
+                    type: "drag-and-drop",
+                    question:
+                      "Match the loop control statement to its function.",
+                    items: [
+                      { id: "d1", text: "`break`" },
+                      { id: "d2", text: "`continue`" },
+                    ],
+                    targets: [
+                      {
+                        id: "t1",
+                        text: "Skips the rest of the current iteration",
+                      },
+                      { id: "t2", text: "Terminates the loop entirely" },
+                    ],
+                    matches: { d1: "t2", d2: "t1" },
+                    explanation:
+                      "Both statements are used for flow control, but with different effects.",
+                  },
+                ],
+              },
+            },
+            {
+              title: "Performance & Best Practices",
+              icon: "bolt",
+              quiz: {
+                questions: [
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "For simple array iteration, which is generally considered the most performant?",
+                    options: [
+                      "`for...of` loop",
+                      "A traditional `for` loop",
+                      "`.forEach()` method",
+                      "`.map()` method",
+                    ],
+                    answer: "A traditional `for` loop",
+                    explanation:
+                      "In most modern JavaScript engines, a traditional `for` loop is often the fastest because it avoids the overhead of function calls associated with methods like `.forEach()` or `.map()`.",
+                  },
+                  {
+                    type: "code-correction",
+                    question: "Improve the performance of this `for` loop.",
+                    code: "for (let i = 0; i < myArray.length; i++) {\n  // do something\n}",
+                    answer:
+                      "const len = myArray.length;\nfor (let i = 0; i < len; i++) {\n  // do something\n}",
+                    explanation:
+                      "Caching the array's length in a variable prevents the `length` property from being re-evaluated on every iteration, which can be a minor performance improvement.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "What is a major advantage of `.map()` or `.filter()` over a traditional `for` loop?",
+                    options: [
+                      "They are always faster",
+                      "They are more readable and expressive",
+                      "They can be used for any data type",
+                      "They do not require a variable for iteration",
+                    ],
+                    answer: "They are more readable and expressive",
+                    explanation:
+                      "These methods use a declarative style that makes the code's intent clearer without exposing the low-level looping logic.",
+                  },
+                  {
+                    type: "fill-in-the-blank",
+                    question:
+                      "The choice of loop should prioritize `__` over micro-optimizations.",
+                    answer: "readability",
+                    explanation:
+                      "Readable, maintainable code is more important than small performance gains unless a specific bottleneck is identified.",
+                    flash: true,
+                    suggestions: [
+                      "speed",
+                      "readability",
+                      "efficiency",
+                      "syntax",
+                    ],
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "When is a `while` loop a better choice than a `for` loop?",
+                    options: [
+                      "When you know the exact number of iterations",
+                      "When the loop condition is based on an external state or input",
+                      "When iterating over an array",
+                      "When you need to iterate backward",
+                    ],
+                    answer:
+                      "When the loop condition is based on an external state or input",
+                    explanation:
+                      "`while` loops are better when the termination condition isn't based on a simple counter.",
+                  },
+                  {
+                    type: "multiple-choice",
+                    question:
+                      "Why is a `for...in` loop not recommended for iterating over arrays?",
+                    options: [
+                      "It is too slow",
+                      "It only iterates over the keys (indices), not the values",
+                      "It can iterate over inherited properties, leading to unexpected behavior",
+                      "It is no longer supported in modern JavaScript",
+                    ],
+                    answer:
+                      "It can iterate over inherited properties, leading to unexpected behavior",
+                    explanation:
+                      "Because `for...in` iterates over all enumerable properties (including inherited ones), it is safer to use `for...of` for arrays.",
+                  },
+                  {
+                    type: "drag-and-drop",
+                    question: "Match the use case to the best loop method.",
+                    items: [
+                      { id: "d1", text: "Transform an array to a new one" },
+                      { id: "d2", text: "Loop through elements of an array" },
+                    ],
+                    targets: [
+                      { id: "t1", text: "`.forEach()`" },
+                      { id: "t2", text: "`.map()`" },
+                    ],
+                    matches: { d1: "t2", d2: "t1" },
+                    explanation:
+                      "`.map()` is for transformation, while `.forEach()` is for performing an action on each element without returning a new array.",
+                  },
+                ],
+              },
+            },
+          ],
+          finalExam: {
+            title: "Final Exam (Lvl 3)",
+            icon: "award",
+            quiz: {
+              questions: [
+                {
+                  type: "multiple-choice",
+                  question:
+                    "Which loop is guaranteed to execute its body at least once?",
+                  options: ["`for`", "`while`", "`do-while`", "`for...of`"],
+                  answer: "`do-while`",
+                  explanation:
+                    "The `do-while` loop checks its condition at the end of the loop, ensuring it runs at least once.",
+                },
+                {
+                  type: "code-correction",
+                  question:
+                    "This loop is counting down incorrectly. It should print 3, 2, 1. Fix it.",
+                  code: "for (let i = 3; i < 0; i--) {\n  console.log(i);\n}",
+                  answer: "for (let i = 3; i > 0; i--) {\n  console.log(i);\n}",
+                  explanation:
+                    "The condition `i < 0` is false from the start. It should be `i > 0` to count down from 3.",
+                },
+                {
+                  type: "multiple-choice",
+                  question:
+                    "What will `console.log(i)` print in this `for...in` loop? `const arr = ['a', 'b', 'c']; for (let i in arr) { console.log(i); }`",
+                  options: ["'a', 'b', 'c'", "0, 1, 2", "a, b, c", "undefined"],
+                  answer: "0, 1, 2",
+                  explanation:
+                    "`for...in` iterates over the indices (keys) of an array, not the values. For values, use `for...of`.",
+                },
+                {
+                  type: "fill-in-the-blank",
+                  question:
+                    "To exit a loop prematurely based on a condition, you would use the `__` statement.",
+                  answer: "break",
+                  explanation:
+                    "The `break` statement halts the execution of the loop and moves on to the next statement after the loop.",
+                  flash: true,
+                  suggestions: ["continue", "break", "return", "exit"],
+                },
+                {
+                  type: "multiple-choice",
+                  question:
+                    "A `for...of` loop can be used on all of the following EXCEPT:",
+                  options: ["Strings", "Arrays", "Objects", "Maps"],
+                  answer: "Objects",
+                  explanation:
+                    "Plain JavaScript objects are not iterable and require other methods like `for...in` or `Object.keys()`.",
+                },
+                {
+                  type: "multiple-choice",
+                  question:
+                    "In a `for` loop, what happens if you omit the condition?",
+                  options: [
+                    "It runs once",
+                    "It throws an error",
+                    "It is an infinite loop",
+                    "It skips to the next loop",
+                  ],
+                  answer: "It is an infinite loop",
+                  explanation:
+                    "Without a condition, the loop will never evaluate to false and will run indefinitely.",
+                },
+                {
+                  type: "drag-and-drop",
+                  question: "Match the statement to its effect.",
+                  items: [
+                    { id: "d1", text: "`continue`" },
+                    { id: "d2", text: "`break`" },
+                  ],
+                  targets: [
+                    { id: "t1", text: "Skips current iteration" },
+                    { id: "t2", text: "Exits the loop" },
+                  ],
+                  matches: { d1: "t1", d2: "t2" },
+                  explanation:
+                    "These control statements give you fine-grained control over loop execution.",
+                },
+              ],
+            },
+          },
+        },
+      };
+
+      const SAVE_KEY = "pathfinderSaveData_level3"; // Unique key for level 3
+      const appState = {
+        currentScreen: "welcome",
+        userName: "",
+        learningPlan: null,
+        quizState: null,
+        achievements: new Set(),
+        flashTimerInterval: null,
+      };
+
+      // --- NEW UNIFIED SAVE/LOAD LOGIC ---
+      async function savePlayerState() {
+        try {
+          const stateToSave = {
+            ...appState,
+            achievements: [...appState.achievements], // Convert Set to Array for JSON
+          };
+          if (currentUser && !currentUser.isAnonymous) {
+            const userLevelRef = doc(
+              db,
+              "users",
+              currentUser.uid,
+              "levelProgress",
+              "level3"
+            );
+            await setDoc(userLevelRef, stateToSave, { merge: true });
+            console.log("Level 3 progress saved to Firebase.");
+          } else {
+            localStorage.setItem(SAVE_KEY, JSON.stringify(stateToSave));
+            console.log("Level 3 progress saved to Local Storage.");
+          }
+        } catch (e) {
+          console.error("Failed to save state:", e);
+        }
+      }
+
+      async function loadPlayerState() {
+        try {
+          let savedState = null;
+          if (currentUser && !currentUser.isAnonymous) {
+            console.log(
+              "Attempting to load Level 3 progress from Firebase for user:",
+              currentUser.uid
+            );
+            const userLevelRef = doc(
+              db,
+              "users",
+              currentUser.uid,
+              "levelProgress",
+              "level3"
+            );
+            const docSnap = await getDoc(userLevelRef);
+            if (docSnap.exists()) {
+              savedState = docSnap.data();
+              console.log("Level 3 progress loaded from Firebase.");
             }
+          } else {
+            const savedStateJSON = localStorage.getItem(SAVE_KEY);
+            if (savedStateJSON) {
+              savedState = JSON.parse(savedStateJSON);
+              console.log("Level 3 progress loaded from Local Storage.");
+            }
+          }
+
+          if (savedState) {
+            savedState.achievements = new Set(savedState.achievements); // Convert back to Set
+            return savedState;
+          }
+        } catch (e) {
+          console.error("Failed to load or parse state:", e);
+        }
+        console.log("No saved state found for Level 3.");
+        return null;
+      }
+
+      // --- Utils ---
+      const shuffleArray = (array) => {
+        return [...array].sort(() => Math.random() - 0.5);
+      };
+      const calculateLevel = (xp) => ({
+        level: Math.floor(xp / 100) + 1,
+        nextLevelXp: (Math.floor(xp / 100) + 1) * 100,
+      });
+      function showXpAnimation() {
+        const activityContainer = document.getElementById("activity-container");
+        if (!activityContainer) return;
+        const xpEl = document.createElement("div");
+        xpEl.textContent = "+10 XP";
+        xpEl.className = "xp-popup";
+        activityContainer.appendChild(xpEl);
+        setTimeout(() => {
+          xpEl.remove();
+        }, 1500);
+      }
+
+      // --- UI Navigation & Setup ---
+      function navigateTo(screenName) {
+        document
+          .querySelectorAll("[data-screen]")
+          .forEach((screen) => screen.classList.remove("active"));
+        const newScreen = document.querySelector(
+          `[data-screen="${screenName}"]`
+        );
+        if (newScreen) {
+          newScreen.classList.add("active");
+          newScreen.querySelector(".card, .p-4")?.classList.add("fade-in");
+          appState.currentScreen = screenName;
+        }
+      }
+
+      function startLearningPath() {
+        appState.userName = currentUser?.displayName || "Learner";
+        const planData = contentLibrary.javascript;
+        appState.learningPlan = {
+          ...planData,
+          progress: planData.modules.reduce(
+            (acc, _, index) => ({ ...acc, [`module_${index}`]: 0 }),
+            { finalExam: 0 }
+          ),
+          xp: 0,
         };
+        appState.achievements = new Set();
+        savePlayerState();
+        renderDashboard();
+        navigateTo("dashboard");
+      }
 
-        const SAVE_KEY = 'pathfinderSaveData_level3'; // Unique key for level 3
-        const appState = {
-            currentScreen: 'welcome',
-            userName: '',
-            learningPlan: null,
-            quizState: null,
-            achievements: new Set(),
-            flashTimerInterval: null,
-        };
+      // --- Dashboard and Activity Rendering ---
+      function renderDashboard() {
+        const { learningPlan } = appState;
+        const userName =
+          appState.userName || currentUser?.displayName || "Learner";
+        if (!learningPlan) return;
+        const { level, nextLevelXp } = calculateLevel(learningPlan.xp);
+        const topNav = document.getElementById("top-nav");
 
-        // --- NEW UNIFIED SAVE/LOAD LOGIC ---
-        async function savePlayerState() {
-            try {
-                const stateToSave = {
-                    ...appState,
-                    achievements: [...appState.achievements], // Convert Set to Array for JSON
-                };
-                if (currentUser && !currentUser.isAnonymous) {
-                    const userLevelRef = doc(db, "users", currentUser.uid, "levelProgress", "level3");
-                    await setDoc(userLevelRef, stateToSave, { merge: true });
-                    console.log("Level 3 progress saved to Firebase.");
-                } else {
-                    localStorage.setItem(SAVE_KEY, JSON.stringify(stateToSave));
-                    console.log("Level 3 progress saved to Local Storage.");
-                }
-            } catch (e) {
-                console.error("Failed to save state:", e);
-            }
-        }
-
-        async function loadPlayerState() {
-            try {
-                let savedState = null;
-                if (currentUser && !currentUser.isAnonymous) {
-                    console.log("Attempting to load Level 3 progress from Firebase for user:", currentUser.uid);
-                    const userLevelRef = doc(db, "users", currentUser.uid, "levelProgress", "level3");
-                    const docSnap = await getDoc(userLevelRef);
-                    if (docSnap.exists()) {
-                        savedState = docSnap.data();
-                        console.log("Level 3 progress loaded from Firebase.");
-                    }
-                } else {
-                    const savedStateJSON = localStorage.getItem(SAVE_KEY);
-                    if (savedStateJSON) {
-                        savedState = JSON.parse(savedStateJSON);
-                        console.log("Level 3 progress loaded from Local Storage.");
-                    }
-                }
-                
-                if (savedState) {
-                    savedState.achievements = new Set(savedState.achievements); // Convert back to Set
-                    return savedState;
-                }
-            } catch (e) {
-                console.error("Failed to load or parse state:", e);
-            }
-            console.log("No saved state found for Level 3.");
-            return null;
-        }
-
-        // --- Utils ---
-        const shuffleArray = (array) => { return [...array].sort(() => Math.random() - 0.5); };
-        const calculateLevel = (xp) => ({ level: Math.floor(xp / 100) + 1, nextLevelXp: (Math.floor(xp / 100) + 1) * 100 });
-        function showXpAnimation() { const activityContainer = document.getElementById('activity-container'); if (!activityContainer) return; const xpEl = document.createElement('div'); xpEl.textContent = '+10 XP'; xpEl.className = 'xp-popup'; activityContainer.appendChild(xpEl); setTimeout(() => { xpEl.remove(); }, 1500); }
-
-        // --- UI Navigation & Setup ---
-        function navigateTo(screenName) {
-            document.querySelectorAll('[data-screen]').forEach(screen => screen.classList.remove('active'));
-            const newScreen = document.querySelector(`[data-screen="${screenName}"]`);
-            if (newScreen) {
-                newScreen.classList.add('active');
-                newScreen.querySelector('.card, .p-4')?.classList.add('fade-in');
-                appState.currentScreen = screenName;
-            }
-        }
-
-        function startLearningPath() {
-            appState.userName = currentUser?.displayName || "Learner";
-            const planData = contentLibrary.javascript;
-            appState.learningPlan = {
-                ...planData,
-                progress: planData.modules.reduce((acc, _, index) => ({ ...acc, [`module_${index}`]: 0 }), { finalExam: 0 }),
-                xp: 0,
-            };
-            appState.achievements = new Set();
-            savePlayerState();
-            renderDashboard();
-            navigateTo('dashboard');
-        }
-        
-        // --- Dashboard and Activity Rendering ---
-        function renderDashboard() {
-            const { learningPlan } = appState;
-            const userName = appState.userName || (currentUser?.displayName || "Learner");
-            if (!learningPlan) return;
-            const {level, nextLevelXp} = calculateLevel(learningPlan.xp);
-            const topNav = document.getElementById('top-nav');
-
-            topNav.innerHTML = `
+        topNav.innerHTML = `
                 <div class="flex flex-wrap justify-between items-center gap-4">
                     <div>
                         <h1 class="text-2xl font-bold">Level 3: Loops</h1>
@@ -688,28 +1528,32 @@
                 </div>
             `;
 
-            renderProgressTracker();
-            renderAchievements();
-            showModuleList();
-            lucide.createIcons();
-        }
+        renderProgressTracker();
+        renderAchievements();
+        showModuleList();
+        lucide.createIcons();
+      }
 
-        function showModuleList() {
-            if (appState.quizState && appState.quizState.timerId) clearInterval(appState.quizState.timerId);
-            if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval);
-            appState.quizState = null;
-            
-            const { modules, finalExam, progress } = appState.learningPlan;
-             document.getElementById('activity-container').innerHTML = `
+      function showModuleList() {
+        if (appState.quizState && appState.quizState.timerId)
+          clearInterval(appState.quizState.timerId);
+        if (appState.flashTimerInterval)
+          clearInterval(appState.flashTimerInterval);
+        appState.quizState = null;
+
+        const { modules, finalExam, progress } = appState.learningPlan;
+        document.getElementById("activity-container").innerHTML = `
                 <h2 class="text-2xl font-bold mb-6">Level 3 Modules</h2>
                 <div class="space-y-4">
-                    ${modules.map((mod, i) => createModuleCard(mod, i)).join('')}
-                    ${createModuleCard(finalExam, 'finalExam', true)}
+                    ${modules
+                      .map((mod, i) => createModuleCard(mod, i))
+                      .join("")}
+                    ${createModuleCard(finalExam, "finalExam", true)}
                 </div>
             `;
-            
-            if (progress.finalExam > 0) {
-                 document.getElementById('activity-container').innerHTML += `
+
+        if (progress.finalExam > 0) {
+          document.getElementById("activity-container").innerHTML += `
                     <div class="mt-8 text-center fade-in">
                         <h3 class="text-2xl font-bold text-red-400">Level 3 Complete!</h3>
                         <p class="mt-2 text-gray-300">You've mastered loops. The next challenge awaits.</p>
@@ -719,151 +1563,522 @@
                         </a>
                     </div>
                 `;
-            }
-
-            document.getElementById('activity-container').classList.add('fade-in');
-            lucide.createIcons();
         }
 
-        function createModuleCard(module, index, isExam = false) {
-             const progress = appState.learningPlan.progress;
-             const id = isExam ? 'finalExam' : `module_${index}`;
-             const isDone = progress[id] > 0;
+        document.getElementById("activity-container").classList.add("fade-in");
+        lucide.createIcons();
+      }
 
-            return `
-            <div class="card module-card !p-4 flex items-center gap-4 cursor-pointer ${isDone ? 'bg-red-500/20' : ''}" onclick="window.startActivity('${id}')">
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center ${isExam ? 'bg-yellow-500' : 'bg-red-500'} text-white flex-shrink-0">
+      function createModuleCard(module, index, isExam = false) {
+        const progress = appState.learningPlan.progress;
+        const id = isExam ? "finalExam" : `module_${index}`;
+        const isDone = progress[id] > 0;
+
+        return `
+            <div class="card module-card !p-4 flex items-center gap-4 cursor-pointer ${
+              isDone ? "bg-red-500/20" : ""
+            }" onclick="window.startActivity('${id}')">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center ${
+                  isExam ? "bg-yellow-500" : "bg-red-500"
+                } text-white flex-shrink-0">
                      <i data-lucide="${module.icon}"></i>
                 </div>
                 <div class="flex-grow">
                      <h3 class="text-xl font-bold">${module.title}</h3>
-                     <p class="text-sm text-gray-400">${module.quiz.questions.length} Questions</p>
+                     <p class="text-sm text-gray-400">${
+                       module.quiz.questions.length
+                     } Questions</p>
                 </div>
-                ${isDone ? '<i data-lucide="check-circle-2" class="w-8 h-8 text-red-400"></i>' : '<i data-lucide="chevron-right" class="w-8 h-8 text-gray-400"></i>'}
+                ${
+                  isDone
+                    ? '<i data-lucide="check-circle-2" class="w-8 h-8 text-red-400"></i>'
+                    : '<i data-lucide="chevron-right" class="w-8 h-8 text-gray-400"></i>'
+                }
             </div>
             `;
-        }
+      }
 
-        function renderProgressTracker() {
-            const { progress, modules, finalExam } = appState.learningPlan;
-            const tracker = document.getElementById('progress-tracker');
-            
-            const createTrackerItem = (id, icon, title, isDone) => `<div class="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/10 ${isDone ? 'opacity-50' : ''}" onclick="${isDone ? '' : `window.startActivity('${id}')`}"><div class="w-8 h-8 rounded-full flex items-center justify-center ${isDone ? 'bg-red-500' : 'bg-red-500'} text-white"><i data-lucide="${isDone ? 'check' : icon}"></i></div><div><p class="font-semibold text-gray-200">${title}</p></div>${isDone ? '<i data-lucide="sparkles" class="w-5 h-5 text-yellow-400 ml-auto"></i>' : ''}</div>`;
+      function renderProgressTracker() {
+        const { progress, modules, finalExam } = appState.learningPlan;
+        const tracker = document.getElementById("progress-tracker");
 
-            let html = modules.map((mod, i) => createTrackerItem(`module_${i}`, mod.icon, mod.title, progress[`module_${i}`] > 0)).join('');
-            html += createTrackerItem('finalExam', finalExam.icon, finalExam.title, progress.finalExam > 0);
-            tracker.innerHTML = html;
-        }
+        const createTrackerItem = (id, icon, title, isDone) =>
+          `<div class="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/10 ${
+            isDone ? "opacity-50" : ""
+          }" onclick="${
+            isDone ? "" : `window.startActivity('${id}')`
+          }"><div class="w-8 h-8 rounded-full flex items-center justify-center ${
+            isDone ? "bg-red-500" : "bg-red-500"
+          } text-white"><i data-lucide="${
+            isDone ? "check" : icon
+          }"></i></div><div><p class="font-semibold text-gray-200">${title}</p></div>${
+            isDone
+              ? '<i data-lucide="sparkles" class="w-5 h-5 text-yellow-400 ml-auto"></i>'
+              : ""
+          }</div>`;
 
-        // --- Achievements ---
-        const allAchievements = {
-            loopRookie: { icon: 'infinity', title: 'Loop Rookie', description: 'Complete your first Loops module.' },
-            forLoopMaster: { icon: 'refresh-cw', title: 'For Loop Master', description: 'Get a perfect score on a Level 3 module.' },
-            loopPro: { icon: 'git-fork', title: 'Loop Pro', description: 'Complete the entire Loops path.' }
-        };
+        let html = modules
+          .map((mod, i) =>
+            createTrackerItem(
+              `module_${i}`,
+              mod.icon,
+              mod.title,
+              progress[`module_${i}`] > 0
+            )
+          )
+          .join("");
+        html += createTrackerItem(
+          "finalExam",
+          finalExam.icon,
+          finalExam.title,
+          progress.finalExam > 0
+        );
+        tracker.innerHTML = html;
+      }
 
-        function awardAchievement(id) {
-            if (appState.achievements.has(id)) return;
-            appState.achievements.add(id);
-            const achievement = allAchievements[id];
-            
-            const modal = document.getElementById('achievement-modal');
-            document.getElementById('modal-content-inner').innerHTML = `<i data-lucide="award" class="w-16 h-16 mx-auto text-yellow-400 mb-4"></i><h2 class="text-2xl font-bold">Achievement Unlocked!</h2><p class="mt-2 font-semibold text-gray-200">${achievement.title}</p><p class="text-sm text-gray-300">${achievement.description}</p><button class="btn mt-6" onclick="this.closest('.modal-overlay').classList.remove('visible')">Continue</button>`;
-            lucide.createIcons();
-            modal.classList.add('visible');
-            renderAchievements();
-            savePlayerState();
-        }
+      // --- Achievements ---
+      const allAchievements = {
+        loopRookie: {
+          icon: "infinity",
+          title: "Loop Rookie",
+          description: "Complete your first Loops module.",
+        },
+        forLoopMaster: {
+          icon: "refresh-cw",
+          title: "For Loop Master",
+          description: "Get a perfect score on a Level 3 module.",
+        },
+        loopPro: {
+          icon: "git-fork",
+          title: "Loop Pro",
+          description: "Complete the entire Loops path.",
+        },
+      };
 
-        function renderAchievements() {
-            const barEl = document.getElementById('achievements-bar');
-            if (!barEl) return; 
+      function awardAchievement(id) {
+        if (appState.achievements.has(id)) return;
+        appState.achievements.add(id);
+        const achievement = allAchievements[id];
 
-            let html = '<h3 class="text-lg font-bold mr-2 text-gray-300 hidden md:block">Achievements</h3>';
-            
-            for (const id in allAchievements) {
-                const achievement = allAchievements[id];
-                const isEarned = appState.achievements.has(id);
-                
-                html += `
-                    <div class="achievement-icon ${isEarned ? '' : 'opacity-30'}" title="${achievement.title}">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center ${isEarned ? 'bg-yellow-400' : 'bg-gray-500'} text-white">
+        const modal = document.getElementById("achievement-modal");
+        document.getElementById(
+          "modal-content-inner"
+        ).innerHTML = `<i data-lucide="award" class="w-16 h-16 mx-auto text-yellow-400 mb-4"></i><h2 class="text-2xl font-bold">Achievement Unlocked!</h2><p class="mt-2 font-semibold text-gray-200">${achievement.title}</p><p class="text-sm text-gray-300">${achievement.description}</p><button class="btn mt-6" onclick="this.closest('.modal-overlay').classList.remove('visible')">Continue</button>`;
+        lucide.createIcons();
+        modal.classList.add("visible");
+        renderAchievements();
+        savePlayerState();
+      }
+
+      function renderAchievements() {
+        const barEl = document.getElementById("achievements-bar");
+        if (!barEl) return;
+
+        let html =
+          '<h3 class="text-lg font-bold mr-2 text-gray-300 hidden md:block">Achievements</h3>';
+
+        for (const id in allAchievements) {
+          const achievement = allAchievements[id];
+          const isEarned = appState.achievements.has(id);
+
+          html += `
+                    <div class="achievement-icon ${
+                      isEarned ? "" : "opacity-30"
+                    }" title="${achievement.title}">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center ${
+                          isEarned ? "bg-yellow-400" : "bg-gray-500"
+                        } text-white">
                             <i data-lucide="${achievement.icon}"></i>
                         </div>
                         <div class="tooltip">
-                            <span class="tooltip-title">${achievement.title}</span>
-                            <span class="tooltip-desc">${achievement.description}</span>
+                            <span class="tooltip-title">${
+                              achievement.title
+                            }</span>
+                            <span class="tooltip-desc">${
+                              achievement.description
+                            }</span>
                         </div>
                     </div>
                 `;
-            }
-            
-            barEl.innerHTML = html;
-            lucide.createIcons();
         }
-        
-        window.markComplete = (activityId, score) => {
-            if (appState.quizState && appState.quizState.timerId) clearInterval(appState.quizState.timerId);
-            if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval);
 
-            const oldXp = appState.learningPlan.xp;
-            const newXp = oldXp - (appState.learningPlan.progress[activityId] || 0) + score * 10;
-            appState.learningPlan.progress[activityId] = score * 10;
-            appState.learningPlan.xp = newXp;
+        barEl.innerHTML = html;
+        lucide.createIcons();
+      }
 
-            if (activityId !== 'finalExam') awardAchievement('loopRookie');
-            const module = activityId === 'finalExam' ? appState.learningPlan.finalExam : appState.learningPlan.modules[activityId.split('_')[1]];
-            if (score === module.quiz.questions.length) awardAchievement('forLoopMaster');
-            const allDone = appState.learningPlan.modules.every((_, i) => appState.learningPlan.progress[`module_${i}`] > 0) && appState.learningPlan.progress.finalExam > 0;
-            if(allDone) awardAchievement('loopPro');
+      window.markComplete = (activityId, score) => {
+        if (appState.quizState && appState.quizState.timerId)
+          clearInterval(appState.quizState.timerId);
+        if (appState.flashTimerInterval)
+          clearInterval(appState.flashTimerInterval);
 
-            renderDashboard();
-            savePlayerState();
+        const oldXp = appState.learningPlan.xp;
+        const newXp =
+          oldXp -
+          (appState.learningPlan.progress[activityId] || 0) +
+          score * 10;
+        appState.learningPlan.progress[activityId] = score * 10;
+        appState.learningPlan.xp = newXp;
+
+        if (activityId !== "finalExam") awardAchievement("loopRookie");
+        const module =
+          activityId === "finalExam"
+            ? appState.learningPlan.finalExam
+            : appState.learningPlan.modules[activityId.split("_")[1]];
+        if (score === module.quiz.questions.length)
+          awardAchievement("forLoopMaster");
+        const allDone =
+          appState.learningPlan.modules.every(
+            (_, i) => appState.learningPlan.progress[`module_${i}`] > 0
+          ) && appState.learningPlan.progress.finalExam > 0;
+        if (allDone) awardAchievement("loopPro");
+
+        renderDashboard();
+        savePlayerState();
+      };
+
+      // --- Quiz Logic ---
+      window.startActivity = (activityId) => {
+        const isExam = activityId === "finalExam";
+        const moduleData = isExam
+          ? appState.learningPlan.finalExam
+          : appState.learningPlan.modules[activityId.split("_")[1]];
+        appState.quizState = {
+          activityId,
+          questions: shuffleArray(moduleData.quiz.questions),
+          currentIndex: 0,
+          score: 0,
+          timerId: null,
+          timeLeft: moduleData.quiz.questions.length * 30,
+        };
+        appState.quizState.timerId = setInterval(updateTimer, 1000);
+        renderQuizActivityQuestion();
+      };
+      function updateTimer() {
+        if (!appState.quizState) return;
+        appState.quizState.timeLeft--;
+        const timerEl = document.getElementById("quiz-timer");
+        if (timerEl) {
+          const m = Math.floor(appState.quizState.timeLeft / 60);
+          const s = appState.quizState.timeLeft % 60;
+          timerEl.textContent = `${m}:${s.toString().padStart(2, "0")}`;
         }
-        
-        // --- Quiz Logic ---
-        window.startActivity = (activityId) => {
-            const isExam = activityId === 'finalExam';
-            const moduleData = isExam ? appState.learningPlan.finalExam : appState.learningPlan.modules[activityId.split('_')[1]];
-            appState.quizState = { activityId, questions: shuffleArray(moduleData.quiz.questions), currentIndex: 0, score: 0, timerId: null, timeLeft: moduleData.quiz.questions.length * 30 };
-            appState.quizState.timerId = setInterval(updateTimer, 1000);
-            renderQuizActivityQuestion();
+        if (appState.quizState.timeLeft <= 0) finishQuiz(true);
+      }
+      function finishQuiz(timesUp = false) {
+        if (!appState.quizState) return;
+        if (appState.quizState.timerId)
+          clearInterval(appState.quizState.timerId);
+        if (appState.flashTimerInterval)
+          clearInterval(appState.flashTimerInterval);
+        const activityContainer = document.getElementById("activity-container");
+        activityContainer.innerHTML = `<div class="text-center fade-in"><h2 class="text-2xl font-bold">${
+          timesUp ? "Time's Up!" : "Module Complete!"
+        }</h2><p class="text-lg mt-2 text-gray-300">You scored</p><p class="text-5xl font-bold text-red-400 my-4">${
+          appState.quizState.score
+        } / ${
+          appState.quizState.questions.length
+        }</p><button onclick="window.markComplete('${
+          appState.quizState.activityId
+        }', ${appState.quizState.score})" class="btn">Continue</button></div>`;
+      }
+
+      function renderQuizActivityQuestion() {
+        if (appState.flashTimerInterval)
+          clearInterval(appState.flashTimerInterval);
+        const { quizState } = appState;
+        if (!quizState) return;
+        const quizData = quizState.questions[quizState.currentIndex];
+        const activityContainer = document.getElementById("activity-container");
+        let questionHTML = "",
+          flashHeaderHTML = "";
+
+        if (quizData.flash) {
+          flashHeaderHTML = `<div class="mb-4 p-3 rounded-lg bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center gap-4"><i data-lucide="zap" class="text-yellow-400 flash-indicator"></i><span class="font-semibold text-yellow-200">Flash Question!</span><span id="flash-timer" class="font-bold text-yellow-300 text-lg">15s</span></div>`;
         }
-        function updateTimer() { if (!appState.quizState) return; appState.quizState.timeLeft--; const timerEl = document.getElementById('quiz-timer'); if (timerEl) { const m = Math.floor(appState.quizState.timeLeft / 60); const s = appState.quizState.timeLeft % 60; timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`; } if (appState.quizState.timeLeft <= 0) finishQuiz(true); }
-        function finishQuiz(timesUp = false) { if (!appState.quizState) return; if (appState.quizState.timerId) clearInterval(appState.quizState.timerId); if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const activityContainer = document.getElementById('activity-container'); activityContainer.innerHTML = `<div class="text-center fade-in"><h2 class="text-2xl font-bold">${timesUp ? "Time's Up!" : "Module Complete!"}</h2><p class="text-lg mt-2 text-gray-300">You scored</p><p class="text-5xl font-bold text-red-400 my-4">${appState.quizState.score} / ${appState.quizState.questions.length}</p><button onclick="window.markComplete('${appState.quizState.activityId}', ${appState.quizState.score})" class="btn">Continue</button></div>`; }
-        function renderQuizActivityQuestion() { if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const { quizState } = appState; if (!quizState) return; const quizData = quizState.questions[quizState.currentIndex]; const activityContainer = document.getElementById('activity-container'); let questionHTML = '', flashHeaderHTML = ''; if (quizData.flash) { flashHeaderHTML = `<div class="mb-4 p-3 rounded-lg bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center gap-4"><i data-lucide="zap" class="text-yellow-400 flash-indicator"></i><span class="font-semibold text-yellow-200">Flash Question!</span><span id="flash-timer" class="font-bold text-yellow-300 text-lg">15s</span></div>`; } if (quizData.type === 'multiple-choice') quizData.options = shuffleArray(quizData.options); switch(quizData.type) { case 'fill-in-the-blank': { let sHTML = ''; if (quizData.suggestions) { sHTML = `<datalist id="suggestions-list">${quizData.suggestions.map(s => `<option value="${s}"></option>`).join('')}</datalist>`; } const iHTML = `<input type="text" id="fill-in-blank-input" ${quizData.suggestions ? 'list="suggestions-list"' : ''} class="mx-2 p-1 border-b-2 border-red-400 focus:outline-none focus:border-red-500 bg-transparent text-white">`; questionHTML = `<p class="text-lg mb-6">${quizData.question.replace('______', iHTML).replace('____', iHTML)}</p>${sHTML}<button id="submit-fill-btn" class="btn">Submit</button>`; break; } case 'drag-and-drop': { questionHTML = `<p class="text-lg mb-6">${quizData.question}</p><div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Items</h4>${quizData.items.map(item => `<div id="${item.id}" draggable="true" class="drag-item p-3 rounded-lg">${item.text}</div>`).join('')}</div><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Targets</h4>${quizData.targets.map(target => `<div id="${target.id}" class="drop-target p-3 rounded-lg min-h-[50px]">${target.text}</div>`).join('')}</div></div><button id="submit-drag-btn" class="btn mt-6">Check Answer</button>`; break; } case 'code-correction': { questionHTML = `<p class="text-lg mb-4">${quizData.question}</p><pre class="bg-black/20 p-4 rounded-lg text-gray-400 text-sm mb-4"><code>${quizData.code}</code></pre><textarea id="code-correction-input" rows="3" class="w-full p-2 rounded-lg themed-input" placeholder="Enter corrected code here..."></textarea><button id="submit-code-btn" class="btn mt-4">Submit</button>`; break; } case 'multiple-choice': default: { questionHTML = `<p class="text-lg mb-6">${quizData.question}</p><div class="space-y-3">${quizData.options.map(opt => `<button class="w-full text-left p-4 rounded-lg quiz-act-option border-2 border-transparent hover:border-red-400 bg-white/5 transition-colors" data-answer="${opt}">${opt}</button>`).join('')}</div>`; break; } } activityContainer.innerHTML = `<div class="fade-in"><div class="flex justify-between items-center mb-4"><button onclick="showModuleList()" class="text-sm text-red-300 hover:text-red-200">&larr; Back to Modules</button><div class="text-lg font-bold text-gray-300" id="quiz-timer"></div></div>${flashHeaderHTML}<h2 class="text-2xl font-bold mb-6">${quizState.questions[quizState.currentIndex].title || 'Question '+(quizState.currentIndex+1)}</h2><div id="question-content">${questionHTML}</div><div id="quiz-feedback-container" class="mt-6"></div></div>`; if (quizData.flash) { let t = 15; const ft = document.getElementById('flash-timer'); ft.textContent = `${t}s`; appState.flashTimerInterval = setInterval(() => { t--; ft.textContent = `${t}s`; if (t <= 0) { clearInterval(appState.flashTimerInterval); handleAnswer('__timeout__', quizData); } }, 1000); } setupQuestionEventListeners(quizData); lucide.createIcons(); }
-        function setupQuestionEventListeners(quizData) { switch(quizData.type) { case 'multiple-choice': document.querySelectorAll('.quiz-act-option').forEach(btn => btn.addEventListener('click', (e) => handleAnswer(e.target.dataset.answer, quizData))); break; case 'fill-in-the-blank': document.getElementById('submit-fill-btn').addEventListener('click', () => handleAnswer(document.getElementById('fill-in-blank-input').value, quizData)); document.getElementById('fill-in-blank-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('submit-fill-btn').click(); }); break; case 'drag-and-drop': let dId = null; document.querySelectorAll('.drag-item').forEach(i => i.addEventListener('dragstart', e => { dId = e.target.id; e.dataTransfer.setData('text/plain', e.target.id); })); document.querySelectorAll('.drop-target').forEach(t => { t.addEventListener('dragover', e => { e.preventDefault(); t.classList.add('drag-over'); }); t.addEventListener('dragleave', () => t.classList.remove('drag-over')); t.addEventListener('drop', e => { e.preventDefault(); t.classList.remove('drag-over'); const dItem = document.getElementById(dId); if (dItem && t.children.length === 0) { t.appendChild(dItem); dItem.style.cursor = 'default'; }}); }); document.getElementById('submit-drag-btn').addEventListener('click', () => { let isCorrect = Object.entries(quizData.matches).every(([iId, tId]) => document.getElementById(tId).querySelector(`#${iId}`)); handleAnswer(isCorrect, quizData); }); break; case 'code-correction': document.getElementById('submit-code-btn').addEventListener('click', () => handleAnswer(document.getElementById('code-correction-input').value, quizData)); break; } }
-        function handleAnswer(selectedAnswer, quizData) { if (appState.flashTimerInterval) clearInterval(appState.flashTimerInterval); const { quizState } = appState; let isCorrect = false, wasTimeout = selectedAnswer === '__timeout__'; if (!wasTimeout) { if (quizData.type === 'code-correction') { isCorrect = selectedAnswer.trim() === quizData.answer.trim(); } else if (typeof selectedAnswer === 'string') { isCorrect = selectedAnswer.trim().toLowerCase() === quizData.answer.trim().toLowerCase(); } else { isCorrect = selectedAnswer === true; } } if (isCorrect) { quizState.score++; showXpAnimation(); } const isLastQuestion = quizState.currentIndex === quizState.questions.length - 1; const feedbackContainer = document.getElementById('quiz-feedback-container'); let feedbackTitle = 'Correct!'; if (wasTimeout) feedbackTitle = "Time's Up!"; else if (!isCorrect) feedbackTitle = 'Not quite.'; feedbackContainer.innerHTML = `<div class="fade-in p-4 rounded-lg ${isCorrect ? 'bg-red-500/20' : 'bg-red-500/20'}"><p class="font-semibold ${isCorrect ? 'text-red-300' : 'text-red-300'}">${feedbackTitle}</p><p class="mt-2 text-sm ${isCorrect ? 'text-red-400' : 'text-red-400'}">${quizData.explanation}</p></div><button id="next-quiz-btn" class="btn mt-4">${isLastQuestion ? 'Finish Quiz' : 'Next Question'}</button>`; document.querySelectorAll('button, input, textarea').forEach(el => { if(el.id !== 'next-quiz-btn') el.disabled = true; }); document.getElementById('next-quiz-btn').addEventListener('click', () => { if (isLastQuestion) finishQuiz(); else { quizState.currentIndex++; renderQuizActivityQuestion(); } }); }
-        
-        // --- APP INITIALIZATION ---
-        async function initializePathfinderApp() {
-            const loadedState = await loadPlayerState();
-            if (loadedState && loadedState.learningPlan) {
-                Object.assign(appState, loadedState);
-                renderDashboard();
-                navigateTo('dashboard');
+
+        if (quizData.type === "multiple-choice") {
+          quizData.options = shuffleArray(quizData.options);
+        }
+
+        switch (quizData.type) {
+          case "fill-in-the-blank": {
+            const blankSpace = `<span class="inline-block border-b-2 border-gray-400 align-bottom w-32 mx-1"></span>`;
+            const questionText = quizData.question.replace(
+              /_{4,}/g,
+              blankSpace
+            ); // Replaces four or more underscores with a visual blank
+            questionHTML = `<p class="text-lg mb-6 leading-relaxed">${questionText}</p>`;
+
+            if (quizData.suggestions) {
+              // If suggestions exist, render them as clickable buttons
+              questionHTML += `<div class="mt-4 flex flex-wrap justify-center gap-3">${quizData.suggestions
+                .map(
+                  (opt) =>
+                    `<button class="btn quiz-act-option bg-white/5 hover:bg-white/10" data-answer="${opt}">${opt}</button>`
+                )
+                .join("")}</div>`;
             } else {
-                navigateTo('welcome');
+              // Otherwise, fall back to a simple text input field
+              questionHTML += `<div class="mt-4 flex gap-2 justify-center"><input type="text" id="fill-in-blank-input" placeholder="Type your answer" class="themed-input p-2 rounded-lg text-center"><button id="submit-fill-btn" class="btn">Submit</button></div>`;
             }
-            document.getElementById('start-learning-btn').addEventListener('click', startLearningPath);
+            break;
+          }
+          case "drag-and-drop": {
+            questionHTML = `<p class="text-lg mb-6">${
+              quizData.question
+            }</p><div class="flex flex-col md:flex-row gap-8"><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Items</h4>${quizData.items
+              .map(
+                (item) =>
+                  `<div id="${item.id}" draggable="true" class="drag-item p-3 rounded-lg">${item.text}</div>`
+              )
+              .join(
+                ""
+              )}</div><div class="w-full md:w-1/2 space-y-3"><h4 class="font-semibold">Targets</h4>${quizData.targets
+              .map(
+                (target) =>
+                  `<div id="${target.id}" class="drop-target p-3 rounded-lg min-h-[50px]">${target.text}</div>`
+              )
+              .join(
+                ""
+              )}</div></div><button id="submit-drag-btn" class="btn mt-6">Check Answer</button>`;
+            break;
+          }
+          case "code-correction": {
+            questionHTML = `<p class="text-lg mb-4">${quizData.question}</p><pre class="bg-black/20 p-4 rounded-lg text-gray-400 text-sm mb-4"><code>${quizData.code}</code></pre><textarea id="code-correction-input" rows="3" class="w-full p-2 rounded-lg themed-input" placeholder="Enter corrected code here..."></textarea><button id="submit-code-btn" class="btn mt-4">Submit</button>`;
+            break;
+          }
+          case "multiple-choice":
+          default: {
+            questionHTML = `<p class="text-lg mb-6">${
+              quizData.question
+            }</p><div class="space-y-3">${quizData.options
+              .map(
+                (opt) =>
+                  `<button class="w-full text-left p-4 rounded-lg quiz-act-option border-2 border-transparent hover:border-red-400 bg-white/5 transition-colors" data-answer="${opt}">${opt}</button>`
+              )
+              .join("")}</div>`;
+            break;
+          }
         }
-
-        onAuthStateChanged(auth, async (user) => {
-            currentUser = user;
-            if (user) {
-                console.log("User is logged in:", user.displayName || user.email);
-                userDisplayName.textContent = user.displayName || user.email || `Guest-${user.uid.substring(0,5)}`;
-                userProfileBtn.classList.remove('hidden');
-                loginRegisterBtn.classList.add('hidden');
-            } else {
-                console.log("User is logged out.");
-                userProfileBtn.classList.add('hidden');
-                loginRegisterBtn.classList.remove('hidden');
+        activityContainer.innerHTML = `<div class="fade-in"><div class="flex justify-between items-center mb-4"><button onclick="showModuleList()" class="text-sm text-red-300 hover:text-red-200">&larr; Back to Modules</button><div class="text-lg font-bold text-gray-300" id="quiz-timer"></div></div>${flashHeaderHTML}<h2 class="text-2xl font-bold mb-6">${
+          quizState.questions[quizState.currentIndex].title ||
+          "Question " + (quizState.currentIndex + 1)
+        }</h2><div id="question-content">${questionHTML}</div><div id="quiz-feedback-container" class="mt-6"></div></div>`;
+        if (quizData.flash) {
+          let t = 15;
+          const ft = document.getElementById("flash-timer");
+          ft.textContent = `${t}s`;
+          appState.flashTimerInterval = setInterval(() => {
+            t--;
+            ft.textContent = `${t}s`;
+            if (t <= 0) {
+              clearInterval(appState.flashTimerInterval);
+              handleAnswer("__timeout__", quizData);
             }
-            // Initialize or re-initialize the app with the current user state
-            initializePathfinderApp();
+          }, 1000);
+        }
+        setupQuestionEventListeners(quizData);
+        lucide.createIcons();
+      }
+
+      function setupQuestionEventListeners(quizData) {
+        switch (quizData.type) {
+          case "multiple-choice":
+            document
+              .querySelectorAll(".quiz-act-option")
+              .forEach((btn) =>
+                btn.addEventListener("click", (e) =>
+                  handleAnswer(e.target.dataset.answer, quizData)
+                )
+              );
+            break;
+          case "fill-in-the-blank":
+            // Handles both new suggestion buttons and the text input fallback
+            document
+              .querySelectorAll(".quiz-act-option")
+              .forEach((btn) =>
+                btn.addEventListener("click", (e) =>
+                  handleAnswer(e.target.dataset.answer, quizData)
+                )
+              );
+
+            const fillSubmitBtn = document.getElementById("submit-fill-btn");
+            if (fillSubmitBtn) {
+              fillSubmitBtn.addEventListener("click", () =>
+                handleAnswer(
+                  document.getElementById("fill-in-blank-input").value,
+                  quizData
+                )
+              );
+              document
+                .getElementById("fill-in-blank-input")
+                .addEventListener("keypress", (e) => {
+                  if (e.key === "Enter")
+                    document.getElementById("submit-fill-btn").click();
+                });
+            }
+            break;
+          case "drag-and-drop":
+            let dId = null;
+            document.querySelectorAll(".drag-item").forEach((i) =>
+              i.addEventListener("dragstart", (e) => {
+                dId = e.target.id;
+                e.dataTransfer.setData("text/plain", e.target.id);
+              })
+            );
+            document.querySelectorAll(".drop-target").forEach((t) => {
+              t.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                t.classList.add("drag-over");
+              });
+              t.addEventListener("dragleave", () =>
+                t.classList.remove("drag-over")
+              );
+              t.addEventListener("drop", (e) => {
+                e.preventDefault();
+                t.classList.remove("drag-over");
+                const dItem = document.getElementById(dId);
+                if (dItem && t.children.length === 0) {
+                  t.appendChild(dItem);
+                  dItem.style.cursor = "default";
+                }
+              });
+            });
+            document
+              .getElementById("submit-drag-btn")
+              .addEventListener("click", () => {
+                let isCorrect = Object.entries(quizData.matches).every(
+                  ([iId, tId]) =>
+                    document.getElementById(tId).querySelector(`#${iId}`)
+                );
+                handleAnswer(isCorrect, quizData);
+              });
+            break;
+          case "code-correction":
+            document
+              .getElementById("submit-code-btn")
+              .addEventListener("click", () =>
+                handleAnswer(
+                  document.getElementById("code-correction-input").value,
+                  quizData
+                )
+              );
+            break;
+        }
+      }
+
+      function handleAnswer(selectedAnswer, quizData) {
+        if (appState.flashTimerInterval)
+          clearInterval(appState.flashTimerInterval);
+        const { quizState } = appState;
+        let isCorrect = false,
+          wasTimeout = selectedAnswer === "__timeout__";
+        if (!wasTimeout) {
+          if (quizData.type === "code-correction") {
+            isCorrect = selectedAnswer.trim() === quizData.answer.trim();
+          } else if (typeof selectedAnswer === "string") {
+            isCorrect =
+              selectedAnswer.trim().toLowerCase() ===
+              quizData.answer.trim().toLowerCase();
+          } else {
+            isCorrect = selectedAnswer === true;
+          }
+        }
+        if (isCorrect) {
+          quizState.score++;
+          showXpAnimation();
+        }
+        const isLastQuestion =
+          quizState.currentIndex === quizState.questions.length - 1;
+        const feedbackContainer = document.getElementById(
+          "quiz-feedback-container"
+        );
+        let feedbackTitle = "Correct!";
+        if (wasTimeout) feedbackTitle = "Time's Up!";
+        else if (!isCorrect) feedbackTitle = "Not quite.";
+        feedbackContainer.innerHTML = `<div class="fade-in p-4 rounded-lg ${
+          isCorrect ? "bg-red-500/20" : "bg-red-500/20"
+        }"><p class="font-semibold ${
+          isCorrect ? "text-red-300" : "text-red-300"
+        }">${feedbackTitle}</p><p class="mt-2 text-sm ${
+          isCorrect ? "text-red-400" : "text-red-400"
+        }">${
+          quizData.explanation
+        }</p></div><button id="next-quiz-btn" class="btn mt-4">${
+          isLastQuestion ? "Finish Quiz" : "Next Question"
+        }</button>`;
+        document.querySelectorAll("button, input, textarea").forEach((el) => {
+          if (el.id !== "next-quiz-btn") el.disabled = true;
         });
-        
+        document
+          .getElementById("next-quiz-btn")
+          .addEventListener("click", () => {
+            if (isLastQuestion) finishQuiz();
+            else {
+              quizState.currentIndex++;
+              renderQuizActivityQuestion();
+            }
+          });
+      }
+
+      // --- APP INITIALIZATION ---
+      async function initializePathfinderApp() {
+        const loadedState = await loadPlayerState();
+        if (loadedState && loadedState.learningPlan) {
+          Object.assign(appState, loadedState);
+          renderDashboard();
+          navigateTo("dashboard");
+        } else {
+          navigateTo("welcome");
+        }
+        document
+          .getElementById("start-learning-btn")
+          .addEventListener("click", startLearningPath);
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
+        if (user) {
+          console.log("User is logged in:", user.displayName || user.email);
+          userDisplayName.textContent =
+            user.displayName ||
+            user.email ||
+            `Guest-${user.uid.substring(0, 5)}`;
+          userProfileBtn.classList.remove("hidden");
+          loginRegisterBtn.classList.add("hidden");
+
+          // MOVED: Attach logout listener here to ensure it's always active when a user is logged in
+          document
+            .getElementById("logout-btn")
+            .addEventListener("click", async () => {
+              closeSidebar();
+              try {
+                // 1. Save current progress to Local Storage for a seamless transition
+                if (appState.learningPlan) {
+                  const stateToSave = {
+                    ...appState,
+                    achievements: [...appState.achievements],
+                  };
+                  localStorage.setItem(SAVE_KEY, JSON.stringify(stateToSave));
+                  console.log("Progress saved locally before logout.");
+                }
+
+                // 2. Sign out from Firebase
+                await signOut(auth);
+                console.log("Logout successful.");
+              } catch (error) {
+                console.error("Logout failed:", error);
+              }
+            });
+        } else {
+          console.log("User is logged out.");
+          userProfileBtn.classList.add("hidden");
+          loginRegisterBtn.classList.remove("hidden");
+        }
+        // Initialize or re-initialize the app with the current user state
+        initializePathfinderApp();
+      });
     </script>
-</body>
+  </body>
 </html>
