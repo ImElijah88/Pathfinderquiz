@@ -1,413 +1,745 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pathfinder - Discover Your Path</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(-45deg, #1e3a8a, #be185d, #4338ca, #15803d);
-            background-size: 400% 400%;
-            animation: gradientBG 20s ease infinite;
-            color: #d1d5db;
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(-45deg, #1e3a8a, #be185d, #4338ca, #15803d);
+        background-size: 400% 400%;
+        animation: gradientBG 20s ease infinite;
+        color: #d1d5db;
+      }
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
         }
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        50% {
+          background-position: 100% 50%;
         }
-        .card {
-            background: rgba(17, 24, 39, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.5rem;
-            padding: 2.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        100% {
+          background-position: 0% 50%;
         }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-        .btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        .quiz-option {
-            border: 2px solid rgba(255,255,255,0.2);
-            transition: all 0.2s ease;
-        }
-        .quiz-option:hover {
-            border-color: #f472b6;
-            background-color: rgba(244, 114, 182, 0.1);
-        }
-        [data-screen] { display: none; }
-        [data-screen].active { display: block; }
+      }
+      .card {
+        background: rgba(17, 24, 39, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1.5rem;
+        padding: 2.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2),
+          0 4px 6px -2px rgba(0, 0, 0, 0.1);
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .quiz-option {
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.2s ease;
+      }
+      .quiz-option:hover {
+        border-color: #f472b6;
+        background-color: rgba(244, 114, 182, 0.1);
+      }
+      [data-screen] {
+        display: none;
+      }
+      [data-screen].active {
+        display: block;
+      }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
-        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        
-        /* Game Styles */
-        .pattern-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        .pattern-tile { width: 100%; padding-bottom: 100%; border-radius: 0.75rem; transition: all 0.2s ease; }
-        .pattern-palette-tile { width: 40px; height: 40px; border-radius: 0.75rem; cursor: pointer; }
-        
-        .assembly-area { min-height: 300px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 1rem; position: relative; overflow: hidden;}
-        .assembly-piece { cursor: grab; position: absolute; user-select: none; }
-        .assembly-piece.dragging { cursor: grabbing; z-index: 10; }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+      }
 
-        .category-box { border: 2px dashed rgba(255,255,255,0.3); border-radius: 1rem; min-height: 150px; padding: 1rem; }
-        .category-box.drag-over { background-color: rgba(255,255,255,0.1); }
-        .category-item { cursor: grab; user-select: none; background-color: rgba(255, 255, 255, 0.1); padding: 0.5rem 1rem; border-radius: 0.5rem; }
-        
-        .difference-container { position: relative; cursor: pointer; }
-        .diff-dot { position: absolute; width: 30px; height: 30px; border: 2px solid red; border-radius: 50%; opacity: 0; transition: opacity 0.2s; }
-        .diff-dot.found { opacity: 1; background-color: rgba(255,0,0,0.3); }
+      /* Game Styles */
+      .pattern-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+      }
+      .pattern-tile {
+        width: 100%;
+        padding-bottom: 100%;
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+      }
+      .pattern-palette-tile {
+        width: 40px;
+        height: 40px;
+        border-radius: 0.75rem;
+        cursor: pointer;
+      }
 
-        .scramble-input { width: 120px; text-align: center; background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 0.5rem; padding: 0.25rem; }
-        
-        #maze-canvas { border: 2px solid rgba(255,255,255,0.3); border-radius: 1rem; }
-        
-        .word-button { font-size: 1.25rem; }
-        .image-choice { opacity: 0.7; transition: all 0.2s; }
-        .image-choice:hover { opacity: 1; transform: scale(1.05); }
+      .assembly-area {
+        min-height: 300px;
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 1rem;
+        position: relative;
+        overflow: hidden;
+      }
+      .assembly-piece {
+        cursor: grab;
+        position: absolute;
+        user-select: none;
+      }
+      .assembly-piece.dragging {
+        cursor: grabbing;
+        z-index: 10;
+      }
 
-        .intruder-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; }
-        .intruder-item { cursor: pointer; transition: transform 0.2s; }
-        .intruder-item:hover { transform: scale(1.1); }
-        
-        .proofread-text span { cursor: pointer; }
-        .proofread-text span.selected { background-color: rgba(236, 72, 153, 0.5); border-radius: 4px;}
+      .category-box {
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 1rem;
+        min-height: 150px;
+        padding: 1rem;
+      }
+      .category-box.drag-over {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+      .category-item {
+        cursor: grab;
+        user-select: none;
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+      }
 
-        /* Sidebar, Modal, and other UI component styles */
-        #sidebar {
-            transition: transform 0.3s ease-in-out;
-            transform: translateX(-100%);
-            z-index: 100;
-        }
-        #sidebar.open {
-            transform: translateX(0);
-        }
-        #overlay {
-            transition: opacity 0.3s ease-in-out;
-            z-index: 90;
-        }
-        .modal {
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-            z-index: 110;
-        }
-        .modal-content {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .themed-input {
-            background-color: rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-        }
-        .themed-input:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
-            border-color: #60a5fa;
-        }
+      .difference-container {
+        position: relative;
+        cursor: pointer;
+      }
+      .diff-dot {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        border: 2px solid red;
+        border-radius: 50%;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .diff-dot.found {
+        opacity: 1;
+        background-color: rgba(255, 0, 0, 0.3);
+      }
+
+      .scramble-input {
+        width: 120px;
+        text-align: center;
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 0.5rem;
+        padding: 0.25rem;
+      }
+
+      #maze-canvas {
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 1rem;
+      }
+
+      .word-button {
+        font-size: 1.25rem;
+      }
+      .image-choice {
+        opacity: 0.7;
+        transition: all 0.2s;
+      }
+      .image-choice:hover {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+
+      .intruder-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+      }
+      .intruder-item {
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .intruder-item:hover {
+        transform: scale(1.1);
+      }
+
+      .proofread-text span {
+        cursor: pointer;
+      }
+      .proofread-text span.selected {
+        background-color: rgba(236, 72, 153, 0.5);
+        border-radius: 4px;
+      }
+
+      .bug-squish-tile {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .bug-squish-tile:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .key-indicator {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 0.5rem;
+        font-size: 1.5rem;
+        transition: all 0.1s ease;
+      }
+      .key-indicator.active {
+        background-color: #f472b6;
+        border-color: #f472b6;
+        transform: scale(1.1);
+      }
+      .key-display {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        font-size: 2.5rem;
+        background-color: rgba(255, 255, 255, 0.1);
+        transition: all 0.2s ease;
+        opacity: 0.5;
+      }
+      .key-display.active {
+        opacity: 1;
+        background-color: #a855f7;
+      }
+
+      /* Sidebar, Modal, and other UI component styles */
+      #sidebar {
+        transition: transform 0.3s ease-in-out;
+        transform: translateX(-100%);
+        z-index: 100;
+      }
+      #sidebar.open {
+        transform: translateX(0);
+      }
+      #overlay {
+        transition: opacity 0.3s ease-in-out;
+        z-index: 90;
+      }
+      .modal {
+        transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        z-index: 110;
+      }
+      .modal-content {
+        background: rgba(17, 24, 39, 0.8);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .themed-input {
+        background-color: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+      }
+      .themed-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+        border-color: #60a5fa;
+      }
     </style>
-</head>
-<body class="antialiased text-gray-200">
-    
+  </head>
+  <body class="antialiased text-gray-200">
     <!-- Sidebar and Auth Modals Wrapper -->
     <div>
-        <!-- Hover zone to activate sidebar -->
-        <div id="sidebar-hover-zone" class="fixed top-0 left-0 h-full z-50" style="width: 100px;"></div>
+      <!-- Hover zone to activate sidebar -->
+      <div
+        id="sidebar-hover-zone"
+        class="fixed top-0 left-0 h-full z-50"
+        style="width: 100px"
+      ></div>
 
-        <!-- Slide-out Sidebar -->
-        <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 to-slate-800 border-r border-gray-700/50 shadow-2xl p-6 flex flex-col">
-            <!-- Header -->
-            <div class="flex items-center gap-3 mb-8">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-blue-400">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <h1 class="text-2xl font-bold text-white">Pathfinder</h1>
-            </div>
-
-            <!-- Level Navigation -->
-            <nav class="flex-grow">
-                <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Levels</h2>
-                <ul class="space-y-2">
-                    <li><a href="index1.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="flag" class="w-5 h-5 text-gray-400"></i> Level 1: Functions</a></li>
-                    <li><a href="index2.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="list" class="w-5 h-5 text-gray-400"></i> Level 2: Arrays</a></li>
-                    <li><a href="index3.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="git-fork" class="w-5 h-5 text-gray-400"></i> Level 3: Loops</a></li>
-                    <li><a href="index4.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="infinity" class="w-5 h-5 text-gray-400"></i> Level 4: Recursion</a></li>
-                    <li><a href="index5.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="box" class="w-5 h-5 text-gray-400"></i> Level 5: OOP</a></li>
-                    <li><a href="index6.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="database" class="w-5 h-5 text-gray-400"></i> Level 6: Data</a></li>
-                    <li><a href="index7.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"><i data-lucide="trophy" class="w-5 h-5 text-gray-400"></i> Level 7: Finale</a></li>
-                </ul>
-            </nav>
-
-            <!-- User/Auth Section -->
-            <div id="auth-section">
-                <!-- This button will be dynamically updated -->
-                 <div id="auth-button-container">
-                    <!-- Logged Out State -->
-                    <button id="login-register-btn" class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-white font-semibold">
-                        <i data-lucide="log-in" class="w-5 h-5"></i>
-                        <span>Login / Register</span>
-                    </button>
-
-                    <!-- Logged In State (template, hidden initially) -->
-                    <div id="user-profile-btn" class="hidden w-full flex items-center justify-between p-2 rounded-lg bg-gray-800 text-white font-semibold">
-                        <span id="user-display-name" class="truncate flex-grow mr-2"></span>
-                        <div class="flex items-center gap-3">
-                             <a href="index.html" title="Home" class="text-gray-400 hover:text-white transition-colors">
-                                <i data-lucide="home" class="w-5 h-5"></i>
-                            </a>
-                            <i id="logout-icon" data-lucide="log-out" class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer" title="Logout"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Overlay for when sidebar is open -->
-        <div id="overlay" class="fixed inset-0 bg-black opacity-0 pointer-events-none"></div>
-
-        <!-- Modals -->
-        <div id="auth-modal" class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none">
-            <div class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8" id="auth-modal-content">
-                <!-- Content will be injected here -->
-            </div>
+      <!-- Slide-out Sidebar -->
+      <aside
+        id="sidebar"
+        class="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 to-slate-800 border-r border-gray-700/50 shadow-2xl p-6 flex flex-col"
+      >
+        <!-- Header -->
+        <div class="flex items-center gap-3 mb-8">
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            class="text-blue-400"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"
+            />
+            <line
+              x1="4"
+              y1="12"
+              x2="20"
+              y2="12"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <h1 class="text-2xl font-bold text-white">Pathfinder</h1>
         </div>
+
+        <!-- Level Navigation -->
+        <nav class="flex-grow">
+          <h2
+            class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3"
+          >
+            Levels
+          </h2>
+          <ul class="space-y-2">
+            <li>
+              <a
+                href="index1.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Level 1: Functions</a
+              >
+            </li>
+            <li>
+              <a
+                href="index2.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Level 2: Arrays</a
+              >
+            </li>
+            <li>
+              <a
+                href="index3.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Level 3: Loops</a
+              >
+            </li>
+            <li>
+              <a
+                href="index4.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Level 4: Recursion</a
+              >
+            </li>
+            <li>
+              <a
+                href="index5.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Level 5: OOP</a
+              >
+            </li>
+            <li>
+              <a
+                href="index6.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Level 6: Data</a
+              >
+            </li>
+            <li>
+              <a
+                href="index7.html"
+                class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Level 7: Finale</a
+              >
+            </li>
+          </ul>
+        </nav>
+
+        <!-- User/Auth Section -->
+        <div id="auth-section">
+          <!-- This button will be dynamically updated -->
+          <div id="auth-button-container">
+            <!-- Logged Out State -->
+            <button
+              id="login-register-btn"
+              class="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-white font-semibold"
+            >
+              <i data-lucide="log-in" class="w-5 h-5"></i>
+              <span>Login / Register</span>
+            </button>
+
+            <!-- Logged In State (template, hidden initially) -->
+            <div
+              id="user-profile-btn"
+              class="hidden w-full flex items-center justify-between p-2 rounded-lg bg-gray-800 text-white font-semibold"
+            >
+              <span
+                id="user-display-name"
+                class="truncate flex-grow mr-2"
+              ></span>
+              <div class="flex items-center gap-3">
+                <a
+                  href="index.html"
+                  title="Home"
+                  class="text-gray-400 hover:text-white transition-colors"
+                >
+                  <i data-lucide="home" class="w-5 h-5"></i>
+                </a>
+                <i
+                  id="logout-icon"
+                  data-lucide="log-out"
+                  class="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                  title="Logout"
+                ></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Overlay for when sidebar is open -->
+      <div
+        id="overlay"
+        class="fixed inset-0 bg-black opacity-0 pointer-events-none"
+      ></div>
+
+      <!-- Modals -->
+      <div
+        id="auth-modal"
+        class="modal fixed inset-0 flex items-center justify-center p-4 opacity-0 pointer-events-none"
+      >
+        <div
+          class="modal-content rounded-2xl shadow-xl w-full max-w-md p-8"
+          id="auth-modal-content"
+        >
+          <!-- Content will be injected here -->
+        </div>
+      </div>
     </div>
-    
-    <!-- Main App Content -->
-    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
 
-        <!-- All screens -->
-        <div data-screen="welcome" class="w-full max-w-lg text-center active">
-            <div class="card fade-in">
-                <div class="flex justify-center mb-4">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-pink-400"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                </div>
-                <h1 class="text-4xl font-bold text-white mb-2">Welcome to Pathfinder</h1>
-                <div id="welcome-message" class="text-lg mb-8"></div>
-                <div id="welcome-actions"></div>
-            </div>
+    <!-- Main App Content -->
+    <div
+      id="app"
+      class="min-h-screen flex flex-col items-center justify-center p-4"
+    >
+      <!-- All screens -->
+      <div data-screen="welcome" class="w-full max-w-lg text-center active">
+        <div class="card fade-in">
+          <div class="flex justify-center mb-4">
+            <svg
+              width="64"
+              height="64"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              class="text-blue-400"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+              />
+              <line
+                x1="4"
+                y1="12"
+                x2="20"
+                y2="12"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <h1 class="text-4xl font-bold text-white mb-2">
+            Welcome to Pathfinder
+          </h1>
+          <div id="welcome-message" class="text-lg mb-8"></div>
+          <div id="welcome-actions"></div>
         </div>
-        <div data-screen="name-input" class="w-full max-w-lg text-center">
-             <div class="card fade-in">
-                <h2 class="text-3xl font-bold text-white mb-4">Let's get started</h2>
-                <p class="mb-8">First, what should we call you?</p>
-                <input type="text" id="name-input-field" placeholder="Enter your name..." class="w-full p-3 bg-gray-900/50 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-pink-500 focus:outline-none transition-colors">
-                <button id="submit-name-btn" class="btn mt-4 w-full">Begin Discovery</button>
-            </div>
+      </div>
+      <div data-screen="name-input" class="w-full max-w-lg text-center">
+        <div class="card fade-in">
+          <h2 class="text-3xl font-bold text-white mb-4">Let's get started</h2>
+          <p class="mb-8">First, what should we call you?</p>
+          <input
+            type="text"
+            id="name-input-field"
+            placeholder="Enter your name..."
+            class="w-full p-3 bg-gray-900/50 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-pink-500 focus:outline-none transition-colors"
+          />
+          <button id="submit-name-btn" class="btn mt-4 w-full">
+            Begin Discovery
+          </button>
         </div>
-        <div data-screen="gauntlet-intro" class="w-full max-w-lg text-center">
-             <div class="card fade-in">
-                <h2 class="text-3xl font-bold text-white mb-4">The Discovery Gauntlet</h2>
-                <p class="mb-8">To find your unique style, you'll go through a few quick challenges: a questionnaire and some mini-games. Ready?</p>
-                <button id="start-gauntlet-btn" class="btn w-full">Let's Go!</button>
-            </div>
+      </div>
+      <div data-screen="gauntlet-intro" class="w-full max-w-lg text-center">
+        <div class="card fade-in">
+          <h2 class="text-3xl font-bold text-white mb-4">
+            The Discovery Gauntlet
+          </h2>
+          <p class="mb-8">
+            To find your unique style, you'll go through a few quick challenges:
+            a questionnaire and some mini-games. Ready?
+          </p>
+          <button id="start-gauntlet-btn" class="btn w-full">Let's Go!</button>
         </div>
-        <div data-screen="questionnaire" class="w-full max-w-2xl">
-            <div class="card fade-in">
-                <div id="quiz-container"></div>
-            </div>
+      </div>
+      <div data-screen="questionnaire" class="w-full max-w-2xl">
+        <div class="card fade-in">
+          <div id="quiz-container"></div>
         </div>
-        <div data-screen="visual-game" class="w-full max-w-md text-center">
-            <div class="card fade-in" id="visual-game-container"></div>
-        </div>
-        <div data-screen="visual-game-2" class="w-full max-w-3xl text-center">
-            <div class="card fade-in" id="visual-game-2-container"></div>
-        </div>
-        <div data-screen="visual-game-3" class="w-full max-w-xl text-center">
-            <div class="card fade-in" id="visual-game-3-container"></div>
-        </div>
-        <div data-screen="auditory-game-1" class="w-full max-w-lg text-center">
-            <div class="card fade-in" id="auditory-game-1-container"></div>
-        </div>
-        <div data-screen="auditory-game-2" class="w-full max-w-lg text-center">
-            <div class="card fade-in" id="auditory-game-2-container"></div>
-        </div>
-        <div data-screen="read-write-game" class="w-full max-w-2xl text-center">
-            <div class="card fade-in" id="read-write-game-container"></div>
-        </div>
-        <div data-screen="read-write-game-2" class="w-full max-w-md text-center">
-            <div class="card fade-in" id="read-write-game-2-container"></div>
-        </div>
-        <div data-screen="read-write-game-3" class="w-full max-w-2xl text-center">
-            <div class="card fade-in" id="read-write-game-3-container"></div>
-        </div>
-        <div data-screen="kinesthetic-game" class="w-full max-w-lg text-center">
-            <div class="card fade-in" id="kinesthetic-game-container"></div>
-        </div>
-        <div data-screen="kinesthetic-game-2" class="w-full max-w-md text-center">
-            <div class="card fade-in" id="kinesthetic-game-2-container"></div>
-        </div>
-        <div data-screen="kinesthetic-game-3" class="w-full max-w-xl text-center">
-            <div class="card fade-in" id="kinesthetic-game-3-container"></div>
-        </div>
-        <div data-screen="results" class="w-full max-w-lg text-center">
-            <div class="card fade-in" id="results-container"></div>
-        </div>
+      </div>
+      <div data-screen="visual-game" class="w-full max-w-md text-center">
+        <div class="card fade-in" id="visual-game-container"></div>
+      </div>
+      <div data-screen="visual-game-2" class="w-full max-w-3xl text-center">
+        <div class="card fade-in" id="visual-game-2-container"></div>
+      </div>
+      <div data-screen="visual-game-3" class="w-full max-w-xl text-center">
+        <div class="card fade-in" id="visual-game-3-container"></div>
+      </div>
+      <div data-screen="auditory-game-1" class="w-full max-w-lg text-center">
+        <div class="card fade-in" id="auditory-game-1-container"></div>
+      </div>
+      <div data-screen="auditory-game-2" class="w-full max-w-lg text-center">
+        <div class="card fade-in" id="auditory-game-2-container"></div>
+      </div>
+      <div data-screen="read-write-game" class="w-full max-w-2xl text-center">
+        <div class="card fade-in" id="read-write-game-container"></div>
+      </div>
+      <div data-screen="read-write-game-2" class="w-full max-w-md text-center">
+        <div class="card fade-in" id="read-write-game-2-container"></div>
+      </div>
+      <div data-screen="read-write-game-3" class="w-full max-w-2xl text-center">
+        <div class="card fade-in" id="read-write-game-3-container"></div>
+      </div>
+      <div data-screen="kinesthetic-game" class="w-full max-w-xl text-center">
+        <div class="card fade-in" id="kinesthetic-game-container"></div>
+      </div>
+      <div data-screen="kinesthetic-game-2" class="w-full max-w-md text-center">
+        <div class="card fade-in" id="kinesthetic-game-2-container"></div>
+      </div>
+      <div data-screen="kinesthetic-game-3" class="w-full max-w-xl text-center">
+        <div class="card fade-in" id="kinesthetic-game-3-container"></div>
+      </div>
+      <div data-screen="results" class="w-full max-w-lg text-center">
+        <div class="card fade-in" id="results-container"></div>
+      </div>
     </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
-        // Import the functions you need from the SDKs
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, browserSessionPersistence, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+      // Import the functions you need from the SDKs
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import {
+        getAuth,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+        sendPasswordResetEmail,
+        browserSessionPersistence,
+        setPersistence,
+        browserLocalPersistence,
+        GoogleAuthProvider,
+        signInWithPopup,
+        signInAnonymously,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        getDoc,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyA76y2Cp0jvLBNiMkkl4Mlklw4SKdBg_Wo",
-            authDomain: "pathfinderquiz.firebaseapp.com",
-            projectId: "pathfinderquiz",
-            storageBucket: "pathfinderquiz.firebasestorage.app",
-            messagingSenderId: "653607161175",
-            appId: "1:653607161175:web:4ffd5922d221f26377c212",
-            measurementId: "G-S7XJTZ1VTZ"
-        };
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyA76y2Cp0jvLBNiMkkl4Mlklw4SKdBg_Wo",
+        authDomain: "pathfinderquiz.firebaseapp.com",
+        projectId: "pathfinderquiz",
+        storageBucket: "pathfinderquiz.firebasestorage.app",
+        messagingSenderId: "653607161175",
+        appId: "1:653607161175:web:4ffd5922d221f26377c212",
+        measurementId: "G-S7XJTZ1VTZ",
+      };
 
-        // Initialize Firebase
-        const firebaseApp = initializeApp(firebaseConfig);
-        const auth = getAuth(firebaseApp);
-        const db = getFirestore(firebaseApp);
-        const googleProvider = new GoogleAuthProvider();
+      // Initialize Firebase
+      const firebaseApp = initializeApp(firebaseConfig);
+      const auth = getAuth(firebaseApp);
+      const db = getFirestore(firebaseApp);
+      const googleProvider = new GoogleAuthProvider();
 
-        // --- Combined Script ---
-        
+      // --- Combined Script ---
+
+      lucide.createIcons();
+
+      // --- Sidebar & Modal Logic ---
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("overlay");
+      const sidebarHoverZone = document.getElementById("sidebar-hover-zone");
+      const authModal = document.getElementById("auth-modal");
+      const authModalContent = document.getElementById("auth-modal-content");
+
+      const openSidebar = () => {
+        sidebar.classList.add("open");
+        overlay.classList.remove("opacity-0", "pointer-events-none");
+        overlay.classList.add("opacity-50");
+      };
+
+      const closeSidebar = () => {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("opacity-50");
+        overlay.classList.add("opacity-0", "pointer-events-none");
+      };
+
+      sidebarHoverZone.addEventListener("mouseenter", openSidebar);
+      sidebar.addEventListener("mouseleave", closeSidebar);
+      overlay.addEventListener("click", closeSidebar);
+
+      const showModal = (content) => {
+        authModalContent.innerHTML = content;
+        authModal.classList.remove("opacity-0", "pointer-events-none");
+        attachModalEventListeners();
+
         lucide.createIcons();
-        
-        // --- Sidebar & Modal Logic ---
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
-        const sidebarHoverZone = document.getElementById('sidebar-hover-zone');
-        const authModal = document.getElementById('auth-modal');
-        const authModalContent = document.getElementById('auth-modal-content');
+      };
 
-        const openSidebar = () => {
-            sidebar.classList.add('open');
-            overlay.classList.remove('opacity-0', 'pointer-events-none');
-            overlay.classList.add('opacity-50');
-        };
+      const hideModals = () => {
+        authModal.classList.add("opacity-0", "pointer-events-none");
+      };
 
-        const closeSidebar = () => {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('opacity-50');
-            overlay.classList.add('opacity-0', 'pointer-events-none');
-        };
+      authModal.addEventListener("click", (e) => {
+        if (e.target === authModal) hideModals();
+      });
 
-        sidebarHoverZone.addEventListener('mouseenter', openSidebar);
-        sidebar.addEventListener('mouseleave', closeSidebar);
-        overlay.addEventListener('click', closeSidebar);
+      // --- Authentication & Database Logic ---
+      const loginRegisterBtn = document.getElementById("login-register-btn");
+      const userProfileBtn = document.getElementById("user-profile-btn");
+      const userDisplayName = document.getElementById("user-display-name");
+      const logoutIcon = document.getElementById("logout-icon");
 
-        const showModal = (content) => {
-            authModalContent.innerHTML = content;
-            authModal.classList.remove('opacity-0', 'pointer-events-none');
-            attachModalEventListeners();
+      const LOCAL_SAVE_KEY = "pathfinderLocalProgress";
 
-            lucide.createIcons();
-        };
-        
-        const hideModals = () => {
-            authModal.classList.add('opacity-0', 'pointer-events-none');
-        };
+      let currentUser = null;
 
-        authModal.addEventListener('click', (e) => {
-            if (e.target === authModal) hideModals();
-        });
-        
-        // --- Authentication & Database Logic ---
-        const loginRegisterBtn = document.getElementById('login-register-btn');
-        const userProfileBtn = document.getElementById('user-profile-btn');
-        const userDisplayName = document.getElementById('user-display-name');
-        const logoutIcon = document.getElementById('logout-icon');
-
-        const LOCAL_SAVE_KEY = 'pathfinderLocalProgress';
-        
-        let currentUser = null;
-
-        // Function to merge local progress with cloud data
-        async function mergeLocalProgressWithCloud(userId) {
-            const localDataRaw = localStorage.getItem(LOCAL_SAVE_KEY);
-            if (localDataRaw) {
-                const localData = JSON.parse(localDataRaw);
-                // Here you could add logic to intelligently merge, but for now we'll just upload if it exists
-                await saveProgressToFirebase(userId, localData);
-                localStorage.removeItem(LOCAL_SAVE_KEY); // Clear local after merging
-                console.log("Local progress merged with cloud account.");
-                // Reload data into appState from the newly saved cloud data
-                await loadProgress();
-            }
+      // Function to merge local progress with cloud data
+      async function mergeLocalProgressWithCloud(userId) {
+        const localDataRaw = localStorage.getItem(LOCAL_SAVE_KEY);
+        if (localDataRaw) {
+          const localData = JSON.parse(localDataRaw);
+          // Here you could add logic to intelligently merge, but for now we'll just upload if it exists
+          await saveProgressToFirebase(userId, localData);
+          localStorage.removeItem(LOCAL_SAVE_KEY); // Clear local after merging
+          console.log("Local progress merged with cloud account.");
+          // Reload data into appState from the newly saved cloud data
+          await loadProgress();
         }
+      }
 
-        async function saveProgressToFirebase(userId, data) {
-            if (!userId) return;
-            try {
-                const userRef = doc(db, "users", userId);
-                await setDoc(userRef, data, { merge: true });
-            } catch (error) {
-                console.error("Error saving progress to Firestore:", error);
-            }
+      async function saveProgressToFirebase(userId, data) {
+        if (!userId) return;
+        try {
+          const userRef = doc(db, "users", userId);
+          await setDoc(userRef, data, { merge: true });
+        } catch (error) {
+          console.error("Error saving progress to Firestore:", error);
         }
-        
-        async function loadProgressFromFirebase(userId) {
-            try {
-                const userRef = doc(db, "users", userId);
-                const docSnap = await getDoc(userRef);
-                if (docSnap.exists()) {
-                    return docSnap.data();
-                } else {
-                    console.log("No such document!");
-                    return null;
-                }
-            } catch (error) {
-                console.error("Error loading progress from Firestore:", error);
-                return null;
-            }
+      }
+
+      async function loadProgressFromFirebase(userId) {
+        try {
+          const userRef = doc(db, "users", userId);
+          const docSnap = await getDoc(userRef);
+          if (docSnap.exists()) {
+            return docSnap.data();
+          } else {
+            console.log("No such document!");
+            return null;
+          }
+        } catch (error) {
+          console.error("Error loading progress from Firestore:", error);
+          return null;
         }
+      }
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                console.log("User is logged in:", user.displayName || user.email || "Guest");
-                userDisplayName.textContent = user.displayName || user.email || `Guest-${user.uid.substring(0,5)}`;
-                userProfileBtn.classList.remove('hidden');
-                loginRegisterBtn.classList.add('hidden');
-                if (!user.isAnonymous) {
-                   await mergeLocalProgressWithCloud(user.uid);
-                }
-                initApp(); // Re-initialize the app to load cloud data
-            } else {
-                currentUser = null;
-                console.log("User is logged out.");
-                userProfileBtn.classList.add('hidden');
-                loginRegisterBtn.classList.remove('hidden');
-                initApp(); // Re-initialize for anonymous user
-            }
-        });
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          currentUser = user;
+          console.log(
+            "User is logged in:",
+            user.displayName || user.email || "Guest"
+          );
+          userDisplayName.textContent =
+            user.displayName ||
+            user.email ||
+            `Guest-${user.uid.substring(0, 5)}`;
+          userProfileBtn.classList.remove("hidden");
+          loginRegisterBtn.classList.add("hidden");
+          if (!user.isAnonymous) {
+            await mergeLocalProgressWithCloud(user.uid);
+          }
+          initApp(); // Re-initialize the app to load cloud data
+        } else {
+          currentUser = null;
+          console.log("User is logged out.");
+          userProfileBtn.classList.add("hidden");
+          loginRegisterBtn.classList.remove("hidden");
+          initApp(); // Re-initialize for anonymous user
+        }
+      });
 
-        // --- Modal Content Templates ---
-        const loginContent = `
+      // --- Modal Content Templates ---
+      const loginContent = `
             <h2 class="text-2xl font-bold text-white mb-6 text-center">Login to Pathfinder</h2>
             <div class="space-y-3">
                 <button id="google-signin-btn" class="w-full flex items-center justify-center gap-2 p-3 rounded-lg bg-white text-gray-800 font-semibold hover:bg-gray-200 transition-colors">
@@ -441,7 +773,7 @@
             </p>
         `;
 
-        const registerContent = `
+      const registerContent = `
             <h2 class="text-2xl font-bold text-white mb-6 text-center">Create an Account</h2>
             <form id="register-form" class="space-y-4">
                 <div>
@@ -463,7 +795,7 @@
             </p>
         `;
 
-        const forgotPasswordContent = `
+      const forgotPasswordContent = `
             <h2 class="text-2xl font-bold text-white mb-4 text-center">Reset Password</h2>
             <p class="text-center text-sm text-gray-400 mb-6">Enter your email and we'll send you a link to reset your password.</p>
             <form id="forgot-password-form" class="space-y-4">
@@ -478,612 +810,1256 @@
             </p>
         `;
 
-        function attachModalEventListeners() {
-            // General Links
-            const showRegisterLink = document.getElementById('show-register-link');
-            if(showRegisterLink) showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); showModal(registerContent); });
-            
-            const showLoginLink = document.getElementById('show-login-link');
-            if(showLoginLink) showLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
-            
-            const backToLoginLink = document.getElementById('back-to-login-link');
-            if(backToLoginLink) backToLoginLink.addEventListener('click', (e) => { e.preventDefault(); showModal(loginContent); });
-
-            // Forms and Buttons
-            const registerForm = document.getElementById('register-form');
-            if(registerForm) registerForm.addEventListener('submit', handleRegister);
-
-            const loginForm = document.getElementById('login-form');
-            if(loginForm) loginForm.addEventListener('submit', handleLogin);
-            
-            const forgotPasswordLink = document.getElementById('forgot-password-link');
-            if(forgotPasswordLink) forgotPasswordLink.addEventListener('click', (e) => { e.preventDefault(); showModal(forgotPasswordContent); });
-
-            const forgotPasswordForm = document.getElementById('forgot-password-form');
-            if(forgotPasswordForm) forgotPasswordForm.addEventListener('submit', handleForgotPassword);
-            
-            const googleSigninBtn = document.getElementById('google-signin-btn');
-            if(googleSigninBtn) googleSigninBtn.addEventListener('click', handleGoogleSignIn);
-            
-            const guestSigninBtn = document.getElementById('guest-signin-btn');
-            if(guestSigninBtn) guestSigninBtn.addEventListener('click', handleGuestSignIn);
-        }
-
-        async function handleRegister(e) {
+      function attachModalEventListeners() {
+        // General Links
+        const showRegisterLink = document.getElementById("show-register-link");
+        if (showRegisterLink)
+          showRegisterLink.addEventListener("click", (e) => {
             e.preventDefault();
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('register-confirm-password').value;
+            showModal(registerContent);
+          });
 
-            if (password !== confirmPassword) {
-                alert("Passwords do not match.");
-                return;
-            }
-
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                console.log("Registration successful:", userCredential.user);
-                hideModals();
-            } catch (error) {
-                alert(`Registration failed: ${error.message}`);
-            }
-        }
-        
-        async function handleLogin(e) {
+        const showLoginLink = document.getElementById("show-login-link");
+        if (showLoginLink)
+          showLoginLink.addEventListener("click", (e) => {
             e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const rememberMe = document.getElementById('remember-me').checked;
-            
-            try {
-                await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                console.log("Login successful:", userCredential.user);
-                hideModals();
-            } catch (error) {
-                alert(`Login failed: ${error.message}`);
-            }
+            showModal(loginContent);
+          });
+
+        const backToLoginLink = document.getElementById("back-to-login-link");
+        if (backToLoginLink)
+          backToLoginLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            showModal(loginContent);
+          });
+
+        // Forms and Buttons
+        const registerForm = document.getElementById("register-form");
+        if (registerForm)
+          registerForm.addEventListener("submit", handleRegister);
+
+        const loginForm = document.getElementById("login-form");
+        if (loginForm) loginForm.addEventListener("submit", handleLogin);
+
+        const forgotPasswordLink = document.getElementById(
+          "forgot-password-link"
+        );
+        if (forgotPasswordLink)
+          forgotPasswordLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            showModal(forgotPasswordContent);
+          });
+
+        const forgotPasswordForm = document.getElementById(
+          "forgot-password-form"
+        );
+        if (forgotPasswordForm)
+          forgotPasswordForm.addEventListener("submit", handleForgotPassword);
+
+        const googleSigninBtn = document.getElementById("google-signin-btn");
+        if (googleSigninBtn)
+          googleSigninBtn.addEventListener("click", handleGoogleSignIn);
+
+        const guestSigninBtn = document.getElementById("guest-signin-btn");
+        if (guestSigninBtn)
+          guestSigninBtn.addEventListener("click", handleGuestSignIn);
+      }
+
+      async function handleRegister(e) {
+        e.preventDefault();
+        const email = document.getElementById("register-email").value;
+        const password = document.getElementById("register-password").value;
+        const confirmPassword = document.getElementById(
+          "register-confirm-password"
+        ).value;
+
+        if (password !== confirmPassword) {
+          alert("Passwords do not match.");
+          return;
         }
 
-        async function handleForgotPassword(e) {
+        try {
+          const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+          console.log("Registration successful:", userCredential.user);
+          hideModals();
+        } catch (error) {
+          alert(`Registration failed: ${error.message}`);
+        }
+      }
+
+      async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById("login-email").value;
+        const password = document.getElementById("login-password").value;
+        const rememberMe = document.getElementById("remember-me").checked;
+
+        try {
+          await setPersistence(
+            auth,
+            rememberMe ? browserLocalPersistence : browserSessionPersistence
+          );
+          const userCredential = await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+          console.log("Login successful:", userCredential.user);
+          hideModals();
+        } catch (error) {
+          alert(`Login failed: ${error.message}`);
+        }
+      }
+
+      async function handleForgotPassword(e) {
+        e.preventDefault();
+        const email = document.getElementById("forgot-email").value;
+        try {
+          await sendPasswordResetEmail(auth, email);
+          alert("Password reset email sent! Please check your inbox.");
+          hideModals();
+        } catch (error) {
+          alert(`Failed to send reset email: ${error.message}`);
+        }
+      }
+
+      async function handleGoogleSignIn() {
+        try {
+          const result = await signInWithPopup(auth, googleProvider);
+          console.log("Google Sign-In successful:", result.user);
+          hideModals();
+        } catch (error) {
+          console.error("Google Sign-In failed:", error);
+          alert(`Google Sign-In failed: ${error.message}`);
+        }
+      }
+
+      async function handleGuestSignIn() {
+        try {
+          const userCredential = await signInAnonymously(auth);
+          console.log("Signed in as guest:", userCredential.user);
+          hideModals();
+        } catch (error) {
+          console.error("Guest Sign-In failed:", error);
+          alert(`Guest Sign-In failed: ${error.message}`);
+        }
+      }
+
+      loginRegisterBtn.addEventListener("click", () => showModal(loginContent));
+
+      logoutIcon.addEventListener("click", async () => {
+        try {
+          await signOut(auth);
+          console.log("Logout successful.");
+        } catch (error) {
+          console.error("Logout failed:", error);
+        }
+      });
+
+      // --- Original index.html Quiz & Game Logic (Adapted for Dual Storage) ---
+      const quizQuestions = [
+        {
+          question: "When you're learning something new, what's most helpful?",
+          options: [
+            {
+              text: "Watching a video or looking at diagrams.",
+              style: "visual",
+            },
+            { text: "Listening to a lecture or a podcast.", style: "auditory" },
+            {
+              text: "Reading a textbook or taking detailed notes.",
+              style: "read-write",
+            },
+            {
+              text: "Jumping in and trying it out myself.",
+              style: "kinesthetic",
+            },
+          ],
+        },
+        {
+          question:
+            "If you need to assemble a piece of furniture, you would most likely:",
+          options: [
+            {
+              text: "Follow the visual diagrams in the manual.",
+              style: "visual",
+            },
+            {
+              text: "Have someone talk you through the steps.",
+              style: "auditory",
+            },
+            {
+              text: "Read the written instructions step-by-step.",
+              style: "read-write",
+            },
+            {
+              text: "Start putting pieces together to see what fits.",
+              style: "kinesthetic",
+            },
+          ],
+        },
+        {
+          question:
+            "When you are trying to remember a phone number, you tend to:",
+          options: [
+            { text: "Visualize the numbers in your head.", style: "visual" },
+            {
+              text: "Say the numbers out loud to yourself.",
+              style: "auditory",
+            },
+            { text: "Write the numbers down.", style: "read-write" },
+            {
+              text: "Trace the numbers with your finger.",
+              style: "kinesthetic",
+            },
+          ],
+        },
+        {
+          question: "How do you prefer to get directions to a new place?",
+          options: [
+            { text: "Look at a map.", style: "visual" },
+            {
+              text: "Listen to spoken, turn-by-turn directions.",
+              style: "auditory",
+            },
+            { text: "Read a list of written directions.", style: "read-write" },
+            {
+              text: "Just start driving and figure it out as I go.",
+              style: "kinesthetic",
+            },
+          ],
+        },
+        {
+          question:
+            "You're at a presentation. What are you most likely to remember afterwards?",
+          options: [
+            { text: "The slides and charts that were shown.", style: "visual" },
+            {
+              text: "The speaker's tone and the things they said.",
+              style: "auditory",
+            },
+            {
+              text: "The detailed handouts or your own notes.",
+              style: "read-write",
+            },
+            {
+              text: "The hands-on activity or demonstration.",
+              style: "kinesthetic",
+            },
+          ],
+        },
+        {
+          question: "How do you best remember a story?",
+          options: [
+            { text: "Picturing the scenes in my mind.", style: "visual" },
+            {
+              text: "Remembering how the narrator told it.",
+              style: "auditory",
+            },
+            {
+              text: "Recalling the specific words I read.",
+              style: "read-write",
+            },
+            {
+              text: "Connecting with the emotions and actions.",
+              style: "kinesthetic",
+            },
+          ],
+        },
+        {
+          question:
+            "When you're interested in a new hobby, what is your first step?",
+          options: [
+            { text: "Watch several 'how-to' videos.", style: "visual" },
+            {
+              text: "Talk to friends who are already involved.",
+              style: "auditory",
+            },
+            {
+              text: "Read articles, blogs, and forums about it.",
+              style: "read-write",
+            },
+            {
+              text: "Buy the basic equipment and start trying.",
+              style: "kinesthetic",
+            },
+          ],
+        },
+      ];
+      const learningStyles = {
+        visual: {
+          title: "Visual",
+          icon: "eye",
+          description:
+            "You learn best by seeing. Diagrams, charts, videos, and visual aids are your greatest tools.",
+        },
+        auditory: {
+          title: "Auditory",
+          icon: "ear",
+          description:
+            "You learn best by hearing. Lectures, discussions, and repeating things out loud help you retain information.",
+        },
+        "read-write": {
+          title: "Read/Write",
+          icon: "pencil",
+          description:
+            "You learn best by interacting with text. Reading books, writing detailed notes, and making lists are your preferred methods.",
+        },
+        kinesthetic: {
+          title: "Kinesthetic",
+          icon: "move",
+          description:
+            "You learn best by doing. Hands-on experience, practical examples, and physical activities are key to your understanding.",
+        },
+      };
+
+      const appState = {
+        discoveryStage: 0,
+        answers: [],
+        gameScores: { visual: 0, auditory: 0, "read-write": 0, kinesthetic: 0 },
+        userData: {
+          userName: null,
+          learningStyle: null,
+          totalXp: 0,
+          achievements: [],
+        },
+      };
+      const discoveryGauntlet = [
+        "questionnaire",
+        "visual-game",
+        "visual-game-2",
+        "visual-game-3",
+        "auditory-game-1",
+        "auditory-game-2",
+        "read-write-game",
+        "read-write-game-2",
+        "read-write-game-3",
+        "kinesthetic-game",
+        "kinesthetic-game-2",
+        "kinesthetic-game-3",
+      ];
+
+      async function saveProgress() {
+        if (currentUser && !currentUser.isAnonymous) {
+          await saveProgressToFirebase(currentUser.uid, appState.userData);
+        } else {
+          localStorage.setItem(
+            LOCAL_SAVE_KEY,
+            JSON.stringify(appState.userData)
+          );
+        }
+      }
+
+      async function loadProgress() {
+        let data = null;
+        if (currentUser && !currentUser.isAnonymous) {
+          data = await loadProgressFromFirebase(currentUser.uid);
+        } else {
+          const localDataRaw = localStorage.getItem(LOCAL_SAVE_KEY);
+          if (localDataRaw) {
+            try {
+              data = JSON.parse(localDataRaw);
+            } catch (error) {
+              console.error("Error parsing local progress:", error);
+              localStorage.removeItem(LOCAL_SAVE_KEY);
+            }
+          }
+        }
+
+        if (data) {
+          appState.userData = data;
+          return true;
+        }
+        // Reset to default if no data
+        appState.userData = {
+          userName: null,
+          learningStyle: null,
+          totalXp: 0,
+          achievements: [],
+        };
+        return false;
+      }
+
+      function navigateTo(screenName) {
+        document
+          .querySelectorAll("[data-screen]")
+          .forEach((screen) => screen.classList.remove("active"));
+        const newScreen = document.querySelector(
+          `[data-screen="${screenName}"]`
+        );
+        newScreen.classList.add("active");
+        newScreen.firstElementChild?.classList.add("fade-in");
+      }
+
+      function nextDiscoveryStage() {
+        if (appState.discoveryStage >= discoveryGauntlet.length) {
+          calculateAndShowResults();
+        } else {
+          const nextStage = discoveryGauntlet[appState.discoveryStage];
+          appState.discoveryStage++;
+
+          switch (nextStage) {
+            case "questionnaire":
+              renderQuizQuestion(0);
+              navigateTo("questionnaire");
+              break;
+            case "visual-game":
+              renderPatternGame();
+              navigateTo("visual-game");
+              break;
+            case "visual-game-2":
+              renderDifferenceGame();
+              navigateTo("visual-game-2");
+              break;
+            case "visual-game-3":
+              renderIntruderGame();
+              navigateTo("visual-game-3");
+              break;
+            case "auditory-game-1":
+              renderWordRecallGame();
+              navigateTo("auditory-game-1");
+              break;
+            case "auditory-game-2":
+              renderSoundAssociationGame();
+              navigateTo("auditory-game-2");
+              break;
+            case "read-write-game":
+              renderCategorizationGame();
+              navigateTo("read-write-game");
+              break;
+            case "read-write-game-2":
+              renderScrambleGame();
+              navigateTo("read-write-game-2");
+              break;
+            case "read-write-game-3":
+              renderProofreadGame();
+              navigateTo("read-write-game-3");
+              break;
+            case "kinesthetic-game":
+              renderAssemblyGame();
+              navigateTo("kinesthetic-game");
+              break;
+            case "kinesthetic-game-2":
+              renderMazeGame();
+              navigateTo("kinesthetic-game-2");
+              break;
+            case "kinesthetic-game-3":
+              renderTypingGame();
+              navigateTo("kinesthetic-game-3");
+              break;
+          }
+        }
+      }
+
+      function renderQuizQuestion(index) {
+        if (index >= quizQuestions.length) {
+          nextDiscoveryStage();
+          return;
+        }
+        const qd = quizQuestions[index];
+        const qc = document.getElementById("quiz-container");
+        const p = (index / quizQuestions.length) * 100;
+        qc.innerHTML = `<div class="w-full bg-gray-700 rounded-full h-2.5 mb-6"><div class="bg-pink-500 h-2.5 rounded-full" style="width: ${p}%"></div></div><h2 class="text-2xl font-bold text-white mb-6 text-center">${
+          qd.question
+        }</h2><div class="space-y-4">${qd.options
+          .map(
+            (o) =>
+              `<button class="w-full text-left p-4 rounded-lg quiz-option" data-style="${o.style}"><span class="font-semibold text-lg">${o.text}</span></button>`
+          )
+          .join("")}</div>`;
+        document.querySelectorAll(".quiz-option").forEach((b) =>
+          b.addEventListener("click", (e) => {
+            appState.answers.push(e.currentTarget.dataset.style);
+            renderQuizQuestion(index + 1);
+          })
+        );
+      }
+
+      function renderPatternGame() {
+        const container = document.getElementById("visual-game-container");
+        const colors = [
+          "#ef4444",
+          "#3b82f6",
+          "#22c55e",
+          "#eab308",
+          "#a855f7",
+          "#ec4899",
+        ];
+        const pattern = Array.from(
+          { length: 6 },
+          () => colors[Math.floor(Math.random() * colors.length)]
+        );
+        let userPattern = [];
+        let phase = "memorize";
+
+        const render = () => {
+          if (phase === "memorize") {
+            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Pattern Recall</h2><p class="mb-6">Memorize this complex pattern. 5 seconds.</p><div class="pattern-grid">${pattern
+              .map(
+                (color) =>
+                  `<div class="pattern-tile" style="background-color: ${color};"></div>`
+              )
+              .join("")}${Array(3)
+              .fill(0)
+              .map(() => `<div class="pattern-tile bg-transparent"></div>`)
+              .join("")}</div>`;
+            setTimeout(() => {
+              phase = "recall";
+              render();
+            }, 5000);
+          } else if (phase === "recall") {
+            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Recreate the Pattern</h2><p class="mb-6">Click the tiles below in the correct color order.</p><div class="pattern-grid" id="recall-grid">${Array(
+              9
+            )
+              .fill(0)
+              .map(
+                (_, i) =>
+                  `<div class="pattern-tile ${
+                    i < 6 ? "bg-gray-700/50" : "bg-transparent"
+                  }" id="tile-${i}"></div>`
+              )
+              .join(
+                ""
+              )}</div><div class="mt-6 flex justify-center gap-2 flex-wrap" id="palette">${colors
+              .map(
+                (color) =>
+                  `<div class="pattern-palette-tile" style="background-color: ${color};" data-color="${color}"></div>`
+              )
+              .join(
+                ""
+              )}</div><button id="skip-pattern-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
+            document
+              .getElementById("palette")
+              .addEventListener("click", (e) => {
+                if (e.target.dataset.color && userPattern.length < 6) {
+                  const selectedColor = e.target.dataset.color;
+                  document.getElementById(
+                    `tile-${userPattern.length}`
+                  ).style.backgroundColor = selectedColor;
+                  userPattern.push(selectedColor);
+                  if (userPattern.length === 6) {
+                    const isCorrect =
+                      JSON.stringify(pattern) === JSON.stringify(userPattern);
+                    if (isCorrect) appState.gameScores.visual += 3;
+                    setTimeout(nextDiscoveryStage, 500);
+                  }
+                }
+              });
+            document
+              .getElementById("skip-pattern-game")
+              .addEventListener("click", nextDiscoveryStage);
+          }
+        };
+        render();
+      }
+
+      function renderDifferenceGame() {
+        const container = document.getElementById("visual-game-2-container");
+        const differences = [
+          { top: "25%", left: "22.5%" },
+          { top: "75%", left: "55.5%" },
+          { top: "55%", left: "85%" },
+        ];
+        let found = 0;
+        const svgImageA = `<svg viewBox="0 0 400 300" class="w-full h-auto bg-gray-800 rounded-lg"><rect x="150" y="150" width="100" height="100" fill="#a78bfa"/><circle cx="80" cy="80" r="30" fill="#f472b6"/><rect x="280" y="50" width="60" height="40" fill="#38bdf8"/></svg>`;
+        const svgImageB = `<svg viewBox="0 0 400 300" class="w-full h-auto bg-gray-800 rounded-lg"><circle cx="90" cy="80" r="30" fill="#f472b6"/><rect x="280" y="50" width="60" height="40" fill="#38bdf8"/><rect x="220" y="220" width="20" height="40" fill="yellow"/><rect x="150" y="150" width="100" height="100" fill="#a78bfa"/></svg>`;
+
+        container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spot the Difference</h2><p class="mb-6">Find the 3 differences between the two images by clicking on them in the right-hand image.</p><div class="flex flex-col md:flex-row gap-4"><div class="difference-container">${svgImageA}</div><div class="difference-container" id="diff-container-b">${svgImageB}</div></div><button id="skip-difference-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
+        document
+          .getElementById("skip-difference-game")
+          .addEventListener("click", nextDiscoveryStage);
+
+        document
+          .getElementById("diff-container-b")
+          .addEventListener("click", (e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            differences.forEach((diff, index) => {
+              const diffX = (parseFloat(diff.left) / 100) * rect.width;
+              const diffY = (parseFloat(diff.top) / 100) * rect.height;
+              const distance = Math.sqrt(
+                Math.pow(x - diffX, 2) + Math.pow(y - diffY, 2)
+              );
+
+              if (distance < 20) {
+                let dot = e.currentTarget.querySelector(
+                  `.diff-dot[data-id="${index}"]`
+                );
+                if (!dot) {
+                  dot = document.createElement("div");
+                  dot.className = "diff-dot";
+                  dot.dataset.id = index;
+                  dot.style.left = `calc(${diff.left} - 15px)`;
+                  dot.style.top = `calc(${diff.top} - 15px)`;
+                  e.currentTarget.appendChild(dot);
+                  dot.classList.add("found");
+                  found++;
+                  if (found === differences.length) {
+                    appState.gameScores.visual += 3;
+                    setTimeout(nextDiscoveryStage, 500);
+                  }
+                }
+              }
+            });
+          });
+      }
+
+      function renderIntruderGame() {
+        const container = document.getElementById("visual-game-3-container");
+        const totalItems = 25;
+        const intruderIndex = Math.floor(Math.random() * totalItems);
+
+        let items = "";
+        for (let i = 0; i < totalItems; i++) {
+          const isIntruder = i === intruderIndex;
+          const rotation = isIntruder ? "rotate(90deg)" : "rotate(0deg)";
+          items += `<div class="intruder-item" data-intruder="${isIntruder}"><svg width="50" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: ${rotation}; transition: transform 0.2s; transform-origin: center;"><path d="M5 12H19M12 5L19 12L12 19" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>`;
+        }
+        container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spot the Intruder</h2><p class="mb-6">One of these icons is rotated differently. Find it!</p><div class="intruder-grid">${items}</div><button id="skip-intruder-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
+        document
+          .getElementById("skip-intruder-game")
+          .addEventListener("click", nextDiscoveryStage);
+
+        container.querySelectorAll(".intruder-item").forEach((item) => {
+          item.addEventListener("click", (e) => {
+            if (e.currentTarget.dataset.intruder === "true") {
+              appState.gameScores.visual += 3;
+            }
+            nextDiscoveryStage();
+          });
+        });
+      }
+
+      function renderWordRecallGame() {
+        const container = document.getElementById("auditory-game-1-container");
+        const words = ["Apple", "House", "Car", "River", "Book", "Chair"];
+        const sequence = [...words].sort(() => 0.5 - Math.random()).slice(0, 4);
+        const options = [
+          ...sequence,
+          ...words
+            .filter((w) => !sequence.includes(w))
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 4),
+        ].sort(() => 0.5 - Math.random());
+        let userSequence = [];
+
+        container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spoken Word Recall</h2><p class="mb-6">Listen to the sequence of words, then click the buttons in the same order.</p><button id="play-word-btn" class="btn"><i data-lucide="play" class="mr-2"></i>Play Sequence</button><button id="skip-word-recall-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
+        lucide.createIcons();
+        document
+          .getElementById("skip-word-recall-game")
+          .addEventListener("click", nextDiscoveryStage);
+
+        document
+          .getElementById("play-word-btn")
+          .addEventListener("click", (e) => {
+            e.target.disabled = true;
+            e.target.innerHTML = "Listen...";
+            let i = 0;
+            function speakWord() {
+              if (i < sequence.length) {
+                const utterance = new SpeechSynthesisUtterance(sequence[i]);
+                speechSynthesis.speak(utterance);
+                i++;
+                utterance.onend = () => setTimeout(speakWord, 300);
+              } else {
+                renderRecallPhase();
+              }
+            }
+            speakWord();
+          });
+
+        const renderRecallPhase = () => {
+          container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Your Turn</h2><p class="mb-6">Click the words in the order you heard them.</p><div class="flex flex-wrap justify-center gap-4">${options
+            .map(
+              (w) =>
+                `<button class="btn word-button" data-word="${w}">${w}</button>`
+            )
+            .join(
+              ""
+            )}</div><p class="mt-6 h-8 text-lg font-mono" id="user-word-display"></p>`;
+          document.querySelectorAll(".word-button").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              const word = e.target.dataset.word;
+              userSequence.push(word);
+              document.getElementById("user-word-display").textContent =
+                userSequence.join(", ");
+              e.target.disabled = true;
+              e.target.style.opacity = "0.5";
+
+              if (userSequence.length === sequence.length) {
+                const isCorrect =
+                  JSON.stringify(sequence) === JSON.stringify(userSequence);
+                if (isCorrect) appState.gameScores.auditory += 3;
+                setTimeout(nextDiscoveryStage, 500);
+              }
+            });
+          });
+        };
+      }
+
+      function renderSoundAssociationGame() {
+        const container = document.getElementById("auditory-game-2-container");
+        const items = [
+          { name: "Dog", emoji: "🐶" },
+          { name: "Cat", emoji: "🐱" },
+          { name: "Lion", emoji: "🦁" },
+          { name: "Car", emoji: "🚗" },
+        ];
+        const chosenItem = items[Math.floor(Math.random() * items.length)];
+        const options = [...items].sort(() => 0.5 - Math.random());
+
+        container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Sound Association</h2><p class="mb-6">Listen to the word, then click the matching image.</p><button id="play-sound-btn" class="btn mb-8"><i data-lucide="volume-2" class="mr-2"></i>Listen</button><div class="flex justify-center gap-8">${options
+          .map(
+            (item) =>
+              `<button class="text-6xl image-choice" data-name="${item.name}">${item.emoji}</button>`
+          )
+          .join(
+            ""
+          )}</div><button id="skip-sound-association-game" class="btn mt-8 text-sm bg-gray-700/50">Skip Challenge</button>`;
+        lucide.createIcons();
+        document
+          .getElementById("skip-sound-association-game")
+          .addEventListener("click", nextDiscoveryStage);
+
+        const speak = () => {
+          const utterance = new SpeechSynthesisUtterance(chosenItem.name);
+          speechSynthesis.speak(utterance);
+        };
+
+        document
+          .getElementById("play-sound-btn")
+          .addEventListener("click", speak);
+        document.querySelectorAll(".image-choice").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            if (e.target.dataset.name === chosenItem.name) {
+              appState.gameScores.auditory += 2;
+            }
+            nextDiscoveryStage();
+          });
+        });
+      }
+
+      function renderCategorizationGame() {
+        const container = document.getElementById("read-write-game-container");
+        const data = {
+          "Web Frontend": ["React", "CSS", "HTML"],
+          "Web Backend": ["Node.js", "Python", "Database"],
+          "General CS": ["Algorithm", "Data Structure", "Compiler"],
+        };
+        const allItems = Object.values(data)
+          .flat()
+          .sort(() => Math.random() - 0.5);
+        container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Advanced Categorization</h2><p class="mb-6">Drag each technical term into its correct category.</p><div class="flex gap-4 mb-6 flex-wrap justify-center">${allItems
+          .map(
+            (item) =>
+              `<div class="category-item" draggable="true" data-term="${item}">${item}</div>`
+          )
+          .join(
+            ""
+          )}</div><div class="grid grid-cols-1 md:grid-cols-3 gap-4">${Object.keys(
+          data
+        )
+          .map(
+            (category) =>
+              `<div class="category-box" data-category="${category}"><h3 class="font-bold text-center mb-2">${category}</h3></div>`
+          )
+          .join(
+            ""
+          )}</div><div class="mt-6 flex justify-center gap-4"><button id="skip-categorization-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button><button id="finish-category-btn" class="btn">I'm Done</button></div>`;
+        document
+          .getElementById("skip-categorization-game")
+          .addEventListener("click", nextDiscoveryStage);
+
+        let draggedItem = null;
+        document.querySelectorAll(".category-item").forEach((item) => {
+          item.addEventListener("dragstart", (e) => {
+            draggedItem = e.target;
+          });
+        });
+        document.querySelectorAll(".category-box").forEach((box) => {
+          box.addEventListener("dragover", (e) => {
             e.preventDefault();
-            const email = document.getElementById('forgot-email').value;
-            try {
-                await sendPasswordResetEmail(auth, email);
-                alert('Password reset email sent! Please check your inbox.');
-                hideModals();
-            } catch (error) {
-                alert(`Failed to send reset email: ${error.message}`);
+            box.classList.add("drag-over");
+          });
+          box.addEventListener("dragleave", () =>
+            box.classList.remove("drag-over")
+          );
+          box.addEventListener("drop", (e) => {
+            e.preventDefault();
+            box.classList.remove("drag-over");
+            if (draggedItem) {
+              box.appendChild(draggedItem);
             }
-        }
-        
-        async function handleGoogleSignIn() {
-            try {
-                const result = await signInWithPopup(auth, googleProvider);
-                console.log("Google Sign-In successful:", result.user);
-                hideModals();
-            } catch (error) {
-                console.error("Google Sign-In failed:", error);
-                alert(`Google Sign-In failed: ${error.message}`);
+          });
+        });
+        document
+          .getElementById("finish-category-btn")
+          .addEventListener("click", () => {
+            let score = 0;
+            for (const category in data) {
+              const box = document.querySelector(
+                `.category-box[data-category="${category}"]`
+              );
+              const terms = data[category];
+              terms.forEach((term) => {
+                if (box.querySelector(`[data-term="${term}"]`)) {
+                  score++;
+                }
+              });
             }
-        }
-        
-        async function handleGuestSignIn() {
-             try {
-                const userCredential = await signInAnonymously(auth);
-                console.log("Signed in as guest:", userCredential.user);
-                hideModals();
-            } catch (error) {
-                console.error("Guest Sign-In failed:", error);
-                alert(`Guest Sign-In failed: ${error.message}`);
+            appState.gameScores["read-write"] += Math.floor(score / 3);
+            nextDiscoveryStage();
+          });
+      }
+
+      function renderScrambleGame() {
+        const container = document.getElementById(
+          "read-write-game-2-container"
+        );
+        const words = [
+          { scrambled: "vraibale", answer: "variable" },
+          { scrambled: "nifcutno", answer: "function" },
+          { scrambled: "dtoniconi", answer: "condition" },
+        ];
+        container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Word Scramble</h2><p class="mb-6">Unscramble the following programming terms.</p><div class="space-y-4">${words
+          .map(
+            (w, i) =>
+              `<div class="flex items-center justify-between"><span class="text-lg font-mono">${w.scrambled}</span><input class="scramble-input" data-answer="${w.answer}" id="scramble-${i}"></div>`
+          )
+          .join(
+            ""
+          )}</div><div class="mt-6 flex justify-center gap-4"><button id="skip-scramble-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button><button id="finish-scramble-btn" class="btn">Check Answers</button></div>`;
+        document
+          .getElementById("skip-scramble-game")
+          .addEventListener("click", nextDiscoveryStage);
+
+        document
+          .getElementById("finish-scramble-btn")
+          .addEventListener("click", () => {
+            let score = 0;
+            words.forEach((w, i) => {
+              const input = document.getElementById(`scramble-${i}`);
+              if (input.value.toLowerCase() === w.answer) {
+                score++;
+              }
+            });
+            if (score > 1) appState.gameScores["read-write"] += score;
+            nextDiscoveryStage();
+          });
+      }
+
+      function renderProofreadGame() {
+        const container = document.getElementById(
+          "read-write-game-3-container"
+        );
+        const text =
+          "JavaScript is a powerfull programming language used for web developement. It allows for dynamic and interractive web pages. Common mistakes include typos and syntax erors.";
+        const errors = ["powerfull", "developement", "interractive", "erors"];
+
+        container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Proofreading Challenge</h2><p class="mb-6">Find and click the 4 spelling mistakes in the text below.</p><p class="proofread-text text-lg leading-relaxed bg-black/20 p-4 rounded-lg">${text
+          .split(" ")
+          .map((word) => `<span>${word} </span>`)
+          .join(
+            ""
+          )}</p><div class="mt-6 flex justify-center gap-4"><button id="skip-proofread-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button><button id="finish-proofread-btn" class="btn">Check Answers</button></div>`;
+        document
+          .getElementById("skip-proofread-game")
+          .addEventListener("click", nextDiscoveryStage);
+
+        let foundErrors = new Set();
+        container.querySelectorAll(".proofread-text span").forEach((span) => {
+          span.addEventListener("click", () => {
+            const word = span.textContent.trim().replace(/[,.]/g, "");
+            if (errors.includes(word)) {
+              span.classList.toggle("selected");
+              if (span.classList.contains("selected")) {
+                foundErrors.add(word);
+              } else {
+                foundErrors.delete(word);
+              }
             }
-        }
-        
-        loginRegisterBtn.addEventListener('click', () => showModal(loginContent));
-        
-        logoutIcon.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                console.log("Logout successful.");
-            } catch (error) {
-                console.error("Logout failed:", error);
-            }
+          });
         });
 
-        // --- Original index.html Quiz & Game Logic (Adapted for Dual Storage) ---
-        const quizQuestions = [ { question: "When you're learning something new, what's most helpful?", options: [ { text: "Watching a video or looking at diagrams.", style: 'visual' }, { text: "Listening to a lecture or a podcast.", style: 'auditory' }, { text: "Reading a textbook or taking detailed notes.", style: 'read-write' }, { text: "Jumping in and trying it out myself.", style: 'kinesthetic' } ] }, { question: "If you need to assemble a piece of furniture, you would most likely:", options: [ { text: "Follow the visual diagrams in the manual.", style: 'visual' }, { text: "Have someone talk you through the steps.", style: 'auditory' }, { text: "Read the written instructions step-by-step.", style: 'read-write' }, { text: "Start putting pieces together to see what fits.", style: 'kinesthetic' } ] }, { question: "When you are trying to remember a phone number, you tend to:", options: [ { text: "Visualize the numbers in your head.", style: 'visual' }, { text: "Say the numbers out loud to yourself.", style: 'auditory' }, { text: "Write the numbers down.", style: 'read-write' }, { text: "Trace the numbers with your finger.", style: 'kinesthetic' } ] }, { question: "How do you prefer to get directions to a new place?", options: [ { text: "Look at a map.", style: 'visual' }, { text: "Listen to spoken, turn-by-turn directions.", style: 'auditory' }, { text: "Read a list of written directions.", style: 'read-write' }, { text: "Just start driving and figure it out as I go.", style: 'kinesthetic' } ] }, { question: "You're at a presentation. What are you most likely to remember afterwards?", options: [ { text: "The slides and charts that were shown.", style: 'visual' }, { text: "The speaker's tone and the things they said.", style: 'auditory' }, { text: "The detailed handouts or your own notes.", style: 'read-write' }, { text: "The hands-on activity or demonstration.", style: 'kinesthetic' } ] }, { question: "How do you best remember a story?", options: [ { text: "Picturing the scenes in my mind.", style: 'visual' }, { text: "Remembering how the narrator told it.", style: 'auditory' }, { text: "Recalling the specific words I read.", style: 'read-write' }, { text: "Connecting with the emotions and actions.", style: 'kinesthetic' } ] }, { question: "When you're interested in a new hobby, what is your first step?", options: [ { text: "Watch several 'how-to' videos.", style: 'visual' }, { text: "Talk to friends who are already involved.", style: 'auditory' }, { text: "Read articles, blogs, and forums about it.", style: 'read-write' }, { text: "Buy the basic equipment and start trying.", style: 'kinesthetic' } ] } ];
-        const learningStyles = { visual: { title: "Visual", icon: "eye", description: "You learn best by seeing. Diagrams, charts, videos, and visual aids are your greatest tools." }, auditory: { title: "Auditory", icon: "ear", description: "You learn best by hearing. Lectures, discussions, and repeating things out loud help you retain information." }, 'read-write': { title: "Read/Write", icon: "pencil", description: "You learn best by interacting with text. Reading books, writing detailed notes, and making lists are your preferred methods." }, kinesthetic: { title: "Kinesthetic", icon: "move", description: "You learn best by doing. Hands-on experience, practical examples, and physical activities are key to your understanding." } };
-        
-        const appState = {
-            discoveryStage: 0,
-            answers: [],
-            gameScores: { visual: 0, auditory: 0, 'read-write': 0, kinesthetic: 0 },
-            userData: { userName: null, learningStyle: null, totalXp: 0, achievements: [] }
+        document
+          .getElementById("finish-proofread-btn")
+          .addEventListener("click", () => {
+            if (foundErrors.size > 2)
+              appState.gameScores["read-write"] += foundErrors.size;
+            nextDiscoveryStage();
+          });
+      }
+
+      function renderAssemblyGame() {
+        const container = document.getElementById("kinesthetic-game-container");
+        container.innerHTML = `
+            <h2 class="text-2xl font-bold text-white mb-4">Code Bug Squish!</h2>
+            <p class="mb-6">Some bugs have appeared in the code! Click them as fast as you can. You have 15 seconds.</p>
+            <div class="flex justify-between items-center mb-4">
+                <div class="text-lg">Time Left: <span id="bug-squish-timer" class="font-bold">15</span>s</div>
+                <div class="text-lg">Score: <span id="bug-squish-score" class="font-bold">0</span></div>
+            </div>
+            <div id="bug-squish-grid" class="grid grid-cols-4 gap-4 w-full h-80 bg-black/20 p-4 rounded-lg">
+                ${Array(16)
+                  .fill(0)
+                  .map(
+                    (_, i) =>
+                      `<div class="bug-squish-tile rounded-lg bg-gray-700/50" data-id="${i}"></div>`
+                  )
+                  .join("")}
+            </div>
+            <button id="skip-bug-squish-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>
+        `;
+
+        const grid = document.getElementById("bug-squish-grid");
+        const tiles = grid.querySelectorAll(".bug-squish-tile");
+        const timerEl = document.getElementById("bug-squish-timer");
+        const scoreEl = document.getElementById("bug-squish-score");
+        let score = 0;
+        let timeLeft = 15;
+        let activeBugTile = null;
+        let gameInterval, timerInterval;
+
+        const endGame = () => {
+          clearInterval(gameInterval);
+          clearInterval(timerInterval);
+          if (gameInterval || timerInterval) {
+            // ensures nextDiscoveryStage is only called once
+            gameInterval = null;
+            timerInterval = null;
+            if (score > 8) appState.gameScores.kinesthetic += 3;
+            else if (score > 4) appState.gameScores.kinesthetic += 2;
+            else if (score > 1) appState.gameScores.kinesthetic += 1;
+            nextDiscoveryStage();
+          }
         };
-        const discoveryGauntlet = ['questionnaire', 'visual-game', 'visual-game-2', 'visual-game-3', 'auditory-game-1', 'auditory-game-2', 'read-write-game', 'read-write-game-2', 'read-write-game-3', 'kinesthetic-game', 'kinesthetic-game-2', 'kinesthetic-game-3'];
 
-        async function saveProgress() { 
-            if (currentUser && !currentUser.isAnonymous) {
-                await saveProgressToFirebase(currentUser.uid, appState.userData);
-            } else {
-                localStorage.setItem(LOCAL_SAVE_KEY, JSON.stringify(appState.userData));
-            }
-        }
-        
-        async function loadProgress() {
-            let data = null;
-            if (currentUser && !currentUser.isAnonymous) {
-                data = await loadProgressFromFirebase(currentUser.uid);
-            } else {
-                const localDataRaw = localStorage.getItem(LOCAL_SAVE_KEY);
-                if (localDataRaw) {
-                    try {
-                        data = JSON.parse(localDataRaw);
-                    } catch (error) {
-                        console.error("Error parsing local progress:", error);
-                        localStorage.removeItem(LOCAL_SAVE_KEY);
-                    }
-                }
-            }
+        document
+          .getElementById("skip-bug-squish-game")
+          .addEventListener("click", endGame);
 
-            if (data) {
-                appState.userData = data;
-                return true;
-            }
-            // Reset to default if no data
-            appState.userData = { userName: null, learningStyle: null, totalXp: 0, achievements: [] };
-            return false;
+        function showBug() {
+          if (activeBugTile) {
+            activeBugTile.innerHTML = "";
+          }
+
+          const randomIndex = Math.floor(Math.random() * tiles.length);
+          activeBugTile = tiles[randomIndex];
+          activeBugTile.innerHTML =
+            '<i data-lucide="bug" class="w-10 h-10 mx-auto text-lime-400 animate-pulse pointer-events-none"></i>';
+          lucide.createIcons();
         }
 
-        function navigateTo(screenName) {
-            document.querySelectorAll('[data-screen]').forEach(screen => screen.classList.remove('active'));
-            const newScreen = document.querySelector(`[data-screen="${screenName}"]`);
-            newScreen.classList.add('active');
-            newScreen.firstElementChild?.classList.add('fade-in');
-        }
-        
-        function nextDiscoveryStage() {
-            if (appState.discoveryStage >= discoveryGauntlet.length) {
-                calculateAndShowResults();
-            } else {
-                const nextStage = discoveryGauntlet[appState.discoveryStage];
-                appState.discoveryStage++;
-                
-                switch(nextStage) {
-                    case 'questionnaire': renderQuizQuestion(0); navigateTo('questionnaire'); break;
-                    case 'visual-game': renderPatternGame(); navigateTo('visual-game'); break;
-                    case 'visual-game-2': renderDifferenceGame(); navigateTo('visual-game-2'); break;
-                    case 'visual-game-3': renderIntruderGame(); navigateTo('visual-game-3'); break;
-                    case 'auditory-game-1': renderWordRecallGame(); navigateTo('auditory-game-1'); break;
-                    case 'auditory-game-2': renderSoundAssociationGame(); navigateTo('auditory-game-2'); break;
-                    case 'read-write-game': renderCategorizationGame(); navigateTo('read-write-game'); break;
-                    case 'read-write-game-2': renderScrambleGame(); navigateTo('read-write-game-2'); break;
-                    case 'read-write-game-3': renderProofreadGame(); navigateTo('read-write-game-3'); break;
-                    case 'kinesthetic-game': renderAssemblyGame(); navigateTo('kinesthetic-game'); break;
-                    case 'kinesthetic-game-2': renderMazeGame(); navigateTo('kinesthetic-game-2'); break;
-                    case 'kinesthetic-game-3': renderTypingGame(); navigateTo('kinesthetic-game-3'); break;
-                }
-            }
-        }
-
-        function renderQuizQuestion(index) {
-            if (index >= quizQuestions.length) { nextDiscoveryStage(); return; }
-            const qd = quizQuestions[index];
-            const qc = document.getElementById('quiz-container');
-            const p = (index / quizQuestions.length) * 100;
-            qc.innerHTML = `<div class="w-full bg-gray-700 rounded-full h-2.5 mb-6"><div class="bg-pink-500 h-2.5 rounded-full" style="width: ${p}%"></div></div><h2 class="text-2xl font-bold text-white mb-6 text-center">${qd.question}</h2><div class="space-y-4">${qd.options.map((o) => `<button class="w-full text-left p-4 rounded-lg quiz-option" data-style="${o.style}"><span class="font-semibold text-lg">${o.text}</span></button>`).join('')}</div>`;
-            document.querySelectorAll('.quiz-option').forEach(b => b.addEventListener('click', (e) => { appState.answers.push(e.currentTarget.dataset.style); renderQuizQuestion(index + 1); }));
-        }
-
-        function renderPatternGame() {
-            const container = document.getElementById('visual-game-container');
-            const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899'];
-            const pattern = Array.from({length: 6}, () => colors[Math.floor(Math.random() * colors.length)]);
-            let userPattern = [];
-            let phase = 'memorize';
-
-            const render = () => {
-                if (phase === 'memorize') {
-                    container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Pattern Recall</h2><p class="mb-6">Memorize this complex pattern. 5 seconds.</p><div class="pattern-grid">${pattern.map(color => `<div class="pattern-tile" style="background-color: ${color};"></div>`).join('')}${Array(3).fill(0).map(() => `<div class="pattern-tile bg-transparent"></div>`).join('')}</div>`;
-                    setTimeout(() => { phase = 'recall'; render(); }, 5000);
-                } else if (phase === 'recall') {
-                    container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Recreate the Pattern</h2><p class="mb-6">Click the tiles below in the correct color order.</p><div class="pattern-grid" id="recall-grid">${Array(9).fill(0).map((_, i) => `<div class="pattern-tile ${i < 6 ? 'bg-gray-700/50' : 'bg-transparent'}" id="tile-${i}"></div>`).join('')}</div><div class="mt-6 flex justify-center gap-2 flex-wrap" id="palette">${colors.map(color => `<div class="pattern-palette-tile" style="background-color: ${color};" data-color="${color}"></div>`).join('')}</div><button id="skip-pattern-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
-                    document.getElementById('palette').addEventListener('click', e => {
-                        if (e.target.dataset.color && userPattern.length < 6) {
-                            const selectedColor = e.target.dataset.color;
-                            document.getElementById(`tile-${userPattern.length}`).style.backgroundColor = selectedColor;
-                            userPattern.push(selectedColor);
-                            if (userPattern.length === 6) {
-                                const isCorrect = JSON.stringify(pattern) === JSON.stringify(userPattern);
-                                if (isCorrect) appState.gameScores.visual += 3;
-                                setTimeout(nextDiscoveryStage, 500);
-                            }
-                        }
-                    });
-                    document.getElementById('skip-pattern-game').addEventListener('click', nextDiscoveryStage);
-                }
-            };
-            render();
-        }
-
-        function renderDifferenceGame() {
-            const container = document.getElementById('visual-game-2-container');
-            const differences = [ { top: '25%', left: '22.5%' }, { top: '75%', left: '55.5%' }, { top: '55%', left: '85%' } ];
-            let found = 0;
-            const svgImageA = `<svg width="400" height="300" viewBox="0 0 400 300" class="bg-gray-800 rounded-lg"><rect x="150" y="150" width="100" height="100" fill="#a78bfa"/><circle cx="80" cy="80" r="30" fill="#f472b6"/><rect x="280" y="50" width="60" height="40" fill="#38bdf8"/></svg>`;
-            const svgImageB = `<svg width="400" height="300" viewBox="0 0 400 300" class="bg-gray-800 rounded-lg"><circle cx="90" cy="80" r="30" fill="#f472b6"/><rect x="280" y="50" width="60" height="40" fill="#38bdf8"/><rect x="220" y="220" width="20" height="40" fill="yellow"/><rect x="150" y="150" width="100" height="100" fill="#a78bfa"/></svg>`; 
-
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spot the Difference</h2><p class="mb-6">Find the 3 differences between the two images by clicking on them in the right-hand image.</p><div class="flex flex-col md:flex-row gap-4"><div class="difference-container">${svgImageA}</div><div class="difference-container" id="diff-container-b">${svgImageB}</div></div><button id="skip-difference-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
-            document.getElementById('skip-difference-game').addEventListener('click', nextDiscoveryStage);
-            
-            document.getElementById('diff-container-b').addEventListener('click', e => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                differences.forEach((diff, index) => {
-                    const diffX = parseFloat(diff.left) / 100 * rect.width;
-                    const diffY = parseFloat(diff.top) / 100 * rect.height;
-                    const distance = Math.sqrt(Math.pow(x - diffX, 2) + Math.pow(y - diffY, 2));
-
-                    if (distance < 20) {
-                        let dot = e.currentTarget.querySelector(`.diff-dot[data-id="${index}"]`);
-                        if (!dot) {
-                            dot = document.createElement('div');
-                            dot.className = 'diff-dot';
-                            dot.dataset.id = index;
-                            dot.style.left = `calc(${diff.left} - 15px)`;
-                            dot.style.top = `calc(${diff.top} - 15px)`;
-                            e.currentTarget.appendChild(dot);
-                            dot.classList.add('found');
-                            found++;
-                            if (found === differences.length) {
-                                appState.gameScores.visual += 3;
-                                setTimeout(nextDiscoveryStage, 500);
-                            }
-                        }
-                    }
-                });
-            });
-        }
-
-        function renderIntruderGame() {
-            const container = document.getElementById('visual-game-3-container');
-            const totalItems = 25;
-            const intruderIndex = Math.floor(Math.random() * totalItems);
-            
-            let items = '';
-            for (let i = 0; i < totalItems; i++) {
-                const isIntruder = i === intruderIndex;
-                const rotation = isIntruder ? 'rotate(90)' : 'rotate(0)';
-                items += `<div class="intruder-item" data-intruder="${isIntruder}"><svg width="50" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: ${rotation}; transition: transform 0.2s;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>`;
-            }
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spot the Intruder</h2><p class="mb-6">One of these icons is rotated differently. Find it!</p><div class="intruder-grid">${items}</div><button id="skip-intruder-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
-            document.getElementById('skip-intruder-game').addEventListener('click', nextDiscoveryStage);
-            
-            container.querySelectorAll('.intruder-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    if(e.currentTarget.dataset.intruder === 'true') {
-                        appState.gameScores.visual += 3;
-                    }
-                    nextDiscoveryStage();
-                });
-            });
-        }
-        
-        function renderWordRecallGame() {
-            const container = document.getElementById('auditory-game-1-container');
-            const words = ['Apple', 'House', 'Car', 'River', 'Book', 'Chair'];
-            const sequence = [...words].sort(() => 0.5 - Math.random()).slice(0, 4);
-            const options = [...sequence, ...words.filter(w => !sequence.includes(w)).sort(() => 0.5 - Math.random()).slice(0, 4)].sort(() => 0.5 - Math.random());
-            let userSequence = [];
-
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Spoken Word Recall</h2><p class="mb-6">Listen to the sequence of words, then click the buttons in the same order.</p><button id="play-word-btn" class="btn"><i data-lucide="play" class="mr-2"></i>Play Sequence</button><button id="skip-word-recall-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
+        grid.addEventListener("click", (e) => {
+          const tile = e.target.closest(".bug-squish-tile");
+          if (tile && tile === activeBugTile) {
+            score++;
+            scoreEl.textContent = score;
+            activeBugTile.innerHTML =
+              '<i data-lucide="sparkles" class="w-10 h-10 mx-auto text-yellow-400 pointer-events-none"></i>';
             lucide.createIcons();
-            document.getElementById('skip-word-recall-game').addEventListener('click', nextDiscoveryStage);
-            
-            document.getElementById('play-word-btn').addEventListener('click', (e) => {
-                e.target.disabled = true;
-                e.target.innerHTML = 'Listen...';
-                let i = 0;
-                function speakWord() {
-                    if (i < sequence.length) {
-                        const utterance = new SpeechSynthesisUtterance(sequence[i]);
-                        speechSynthesis.speak(utterance);
-                        i++;
-                        utterance.onend = () => setTimeout(speakWord, 300);
-                    } else {
-                        renderRecallPhase();
-                    }
-                }
-                speakWord();
-            });
+            activeBugTile = null; // Prevent double scoring
+          }
+        });
 
-            const renderRecallPhase = () => {
-                container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Your Turn</h2><p class="mb-6">Click the words in the order you heard them.</p><div class="flex flex-wrap justify-center gap-4">${options.map(w => `<button class="btn word-button" data-word="${w}">${w}</button>`).join('')}</div><p class="mt-6 h-8 text-lg font-mono" id="user-word-display"></p>`;
-                document.querySelectorAll('.word-button').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const word = e.target.dataset.word;
-                        userSequence.push(word);
-                        document.getElementById('user-word-display').textContent = userSequence.join(', ');
-                        e.target.disabled = true;
-                        e.target.style.opacity = '0.5';
+        gameInterval = setInterval(showBug, 800);
 
-                        if(userSequence.length === sequence.length) {
-                            const isCorrect = JSON.stringify(sequence) === JSON.stringify(userSequence);
-                            if (isCorrect) appState.gameScores.auditory += 3;
-                            setTimeout(nextDiscoveryStage, 500);
-                        }
-                    });
-                });
+        timerInterval = setInterval(() => {
+          timeLeft--;
+          timerEl.textContent = timeLeft;
+          if (timeLeft <= 0) {
+            endGame();
+          }
+        }, 1000);
+      }
+
+      function renderMazeGame() {
+        const container = document.getElementById(
+          "kinesthetic-game-2-container"
+        );
+        container.innerHTML = `
+            <h2 class="text-2xl font-bold text-white mb-4">Kinesthetic Keys</h2>
+            <p class="mb-6">Watch the sequence of arrows, then repeat it using your keyboard's arrow keys.</p>
+            <div id="sequence-display" class="flex justify-center items-center gap-4 h-24 bg-black/20 p-4 rounded-lg mb-4">
+                <!-- Arrows will be shown here -->
+            </div>
+            <div class="flex justify-center items-center gap-4">
+                 <div class="key-indicator" data-key="ArrowUp">↑</div>
+                 <div class="key-indicator" data-key="ArrowDown">↓</div>
+                 <div class="key-indicator" data-key="ArrowLeft">←</div>
+                 <div class="key-indicator" data-key="ArrowRight">→</div>
+            </div>
+            <p id="game-status" class="mt-4 h-6"></p>
+            <button id="skip-keys-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>
+        `;
+
+        const sequenceDisplay = document.getElementById("sequence-display");
+        const statusEl = document.getElementById("game-status");
+
+        const keys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+        const keySymbols = {
+          ArrowUp: "↑",
+          ArrowDown: "↓",
+          ArrowLeft: "←",
+          ArrowRight: "→",
+        };
+        let sequence = [];
+        let userSequence = [];
+        let level = 3;
+        let state = "watching"; // watching, repeating
+        let gameActive = true;
+
+        const endGame = (success) => {
+          if (!gameActive) return;
+          gameActive = false;
+          document.removeEventListener("keydown", handleKeyPress);
+          if (success) {
+            appState.gameScores.kinesthetic += 3;
+          }
+          nextDiscoveryStage();
+        };
+
+        document
+          .getElementById("skip-keys-game")
+          .addEventListener("click", () => endGame(false));
+
+        function nextRound() {
+          if (!gameActive) return;
+          if (level > 6) {
+            statusEl.textContent = "Great job!";
+            setTimeout(() => endGame(true), 1000);
+            return;
+          }
+          state = "watching";
+          userSequence = [];
+          sequence = [];
+          for (let i = 0; i < level; i++) {
+            sequence.push(keys[Math.floor(Math.random() * keys.length)]);
+          }
+          playSequence();
+        }
+
+        async function playSequence() {
+          if (!gameActive) return;
+          statusEl.textContent = "Watch carefully...";
+          sequenceDisplay.innerHTML = "";
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          for (const key of sequence) {
+            if (!gameActive) return;
+            const arrowEl = document.createElement("div");
+            arrowEl.className = "key-display active";
+            arrowEl.textContent = keySymbols[key];
+            sequenceDisplay.appendChild(arrowEl);
+            await new Promise((resolve) => setTimeout(resolve, 400));
+            arrowEl.classList.remove("active");
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+          if (!gameActive) return;
+          statusEl.textContent = "Your turn!";
+          state = "repeating";
+        }
+
+        const handleKeyPress = (e) => {
+          if (state !== "repeating" || !keys.includes(e.key)) return;
+
+          const indicator = document.querySelector(
+            `.key-indicator[data-key="${e.key}"]`
+          );
+          if (indicator) {
+            indicator.classList.add("active");
+            setTimeout(() => indicator.classList.remove("active"), 200);
+          }
+
+          const correctKey = sequence[userSequence.length];
+          userSequence.push(e.key);
+
+          if (e.key !== correctKey) {
+            statusEl.textContent = "Oops! Wrong key.";
+            setTimeout(() => endGame(false), 1000);
+            return;
+          }
+
+          if (userSequence.length === sequence.length) {
+            statusEl.textContent = "Correct!";
+            level++;
+            setTimeout(nextRound, 1000);
+          }
+        };
+
+        document.addEventListener("keydown", handleKeyPress);
+        nextRound();
+      }
+
+      function renderTypingGame() {
+        const container = document.getElementById(
+          "kinesthetic-game-3-container"
+        );
+        const codeSnippet =
+          "function greet(name) {\n  return `Hello, ${name}!`;\n}";
+        container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Typing Challenge</h2><p class="mb-4">Type the following code snippet exactly as you see it. You have 20 seconds.</p><pre class="bg-black/30 p-4 rounded-lg text-sm text-pink-400 mb-4 whitespace-pre-wrap"><code>${codeSnippet}</code></pre><textarea id="typing-input" rows="3" class="w-full p-2 rounded-lg themed-input"></textarea><div id="typing-timer" class="mt-4 text-xl font-bold">20</div><button id="skip-typing-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
+        document
+          .getElementById("skip-typing-game")
+          .addEventListener("click", nextDiscoveryStage);
+
+        const input = document.getElementById("typing-input");
+        const timerEl = document.getElementById("typing-timer");
+        input.focus();
+        let timeLeft = 20;
+
+        const timer = setInterval(() => {
+          timeLeft--;
+          timerEl.textContent = timeLeft;
+          if (timeLeft <= 0) {
+            clearInterval(timer);
+            checkTyping();
+          }
+        }, 1000);
+
+        const checkTyping = () => {
+          clearInterval(timer);
+          const typedText = input.value;
+          let score = 0;
+          for (let i = 0; i < codeSnippet.length; i++) {
+            if (typedText[i] === codeSnippet[i]) {
+              score++;
             }
-        }
-        
-        function renderSoundAssociationGame() {
-            const container = document.getElementById('auditory-game-2-container');
-            const items = [{name: 'Dog', emoji: '🐶'}, {name: 'Cat', emoji: '🐱'}, {name: 'Lion', emoji: '🦁'}, {name: 'Car', emoji: '🚗'}];
-            const chosenItem = items[Math.floor(Math.random() * items.length)];
-            const options = [...items].sort(() => 0.5 - Math.random());
+          }
+          const accuracy = score / codeSnippet.length;
+          if (accuracy > 0.8) appState.gameScores.kinesthetic += 3;
+          else if (accuracy > 0.6) appState.gameScores.kinesthetic += 1;
+          nextDiscoveryStage();
+        };
 
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Sound Association</h2><p class="mb-6">Listen to the word, then click the matching image.</p><button id="play-sound-btn" class="btn mb-8"><i data-lucide="volume-2" class="mr-2"></i>Listen</button><div class="flex justify-center gap-8">${options.map(item => `<button class="text-6xl image-choice" data-name="${item.name}">${item.emoji}</button>`).join('')}</div><button id="skip-sound-association-game" class="btn mt-8 text-sm bg-gray-700/50">Skip Challenge</button>`;
-            lucide.createIcons();
-            document.getElementById('skip-sound-association-game').addEventListener('click', nextDiscoveryStage);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") checkTyping();
+        });
+      }
 
-            const speak = () => {
-                const utterance = new SpeechSynthesisUtterance(chosenItem.name);
-                speechSynthesis.speak(utterance);
-            }
+      function calculateAndShowResults() {
+        const counts = appState.answers.reduce(
+          (acc, style) => {
+            acc[style] = (acc[style] || 0) + 1;
+            return acc;
+          },
+          { visual: 0, auditory: 0, "read-write": 0, kinesthetic: 0 }
+        );
+        counts.visual += appState.gameScores.visual;
+        counts.auditory += appState.gameScores.auditory;
+        counts["read-write"] += appState.gameScores["read-write"];
+        counts.kinesthetic += appState.gameScores.kinesthetic;
+        const majorityStyle = Object.keys(counts).reduce((a, b) =>
+          counts[a] > counts[b] ? a : b
+        );
+        appState.userData.learningStyle = majorityStyle;
+        saveProgress();
 
-            document.getElementById('play-sound-btn').addEventListener('click', speak);
-            document.querySelectorAll('.image-choice').forEach(btn => {
-                btn.addEventListener('click', e => {
-                    if (e.target.dataset.name === chosenItem.name) {
-                        appState.gameScores.auditory += 2;
-                    }
-                    nextDiscoveryStage();
-                });
-            });
-        }
-        
-        function renderCategorizationGame() {
-            const container = document.getElementById('read-write-game-container');
-            const data = { 'Web Frontend': ['React', 'CSS', 'HTML'], 'Web Backend': ['Node.js', 'Python', 'Database'], 'General CS': ['Algorithm', 'Data Structure', 'Compiler'] };
-            const allItems = Object.values(data).flat().sort(() => Math.random() - 0.5);
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Advanced Categorization</h2><p class="mb-6">Drag each technical term into its correct category.</p><div class="flex gap-4 mb-6 flex-wrap justify-center">${allItems.map(item => `<div class="category-item" draggable="true" data-term="${item}">${item}</div>`).join('')}</div><div class="grid grid-cols-1 md:grid-cols-3 gap-4">${Object.keys(data).map(category => `<div class="category-box" data-category="${category}"><h3 class="font-bold text-center mb-2">${category}</h3></div>`).join('')}</div><div class="mt-6 flex justify-center gap-4"><button id="skip-categorization-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button><button id="finish-category-btn" class="btn">I'm Done</button></div>`;
-            document.getElementById('skip-categorization-game').addEventListener('click', nextDiscoveryStage);
+        const styleInfo = learningStyles[majorityStyle];
+        const resultsContainer = document.getElementById("results-container");
+        resultsContainer.innerHTML = `<i data-lucide="${styleInfo.icon}" class="w-16 h-16 mx-auto text-pink-400 mb-4"></i><h2 class="text-3xl font-bold text-white">Your primary style is ${styleInfo.title}!</h2><p class="mt-4 mb-2 text-lg">${styleInfo.description}</p><div class="my-6"><canvas id="results-chart"></canvas></div><a href="index1.html" class="btn w-full"><i data-lucide="play-circle" class="mr-2"></i>Start Your Personalized Journey</a>`;
 
-            let draggedItem = null;
-            document.querySelectorAll('.category-item').forEach(item => { item.addEventListener('dragstart', e => { draggedItem = e.target; }); });
-            document.querySelectorAll('.category-box').forEach(box => { box.addEventListener('dragover', e => { e.preventDefault(); box.classList.add('drag-over'); }); box.addEventListener('dragleave', () => box.classList.remove('drag-over')); box.addEventListener('drop', e => { e.preventDefault(); box.classList.remove('drag-over'); if (draggedItem) { box.appendChild(draggedItem); } }); });
-            document.getElementById('finish-category-btn').addEventListener('click', () => {
-                let score = 0;
-                for (const category in data) {
-                    const box = document.querySelector(`.category-box[data-category="${category}"]`);
-                    const terms = data[category];
-                    terms.forEach(term => { if (box.querySelector(`[data-term="${term}"]`)) { score++; } });
-                }
-                appState.gameScores['read-write'] += Math.floor(score / 3);
-                nextDiscoveryStage();
-            });
-        }
-
-        function renderScrambleGame() {
-            const container = document.getElementById('read-write-game-2-container');
-            const words = [{scrambled: 'vraibale', answer: 'variable'}, {scrambled: 'nifcutno', answer: 'function'}, {scrambled: 'dtoniconi', answer: 'condition'}];
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Word Scramble</h2><p class="mb-6">Unscramble the following programming terms.</p><div class="space-y-4">${words.map((w,i) => `<div class="flex items-center justify-between"><span class="text-lg font-mono">${w.scrambled}</span><input class="scramble-input" data-answer="${w.answer}" id="scramble-${i}"></div>`).join('')}</div><div class="mt-6 flex justify-center gap-4"><button id="skip-scramble-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button><button id="finish-scramble-btn" class="btn">Check Answers</button></div>`;
-            document.getElementById('skip-scramble-game').addEventListener('click', nextDiscoveryStage);
-
-            document.getElementById('finish-scramble-btn').addEventListener('click', () => {
-                let score = 0;
-                words.forEach((w,i) => {
-                    const input = document.getElementById(`scramble-${i}`);
-                    if(input.value.toLowerCase() === w.answer) { score++; }
-                });
-                if(score > 1) appState.gameScores['read-write'] += score;
-                nextDiscoveryStage();
-            });
-        }
-
-        function renderProofreadGame() {
-            const container = document.getElementById('read-write-game-3-container');
-            const text = "JavaScript is a powerfull programming language used for web developement. It allows for dynamic and interractive web pages. Common mistakes include typos and syntax erors.";
-            const errors = ['powerfull', 'developement', 'interractive', 'erors'];
-            
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Proofreading Challenge</h2><p class="mb-6">Find and click the 4 spelling mistakes in the text below.</p><p class="proofread-text text-lg leading-relaxed bg-black/20 p-4 rounded-lg">${text.split(' ').map(word => `<span>${word} </span>`).join('')}</p><div class="mt-6 flex justify-center gap-4"><button id="skip-proofread-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button><button id="finish-proofread-btn" class="btn">Check Answers</button></div>`;
-            document.getElementById('skip-proofread-game').addEventListener('click', nextDiscoveryStage);
-
-            let foundErrors = new Set();
-            container.querySelectorAll('.proofread-text span').forEach(span => {
-                span.addEventListener('click', () => {
-                    const word = span.textContent.trim().replace(/[,.]/g, '');
-                    if(errors.includes(word)) {
-                        span.classList.toggle('selected');
-                        if (span.classList.contains('selected')) {
-                            foundErrors.add(word);
-                        } else {
-                            foundErrors.delete(word);
-                        }
-                    }
-                });
-            });
-
-            document.getElementById('finish-proofread-btn').addEventListener('click', () => {
-                if(foundErrors.size > 2) appState.gameScores['read-write'] += foundErrors.size;
-                nextDiscoveryStage();
-            });
-        }
-        
-        function renderAssemblyGame() {
-            const container = document.getElementById('kinesthetic-game-container');
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Complex Assembly</h2><p class="mb-6">Use the correct pieces to build the more complex target shape.</p><div class="flex items-center gap-8"><div class="flex-shrink-0"><p class="font-semibold mb-2 text-center">TARGET</p><div class="w-24 h-24 bg-pink-500/50 rounded flex flex-col items-center justify-center relative"><div class="bg-pink-500" style="width: 80px; height: 40px;"></div><div class="bg-pink-500 absolute" style="width: 40px; height: 80px; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div></div></div><div id="assembly-area" class="w-full h-64 assembly-area"></div></div><div id="assembly-pieces" class="mt-6 h-32 relative"><div class="assembly-piece bg-white" style="width: 40px; height: 80px; top: 10px; left: 20px;"></div><div class="assembly-piece bg-white" style="width: 80px; height: 40px; top: 50px; left: 100px;"></div><div class="assembly-piece bg-gray-500" style="width: 60px; height: 60px; top: 10px; left: 220px;"></div></div><div class="mt-6 flex justify-center gap-4"><button id="skip-assembly-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button><button id="finish-assembly-btn" class="btn">I'm Done</button></div>`;
-            document.getElementById('skip-assembly-game').addEventListener('click', nextDiscoveryStage);
-            let draggedPiece = null, offsetX, offsetY;
-            const moveHandler = (e) => { if(draggedPiece) { e.preventDefault(); let x = (e.touches ? e.touches[0].clientX : e.clientX); let y = (e.touches ? e.touches[0].clientY : e.clientY); draggedPiece.style.left = `${x - offsetX - container.getBoundingClientRect().left}px`; draggedPiece.style.top = `${y - offsetY - container.getBoundingClientRect().top}px`; } }
-            const downHandler = (e) => { draggedPiece = e.target; let x = (e.touches ? e.touches[0].clientX : e.clientX); let y = (e.touches ? e.touches[0].clientY : e.clientY); offsetX = x - draggedPiece.getBoundingClientRect().left; offsetY = y - draggedPiece.getBoundingClientRect().top; draggedPiece.classList.add('dragging'); }
-            const upHandler = () => { if (draggedPiece) { draggedPiece.classList.remove('dragging'); draggedPiece = null; } }
-            document.querySelectorAll('.assembly-piece').forEach(p => { p.addEventListener('mousedown', downHandler); p.addEventListener('touchstart', downHandler); });
-            document.addEventListener('mouseup', upHandler); document.addEventListener('touchend', upHandler); document.addEventListener('mousemove', moveHandler); document.addEventListener('touchmove', moveHandler);
-            document.getElementById('finish-assembly-btn').addEventListener('click', () => {
-                const box = document.getElementById('assembly-area').getBoundingClientRect(); const whitePieces = document.querySelectorAll('.assembly-piece.bg-white'); let inBoxCount = 0;
-                whitePieces.forEach(p => { const rect = p.getBoundingClientRect(); if(rect.top > box.top && rect.bottom < box.bottom && rect.left > box.left && rect.right < box.right) { inBoxCount++; } });
-                if (inBoxCount === 2) { appState.gameScores.kinesthetic += 3; }
-                nextDiscoveryStage();
-            });
-        }
-
-        function renderMazeGame() {
-            const container = document.getElementById('kinesthetic-game-2-container');
-            container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Pathfinder Maze</h2><p class="mb-6">Click and drag the ball from the start (S) to the end (E) without touching the walls.</p><canvas id="maze-canvas" width="300" height="300"></canvas><div class="mt-6 flex justify-center gap-4"><button id="skip-maze-game" class="btn text-sm bg-gray-700/50">Skip Challenge</button></div>`;
-            
-            const canvas = document.getElementById('maze-canvas');
-            const ctx = canvas.getContext('2d');
-            const maze = [ [1,0,1,1,1], [1,0,0,0,1], [1,1,1,0,1], [1,0,0,0,1], [1,1,1,0,2] ];
-            const cellSize = canvas.width / maze.length;
-            let player = { x: 0.5, y: 0.5, radius: cellSize / 4 };
-            let isDragging = false;
-            let hasWon = false;
-            let animationFrameId = null;
-
-            function draw() {
-                ctx.clearRect(0,0,canvas.width,canvas.height);
-                for(let y=0; y<maze.length; y++) {
-                    for(let x=0; x<maze[y].length; x++) {
-                        if(maze[y][x] === 1) { ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize); }
-                        if(maze[y][x] === 2) { ctx.fillStyle = '#f472b6'; ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize); }
-                    }
-                }
-                ctx.fillStyle = '#fff'; ctx.fillText('S', 5, 15);
-                ctx.fillStyle = '#fff'; ctx.fillText('E', canvas.width - 15, canvas.height - 5);
-                
-                ctx.beginPath(); ctx.arc(player.x * cellSize, player.y * cellSize, player.radius, 0, Math.PI*2);
-                ctx.fillStyle = '#38bdf8'; ctx.fill();
-                animationFrameId = requestAnimationFrame(draw);
-            }
-            
-            const downHandler = () => isDragging = true;
-            const upHandler = () => isDragging = false;
-            const moveHandler = e => {
-                if(!isDragging || hasWon) return;
-                const rect = canvas.getBoundingClientRect();
-                const newX = (e.clientX - rect.left) / cellSize;
-                const newY = (e.clientY - rect.top) / cellSize;
-                const gridX = Math.floor(newX);
-                const gridY = Math.floor(newY);
-
-                if(maze[gridY] && maze[gridY][gridX] === 1) { isDragging = false; player = { x: 0.5, y: 0.5, radius: cellSize / 4 }; } 
-                else if(maze[gridY] && maze[gridY][gridX] === 2) { hasWon = true; appState.gameScores.kinesthetic += 3; cancelAnimationFrame(animationFrameId); setTimeout(nextDiscoveryStage, 500); } 
-                else { player.x = newX; player.y = newY; }
-            };
-
-            canvas.addEventListener('mousedown', downHandler);
-            canvas.addEventListener('mouseup', upHandler);
-            canvas.addEventListener('mouseleave', upHandler);
-            canvas.addEventListener('mousemove', moveHandler);
-            draw();
-        }
-
-        function renderTypingGame() {
-             const container = document.getElementById('kinesthetic-game-3-container');
-             const codeSnippet = "function greet(name) {\n  return `Hello, ${name}!`;\n}";
-             container.innerHTML = `<h2 class="text-2xl font-bold text-white mb-4">Typing Challenge</h2><p class="mb-4">Type the following code snippet exactly as you see it. You have 20 seconds.</p><pre class="bg-black/30 p-4 rounded-lg text-sm text-pink-400 mb-4 whitespace-pre-wrap"><code>${codeSnippet}</code></pre><textarea id="typing-input" rows="3" class="w-full p-2 rounded-lg themed-input"></textarea><div id="typing-timer" class="mt-4 text-xl font-bold">20</div><button id="skip-typing-game" class="btn mt-4 text-sm bg-gray-700/50">Skip Challenge</button>`;
-            document.getElementById('skip-typing-game').addEventListener('click', nextDiscoveryStage);
-            
-             const input = document.getElementById('typing-input');
-             const timerEl = document.getElementById('typing-timer');
-             input.focus();
-             let timeLeft = 20;
-
-             const timer = setInterval(() => {
-                timeLeft--;
-                timerEl.textContent = timeLeft;
-                if(timeLeft <= 0) {
-                    clearInterval(timer);
-                    checkTyping();
-                }
-             }, 1000);
-
-             const checkTyping = () => {
-                clearInterval(timer);
-                const typedText = input.value;
-                let score = 0;
-                for(let i=0; i < codeSnippet.length; i++) {
-                    if (typedText[i] === codeSnippet[i]) {
-                        score++;
-                    }
-                }
-                const accuracy = score / codeSnippet.length;
-                if(accuracy > 0.8) appState.gameScores.kinesthetic += 3;
-                else if (accuracy > 0.6) appState.gameScores.kinesthetic += 1;
-                nextDiscoveryStage();
-             };
-
-             input.addEventListener('keydown', e => { if (e.key === 'Enter') checkTyping(); });
-        }
-
-        function calculateAndShowResults() {
-            const counts = appState.answers.reduce((acc, style) => { acc[style] = (acc[style] || 0) + 1; return acc; }, { visual: 0, auditory: 0, 'read-write': 0, kinesthetic: 0 });
-            counts.visual += appState.gameScores.visual; counts.auditory += appState.gameScores.auditory; counts['read-write'] += appState.gameScores['read-write']; counts.kinesthetic += appState.gameScores.kinesthetic;
-            const majorityStyle = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-            appState.userData.learningStyle = majorityStyle;
-            saveProgress();
-            
-            const styleInfo = learningStyles[majorityStyle];
-            const resultsContainer = document.getElementById('results-container');
-            resultsContainer.innerHTML = `<i data-lucide="${styleInfo.icon}" class="w-16 h-16 mx-auto text-pink-400 mb-4"></i><h2 class="text-3xl font-bold text-white">Your primary style is ${styleInfo.title}!</h2><p class="mt-4 mb-2 text-lg">${styleInfo.description}</p><div class="my-6"><canvas id="results-chart"></canvas></div><a href="index1.html" class="btn w-full"><i data-lucide="play-circle" class="mr-2"></i>Start Your Personalized Journey</a>`;
-
-            const ctx = document.getElementById('results-chart').getContext('2d');
-            new Chart(ctx, { type: 'radar', data: { labels: Object.values(learningStyles).map(s => s.title), datasets: [{ label: 'Your Learning Profile', data: Object.values(counts), backgroundColor: 'rgba(236, 72, 153, 0.2)', borderColor: 'rgba(236, 72, 153, 1)', borderWidth: 2, pointBackgroundColor: 'rgba(236, 72, 153, 1)', pointBorderColor: '#fff', }] }, options: { scales: { r: { angleLines: { color: 'rgba(255, 255, 255, 0.2)' }, grid: { color: 'rgba(255, 255, 255, 0.2)' }, pointLabels: { color: '#fff', font: { size: 14 } }, ticks: { color: 'rgba(255, 255, 255, 0.7)', backdropColor: 'rgba(0, 0, 0, 0.5)', stepSize: 1 } } }, plugins: { legend: { display: false } } } });
-            lucide.createIcons();
-            navigateTo('results');
-        }
-
-        // --- App Initialization ---
-        async function initApp() {
-            await loadProgress();
-            const welcomeMessage = document.getElementById('welcome-message');
-            const welcomeActions = document.getElementById('welcome-actions');
-            
-            if (appState.userData.userName && appState.userData.learningStyle) {
-                const styleInfo = learningStyles[appState.userData.learningStyle];
-                welcomeMessage.innerHTML = `<p class="text-xl mb-4">Welcome back, ${appState.userData.userName}!</p><p class="mb-8 text-pink-400 font-semibold">Your dominant style: ${styleInfo.title}</p>`;
-                welcomeActions.innerHTML = `<a href="index1.html" class="btn w-full mb-4"><i data-lucide="play-circle" class="mr-2"></i>Continue Your Journey</a><button id="reset-btn" class="text-sm text-gray-400 hover:text-white">Start Over / New User?</button>`;
-                document.getElementById('reset-btn').addEventListener('click', () => { 
-                    if (currentUser && !currentUser.isAnonymous) {
-                         saveProgressToFirebase(currentUser.uid, { userName: null, learningStyle: null, totalXp: 0, achievements: [] });
-                    }
-                    localStorage.removeItem(LOCAL_SAVE_KEY); 
-                    window.location.reload(); 
-                });
-            } else {
-                welcomeMessage.textContent = `Your personal learning journey awaits. Let's discover your unique learning style.`;
-                welcomeActions.innerHTML = `<button id="discover-style-btn" class="btn w-full text-lg">Discover Your Learning Style</button>`;
-                document.getElementById('discover-style-btn').addEventListener('click', () => {
-                    if (currentUser && !currentUser.isAnonymous) {
-                        appState.userData.userName = currentUser.displayName || currentUser.email;
-                        saveProgress();
-                        navigateTo('gauntlet-intro');
-                    } else {
-                        navigateTo('name-input');
-                    }
-                });
-            }
-            lucide.createIcons();
-
-            document.getElementById('submit-name-btn').addEventListener('click', () => {
-                const name = document.getElementById('name-input-field').value.trim();
-                if (name) {
-                    appState.userData.userName = name;
-                    saveProgress();
-                    navigateTo('gauntlet-intro');
-                }
-            });
-            document.getElementById('start-gauntlet-btn').addEventListener('click', nextDiscoveryStage);
-            
-            navigateTo('welcome');
-        }
-
-        initApp();
+        const ctx = document.getElementById("results-chart").getContext("2d");
+        new Chart(ctx, {
+          type: "radar",
+          data: {
+            labels: Object.values(learningStyles).map((s) => s.title),
+            datasets: [
+              {
+                label: "Your Learning Profile",
+                data: Object.values(counts),
+                backgroundColor: "rgba(236, 72, 153, 0.2)",
+                borderColor: "rgba(236, 72, 153, 1)",
+                borderWidth: 2,
+                pointBackgroundColor: "rgba(236, 72, 153, 1)",
+                pointBorderColor: "#fff",
+              },
+            ],
+          },
+          options: {
+            scales: {
+              r: {
+                angleLines: { color: "rgba(255, 255, 255, 0.2)" },
+                grid: { color: "rgba(255, 255, 255, 0.2)" },
+                pointLabels: { color: "#fff", font: { size: 14 } },
+                ticks: {
+                  color: "rgba(255, 255, 255, 0.7)",
+                  backdropColor: "rgba(0, 0, 0, 0.5)",
+                  stepSize: 1,
+                },
+              },
+            },
+            plugins: { legend: { display: false } },
+          },
+        });
         lucide.createIcons();
+        navigateTo("results");
+      }
+
+      // --- App Initialization ---
+      async function initApp() {
+        await loadProgress();
+        const welcomeMessage = document.getElementById("welcome-message");
+        const welcomeActions = document.getElementById("welcome-actions");
+
+        if (appState.userData.userName && appState.userData.learningStyle) {
+          const styleInfo = learningStyles[appState.userData.learningStyle];
+          welcomeMessage.innerHTML = `<p class="text-xl mb-4">Welcome back, ${appState.userData.userName}!</p><p class="mb-8 text-pink-400 font-semibold">Your dominant style: ${styleInfo.title}</p>`;
+          welcomeActions.innerHTML = `<a href="index1.html" class="btn w-full mb-4"><i data-lucide="play-circle" class="mr-2"></i>Continue Your Journey</a><button id="reset-btn" class="text-sm text-gray-400 hover:text-white">Start Over / New User?</button>`;
+          document.getElementById("reset-btn").addEventListener("click", () => {
+            if (currentUser && !currentUser.isAnonymous) {
+              saveProgressToFirebase(currentUser.uid, {
+                userName: null,
+                learningStyle: null,
+                totalXp: 0,
+                achievements: [],
+              });
+            }
+            localStorage.removeItem(LOCAL_SAVE_KEY);
+            window.location.reload();
+          });
+        } else {
+          welcomeMessage.textContent = `Your personal learning journey awaits. Let's discover your unique learning style.`;
+          welcomeActions.innerHTML = `<button id="discover-style-btn" class="btn w-full text-lg">Discover Your Learning Style</button>`;
+          document
+            .getElementById("discover-style-btn")
+            .addEventListener("click", () => {
+              if (currentUser && !currentUser.isAnonymous) {
+                appState.userData.userName =
+                  currentUser.displayName || currentUser.email;
+                saveProgress();
+                navigateTo("gauntlet-intro");
+              } else {
+                navigateTo("name-input");
+              }
+            });
+        }
+        lucide.createIcons();
+
+        document
+          .getElementById("submit-name-btn")
+          .addEventListener("click", () => {
+            const name = document
+              .getElementById("name-input-field")
+              .value.trim();
+            if (name) {
+              appState.userData.userName = name;
+              saveProgress();
+              navigateTo("gauntlet-intro");
+            }
+          });
+        document
+          .getElementById("start-gauntlet-btn")
+          .addEventListener("click", nextDiscoveryStage);
+
+        navigateTo("welcome");
+      }
+
+      initApp();
+      lucide.createIcons();
     </script>
-</body>
+  </body>
 </html>
