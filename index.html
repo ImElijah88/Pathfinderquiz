@@ -284,13 +284,53 @@
     </style>
   </head>
   <body class="antialiased text-gray-200">
+    <!-- Mobile Header -->
+    <header
+      class="fixed top-0 left-0 right-0 z-[99] flex items-center justify-between p-4 bg-gray-900/50 backdrop-blur-sm md:hidden"
+    >
+      <div class="flex items-center gap-3">
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          class="text-blue-400"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            fill="none"
+          />
+          <line
+            x1="4"
+            y1="12"
+            x2="20"
+            y2="12"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <h1 class="text-xl font-bold text-white">Pathfinder</h1>
+      </div>
+      <button id="menu-btn" class="p-2">
+        <i data-lucide="menu" class="w-6 h-6 text-white"></i>
+      </button>
+    </header>
+
     <!-- Sidebar and Auth Modals Wrapper -->
     <div>
       <!-- Hover zone to activate sidebar -->
       <div
         id="sidebar-hover-zone"
-        class="fixed top-0 left-0 h-full z-50"
-        style="width: 100px"
+        class="fixed top-0 left-0 h-full z-50 w-20 hidden md:block"
       ></div>
 
       <!-- Slide-out Sidebar -->
@@ -299,37 +339,42 @@
         class="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 to-slate-800 border-r border-gray-700/50 shadow-2xl p-6 flex flex-col"
       >
         <!-- Header -->
-        <div class="flex items-center gap-3 mb-8">
-          <svg
-            width="40"
-            height="40"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            class="text-blue-400"
-          >
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+        <div class="flex items-center justify-between gap-3 mb-8">
+          <div class="flex items-center gap-3">
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
               fill="none"
-            />
-            <line
-              x1="4"
-              y1="12"
-              x2="20"
-              y2="12"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <h1 class="text-2xl font-bold text-white">Pathfinder</h1>
+              xmlns="http://www.w3.org/2000/svg"
+              class="text-blue-400"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+              />
+              <line
+                x1="4"
+                y1="12"
+                x2="20"
+                y2="12"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <h1 class="text-2xl font-bold text-white">Pathfinder</h1>
+          </div>
+          <button id="close-menu-btn" class="p-1 md:hidden">
+            <i data-lucide="x" class="w-6 h-6 text-gray-400"></i>
+          </button>
         </div>
 
         <!-- Level Navigation -->
@@ -464,7 +509,7 @@
     <!-- Main App Content -->
     <div
       id="app"
-      class="min-h-screen flex flex-col items-center justify-center p-4"
+      class="min-h-screen flex flex-col items-center justify-center p-4 pt-20 md:pt-4"
     >
       <!-- All screens -->
       <div data-screen="welcome" class="w-full max-w-lg text-center active">
@@ -629,6 +674,8 @@
       const sidebarHoverZone = document.getElementById("sidebar-hover-zone");
       const authModal = document.getElementById("auth-modal");
       const authModalContent = document.getElementById("auth-modal-content");
+      const menuBtn = document.getElementById("menu-btn");
+      const closeMenuBtn = document.getElementById("close-menu-btn");
 
       const openSidebar = () => {
         sidebar.classList.add("open");
@@ -642,8 +689,14 @@
         overlay.classList.add("opacity-0", "pointer-events-none");
       };
 
+      // Desktop hover
       sidebarHoverZone.addEventListener("mouseenter", openSidebar);
       sidebar.addEventListener("mouseleave", closeSidebar);
+
+      // Mobile click
+      menuBtn.addEventListener("click", openSidebar);
+      closeMenuBtn.addEventListener("click", closeSidebar);
+
       overlay.addEventListener("click", closeSidebar);
 
       const showModal = (content) => {
